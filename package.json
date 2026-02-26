@@ -12,5 +12,18 @@
     },
     "dependencies": {
         "firebase": "^12.9.0"
-    }
+    },
+    "main": "app.js",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/legendsbarberiaapp/app-legends.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "commonjs",
+    "bugs": {
+        "url": "https://github.com/legendsbarberiaapp/app-legends/issues"
+    },
+    "homepage": "https://github.com/legendsbarberiaapp/app-legends#readme"
 }
