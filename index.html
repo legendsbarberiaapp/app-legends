@@ -82,7 +82,7 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 
-<body class="font-display bg-background-dark text-slate-100 antialiased overflow-hidden select-none">
+<body class="font-display bg-background-dark text-slate-100 antialiased select-none">
 
     <!-- SPLASH SCREEN -->
     <div id="splash-screen"
@@ -1314,6 +1314,15 @@
                         <span class="material-symbols-outlined">settings</span>
                     </div>
                     <span class="text-xs font-medium text-white/80">Ajustes</span>
+                </button>
+            </div>
+
+            <!-- Logout Button -->
+            <div class="px-6 mb-8">
+                <button onclick="handleSignOut()"
+                    class="w-full flex items-center justify-center gap-2 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500/20 hover:border-red-500/40 transition-all active:scale-[0.98]">
+                    <span class="material-symbols-outlined text-lg">logout</span>
+                    <span class="font-black uppercase tracking-wide text-sm">Cerrar Sesión</span>
                 </button>
             </div>
 
