@@ -120,6 +120,9 @@ class FirebaseAuthAdapter {
         roleManager.saveUserToStorage = () => { };
 
         this.auth.onAuthStateChanged(async (firebaseUser) => {
+            const loadingState = document.getElementById('auth-loading-state');
+            const loginButtons = document.getElementById('auth-login-buttons');
+
             if (firebaseUser) {
                 console.log('✓ Usuario autenticado en Firebase:', firebaseUser.email);
                 const userData = await this.ensureUserDocument(firebaseUser);
@@ -130,7 +133,7 @@ class FirebaseAuthAdapter {
                 roleManager.initialized = true;
                 roleManager.renderForRole();
 
-                // Mostrar app
+                // Mostrar app directamente (sin mostrar botones de login)
                 const splash = document.getElementById('splash-screen');
                 const app = document.getElementById('main-app');
 
@@ -147,6 +150,14 @@ class FirebaseAuthAdapter {
                 }
             } else {
                 console.log('✓ Usuario desconectado de Firebase');
+
+                // Ocultar spinner y mostrar botones de login
+                if (loadingState) loadingState.style.display = 'none';
+                if (loginButtons) {
+                    loginButtons.style.display = 'block';
+                    loginButtons.style.animation = 'fadeIn 0.5s ease-out';
+                }
+
                 roleManager.currentUser = null;
                 roleManager.currentRole = null;
                 roleManager.hideAllTabs();
@@ -154,7 +165,7 @@ class FirebaseAuthAdapter {
                 if (navContainer) navContainer.innerHTML = '';
                 roleManager.toggleFAB(false);
 
-                // Mostrar splash
+                // Mostrar splash (si no está ya visible)
                 const splash = document.getElementById('splash-screen');
                 const app = document.getElementById('main-app');
 
@@ -177,8 +188,41 @@ class FirebaseAuthAdapter {
 // Instancia global
 const firebaseAdapter = new FirebaseAuthAdapter();
 
+// Protección contra doble clic en login
+let isLoginInProgress = false;
+
 // Exponer en la ventana para botones de interfaz
-window.handleGoogleLogin = () => firebaseAdapter.signInWithGoogle();
+window.handleGoogleLogin = async () => {
+    if (isLoginInProgress) {
+        console.log('⚠ Login ya en progreso, ignorando clic duplicado');
+        return;
+    }
+
+    const btn = document.getElementById('google-login-btn');
+    isLoginInProgress = true;
+
+    // Deshabilitar botón visualmente
+    if (btn) {
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+        btn.style.pointerEvents = 'none';
+    }
+
+    try {
+        await firebaseAdapter.signInWithGoogle();
+    } catch (error) {
+        console.error('Error en login:', error);
+        // Rehabilitar botón si hay error
+        if (btn) {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.pointerEvents = 'auto';
+        }
+    } finally {
+        isLoginInProgress = false;
+    }
+};
+
 window.handleAppleLogin = () => firebaseAdapter.signInWithApple();
 window.handleSignOut = () => firebaseAdapter.signOut();
 
