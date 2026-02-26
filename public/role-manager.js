@@ -182,6 +182,13 @@ class RoleManager {
         if (emailDisplay) {
             emailDisplay.textContent = this.currentUser.email || 'Miembro Activo';
         }
+
+        const greetingDisplay = document.getElementById('home-greeting-name');
+        if (greetingDisplay) {
+            const firstName = (this.currentUser.displayName || 'Usuario').split(' ')[0];
+            greetingDisplay.textContent = firstName;
+        }
+
         console.log('✓ UI de Perfil Sincronizada con Google');
     }
 
