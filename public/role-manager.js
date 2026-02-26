@@ -83,7 +83,10 @@ class RoleManager {
         // 4. Mostrar/ocultar FAB
         this.toggleFAB(config.showFAB);
 
-        // 5. Navegar a tab por defecto
+        // 5. Actualizar la interfaz del perfil
+        this.updateProfileUI();
+
+        // 6. Navegar a tab por defecto
         setTimeout(() => {
             switchTab(config.defaultTab);
         }, 100);
@@ -146,6 +149,40 @@ class RoleManager {
             fab.style.display = show ? 'block' : 'none';
             console.log(`✓ FAB ${show ? 'visible' : 'oculto'}`);
         }
+    }
+
+    // Actualizar nombre y foto de perfil según configuración de Google/currentUser
+    updateProfileUI() {
+        if (!this.currentUser) return;
+
+        const avatarImg = document.getElementById('profile-avatar-img');
+        const nameDisplay = document.getElementById('profile-name-display');
+        const emailDisplay = document.getElementById('profile-email-display');
+
+        if (avatarImg && this.currentUser.photoURL) {
+            avatarImg.src = this.currentUser.photoURL;
+        } else if (avatarImg) {
+            // Placeholder si no tiene foto de Google
+            const fallbackName = this.currentUser.displayName || 'User';
+            avatarImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(fallbackName)}&background=c9a74a&color=000`;
+        }
+
+        if (nameDisplay) {
+            // Dividir nombre y apellido por estética si es posible
+            const nameParts = (this.currentUser.displayName || 'Usuario').split(' ');
+            if (nameParts.length >= 2) {
+                const fName = nameParts.shift();
+                const lName = nameParts.join(' ');
+                nameDisplay.innerHTML = `${fName}<br><span class="text-primary drop-shadow-[0_0_15px_rgba(201,167,74,0.6)]"></span> ${lName}`;
+            } else {
+                nameDisplay.textContent = this.currentUser.displayName;
+            }
+        }
+
+        if (emailDisplay) {
+            emailDisplay.textContent = this.currentUser.email || 'Miembro Activo';
+        }
+        console.log('✓ UI de Perfil Sincronizada con Google');
     }
 
     // Guardar usuario en localStorage
