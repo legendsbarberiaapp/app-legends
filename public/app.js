@@ -214,46 +214,8 @@ window.addEventListener('resize', () => {
     }, 250);
 });
 
-// Prevent pull-to-refresh on mobile (CORREGIDO)
-// El scroll en esta app ocurre dentro de los contenedores de cada tab,
-// NO en window, así que hay que verificar el scrollTop del contenedor real.
-let touchStartY = 0;
-document.addEventListener('touchstart', (e) => {
-    touchStartY = e.touches[0].clientY;
-}, { passive: true });
-
-document.addEventListener('touchmove', (e) => {
-    const touchY = e.touches[0].clientY;
-    const touchDiff = touchY - touchStartY;
-
-    // Solo bloquear si el usuario está arrastrando hacia abajo (pull-to-refresh)
-    if (touchDiff > 0) {
-        // Buscar el contenedor scrollable más cercano al elemento tocado
-        let scrollableParent = e.target;
-        let isAtTop = true;
-
-        while (scrollableParent && scrollableParent !== document.body) {
-            const style = window.getComputedStyle(scrollableParent);
-            const overflowY = style.overflowY;
-
-            if (overflowY === 'auto' || overflowY === 'scroll') {
-                // Encontramos un contenedor scrollable
-                if (scrollableParent.scrollTop > 0) {
-                    // El contenedor NO está en el top, permitir scroll normal
-                    isAtTop = false;
-                }
-                break;
-            }
-            scrollableParent = scrollableParent.parentElement;
-        }
-
-        // Solo prevenir pull-to-refresh si TODOS los contenedores están en el top
-        // Y el window también está en el top
-        if (isAtTop && window.scrollY === 0) {
-            e.preventDefault();
-        }
-    }
-}, { passive: false });
+// Pull-to-refresh: Se permite el comportamiento nativo del navegador
+// para que el usuario pueda recargar la app deslizando hacia abajo.
 
 // Add visibility change handler
 document.addEventListener('visibilitychange', () => {
