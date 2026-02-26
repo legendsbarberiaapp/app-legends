@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Legends Barberia - Booking Flow</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#c9a74a",
+                        "background-light": "#f8f7f6",
+                        "background-dark": "#1f1c13", // Very dark brownish/black
+                        "surface-dark": "#2a271f", // Slightly lighter surface
+                        "surface-card": "#36332b", // Card background
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for horizontal sections */
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .glass-panel {
+            background: rgba(42, 39, 31, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display min-h-screen flex flex-col antialiased selection:bg-primary selection:text-black">
+<!-- Header -->
+<header class="sticky top-0 z-50 bg-background-dark/95 backdrop-blur-md border-b border-white/5 px-4 pt-12 pb-4">
+<div class="flex items-center justify-between">
+<button class="flex h-10 w-10 items-center justify-center rounded-full text-white hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<div class="flex flex-col items-center">
+<h1 class="text-white text-lg font-extrabold tracking-wide uppercase">Legends Barberia</h1>
+<p class="text-xs font-medium text-primary tracking-widest uppercase">Book Appointment</p>
+</div>
+<button class="text-sm font-bold text-neutral-400 hover:text-white transition-colors">
+                Cancel
+            </button>
+</div>
+<!-- Progress Stepper -->
+<div class="mt-6 flex w-full items-center justify-center gap-2">
+<div class="h-1.5 w-8 rounded-full bg-primary shadow-[0_0_10px_rgba(201,167,74,0.5)]"></div>
+<div class="h-1.5 w-8 rounded-full bg-surface-card"></div>
+<div class="h-1.5 w-8 rounded-full bg-surface-card"></div>
+<div class="h-1.5 w-8 rounded-full bg-surface-card"></div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 overflow-x-hidden pb-32">
+<!-- Section 1: Services -->
+<section class="mt-8 px-4">
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-xl font-bold text-white tracking-tight uppercase">The Cut</h2>
+<span class="text-xs text-neutral-500 font-semibold uppercase tracking-wider">Step 1</span>
+</div>
+<div class="flex gap-3 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4">
+<!-- Active Service -->
+<button class="group relative flex flex-shrink-0 flex-col gap-1 rounded-xl bg-primary p-4 min-w-[140px] border-2 border-primary transition-all">
+<div class="flex justify-between items-start w-full">
+<span class="material-symbols-outlined text-black font-bold">content_cut</span>
+<div class="h-4 w-4 rounded-full bg-black flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-[10px] font-bold">check</span>
+</div>
+</div>
+<div class="mt-4">
+<p class="text-black text-sm font-bold leading-tight">Fade Cut</p>
+<p class="text-black/80 text-xs font-medium">$45.00</p>
+</div>
+</button>
+<!-- Inactive Service -->
+<button class="group relative flex flex-shrink-0 flex-col gap-1 rounded-xl bg-surface-card p-4 min-w-[140px] border-2 border-transparent hover:border-primary/50 transition-all">
+<div class="flex justify-between items-start w-full">
+<span class="material-symbols-outlined text-neutral-400">face</span>
+<div class="h-4 w-4 rounded-full border border-neutral-600"></div>
+</div>
+<div class="mt-4 text-left">
+<p class="text-white text-sm font-bold leading-tight">Beard Trim</p>
+<p class="text-neutral-400 text-xs font-medium">$25.00</p>
+</div>
+</button>
+<!-- Inactive Service -->
+<button class="group relative flex flex-shrink-0 flex-col gap-1 rounded-xl bg-surface-card p-4 min-w-[140px] border-2 border-transparent hover:border-primary/50 transition-all">
+<div class="flex justify-between items-start w-full">
+<span class="material-symbols-outlined text-neutral-400">spa</span>
+<div class="h-4 w-4 rounded-full border border-neutral-600"></div>
+</div>
+<div class="mt-4 text-left">
+<p class="text-white text-sm font-bold leading-tight">Full Service</p>
+<p class="text-neutral-400 text-xs font-medium">$65.00</p>
+</div>
+</button>
+<!-- Inactive Service -->
+<button class="group relative flex flex-shrink-0 flex-col gap-1 rounded-xl bg-surface-card p-4 min-w-[140px] border-2 border-transparent hover:border-primary/50 transition-all">
+<div class="flex justify-between items-start w-full">
+<span class="material-symbols-outlined text-neutral-400">straighten</span>
+<div class="h-4 w-4 rounded-full border border-neutral-600"></div>
+</div>
+<div class="mt-4 text-left">
+<p class="text-white text-sm font-bold leading-tight">Line Up</p>
+<p class="text-neutral-400 text-xs font-medium">$20.00</p>
+</div>
+</button>
+</div>
+</section>
+<!-- Section 2: The Barber -->
+<section class="mt-8">
+<div class="px-4 flex items-center justify-between mb-4">
+<h2 class="text-xl font-bold text-white tracking-tight uppercase">The Barber</h2>
+<button class="text-xs text-primary font-bold uppercase tracking-wider">See all</button>
+</div>
+<div class="flex gap-4 overflow-x-auto scrollbar-hide px-4 pb-4">
+<!-- Barber 1 (Selected) -->
+<div class="relative flex-shrink-0 h-64 w-48 rounded-2xl overflow-hidden group border-2 border-primary cursor-pointer">
+<img alt="Stylish barber with tattoos posing in studio" class="h-full w-full object-cover filter grayscale group-hover:grayscale-0 transition-all duration-500" data-alt="Black and white portrait of a stylish barber with tattoos" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4aS707M9sHolZNl68PNDKw0TF4u8QHqa1sHhBa61TZjOHj3NdRx28R4lb-t-ESU8KNQsQs2T7jCj4QpRWSdnxuAAEkfD-TpLHhsoL4CXMlKwGsXEHZgYvxGxleZY-dADMMY9oke1RMpD8eGi9e1Fb4AZAc2M_odDApxI_gBekwYCM1o5cnw_XUbxj37xeCd4qFVsRqvpjX3hyBT7PIizxgW6HaPcvGKj0olJHPQKBrSu0uBcg4OLlX-wyle3HnlrRIz15Trqxros"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90"></div>
+<div class="absolute bottom-0 left-0 w-full p-4 glass-panel border-t border-white/10">
+<div class="flex items-center justify-between">
+<h3 class="text-white font-bold text-lg">Marcus</h3>
+<div class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-[16px] fill-current">star</span>
+<span class="text-xs font-bold">4.9</span>
+</div>
+</div>
+<p class="text-neutral-400 text-xs mt-1">Master Barber</p>
+</div>
+<div class="absolute top-3 right-3 h-6 w-6 rounded-full bg-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-black text-sm font-bold">check</span>
+</div>
+</div>
+<!-- Barber 2 -->
+<div class="relative flex-shrink-0 h-64 w-48 rounded-2xl overflow-hidden group border-2 border-transparent hover:border-white/20 cursor-pointer">
+<img alt="Confident barber smiling at camera" class="h-full w-full object-cover filter grayscale group-hover:grayscale-0 transition-all duration-500" data-alt="Black and white portrait of a smiling barber" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5ekLBeOdYSEYcI1KWRDYpsuLP6UzZIsk2a95MHILRpFFSE1AK3jBpbTFUKvTUnAXNCmfpdpcD_fnKwUAEOPd6CJPvegJbtwZ0seofSYiw2HC31aUzjE2MNLbdaijh_pjGfgO2PZDjRKspu2RfT9eMt1cBsf7HtxiIafaJi-dKH9yT4Cq1nGF3uL5vNIj-qAH3PJwQR_Osrt7MLyL0SZ47LqxbZR1xnTkddfXrW69bB1r_R4fcVuvW5NCFCqdMhgGXxBurPdiT2NM"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90"></div>
+<div class="absolute bottom-0 left-0 w-full p-4">
+<div class="flex items-center justify-between">
+<h3 class="text-white font-bold text-lg">Jax</h3>
+<div class="flex items-center gap-1 text-white/60">
+<span class="material-symbols-outlined text-[16px]">star</span>
+<span class="text-xs font-bold">4.8</span>
+</div>
+</div>
+<p class="text-neutral-500 text-xs mt-1">Senior Barber</p>
+</div>
+</div>
+<!-- Barber 3 -->
+<div class="relative flex-shrink-0 h-64 w-48 rounded-2xl overflow-hidden group border-2 border-transparent hover:border-white/20 cursor-pointer">
+<img alt="Young barber with trendy haircut" class="h-full w-full object-cover filter grayscale group-hover:grayscale-0 transition-all duration-500" data-alt="Black and white portrait of a young barber with trendy hair" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAVsr5k3EiD7AuIFpUnShvmqHVAO2FqrBHCHs0qgR8XCxpGyqBgz1iTcPSpbMGZ-nWwlnv2OkbrPNd1WY6Ku-PQqylefgy8PF69HoseHtFQDqN-bLBtk5ZhEOEuC3OB_eDwliDXX3eZLWi48yc3CFfE5XogJhsjPgOYRweSj-E6gD6ty5iiRQAz1W1AJ3IeUZYq5BSCSYB7t0_TrXDrJbTM6TreHVn1e4NCWSfUOoK1GaFL0j0UrKIJHuUI0PcSBsJiKSXZpj4aDCE"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90"></div>
+<div class="absolute bottom-0 left-0 w-full p-4">
+<div class="flex items-center justify-between">
+<h3 class="text-white font-bold text-lg">Leo</h3>
+<div class="flex items-center gap-1 text-white/60">
+<span class="material-symbols-outlined text-[16px]">star</span>
+<span class="text-xs font-bold">4.7</span>
+</div>
+</div>
+<p class="text-neutral-500 text-xs mt-1">Stylist</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 3: Calendar -->
+<section class="mt-8 px-4">
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-xl font-bold text-white tracking-tight uppercase">October 2023</h2>
+<div class="flex gap-2">
+<button class="h-8 w-8 rounded-full bg-surface-card flex items-center justify-center text-neutral-400 hover:text-white">
+<span class="material-symbols-outlined text-sm">chevron_left</span>
+</button>
+<button class="h-8 w-8 rounded-full bg-surface-card flex items-center justify-center text-neutral-400 hover:text-white">
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-7 gap-1 text-center mb-2">
+<span class="text-[10px] font-bold text-neutral-500 uppercase">Mon</span>
+<span class="text-[10px] font-bold text-neutral-500 uppercase">Tue</span>
+<span class="text-[10px] font-bold text-neutral-500 uppercase">Wed</span>
+<span class="text-[10px] font-bold text-neutral-500 uppercase">Thu</span>
+<span class="text-[10px] font-bold text-neutral-500 uppercase">Fri</span>
+<span class="text-[10px] font-bold text-neutral-500 uppercase">Sat</span>
+<span class="text-[10px] font-bold text-neutral-500 uppercase">Sun</span>
+</div>
+<div class="grid grid-cols-7 gap-2">
+<!-- Empty days -->
+<div class="aspect-square"></div>
+<div class="aspect-square"></div>
+<!-- Days -->
+<button class="aspect-square rounded-lg flex items-center justify-center text-sm font-medium text-neutral-400 hover:bg-surface-card">1</button>
+<button class="aspect-square rounded-lg flex items-center justify-center text-sm font-medium text-neutral-400 hover:bg-surface-card">2</button>
+<button class="aspect-square rounded-lg flex items-center justify-center text-sm font-medium text-neutral-400 hover:bg-surface-card">3</button>
+<button class="aspect-square rounded-lg flex items-center justify-center text-sm font-medium text-neutral-400 hover:bg-surface-card">4</button>
+<button class="aspect-square rounded-lg flex items-center justify-center text-sm font-medium text-neutral-400 hover:bg-surface-card">5</button>
+<button class="aspect-square rounded-lg flex items-center justify-center text-sm font-medium text-neutral-400 hover:bg-surface-card">6</button>
+<button class="aspect-square rounded-lg flex items-center justify-center text-sm font-medium text-neutral-400 hover:bg-surface-card">7</button>
+<button class="aspect-square rounded-lg flex items-center justify-center text-sm font-medium text-neutral-400 hover:bg-surface-card">8</button>
+<button class="aspect-square rounded-lg flex items-center justify-center text-sm font-bold bg-primary text-black shadow-[0_0_15px_rgba(201,167,74,0.4)]">9</button>
+<button class="aspect-square rounded-lg flex items-center justify-center text-sm font-medium text-white hover:bg-surface-card">10</button>
+<button class="aspect-square rounded-lg flex items-center justify-center text-sm font-medium text-white hover:bg-surface-card">11</button>
+<button class="aspect-square rounded-lg flex items-center justify-center text-sm font-medium text-white hover:bg-surface-card">12</button>
+<button class="aspect-square rounded-lg flex items-center justify-center text-sm font-medium text-neutral-600 line-through cursor-not-allowed">13</button>
+<button class="aspect-square rounded-lg flex items-center justify-center text-sm font-medium text-white hover:bg-surface-card">14</button>
+</div>
+</section>
+<!-- Section 4: Time Slots -->
+<section class="mt-8 px-4">
+<h2 class="text-xl font-bold text-white tracking-tight uppercase mb-4">Available Time</h2>
+<div class="grid grid-cols-3 gap-3">
+<button class="py-2.5 px-4 rounded-lg bg-surface-card border border-neutral-700 text-neutral-400 text-sm font-medium text-center line-through cursor-not-allowed opacity-50">09:00 AM</button>
+<button class="py-2.5 px-4 rounded-lg bg-surface-card border border-neutral-700 text-white text-sm font-medium text-center hover:border-primary/50 transition-colors">09:45 AM</button>
+<button class="py-2.5 px-4 rounded-lg bg-primary text-black text-sm font-bold text-center shadow-[0_0_15px_rgba(201,167,74,0.3)] transform scale-105">10:30 AM</button>
+<button class="py-2.5 px-4 rounded-lg bg-surface-card border border-neutral-700 text-white text-sm font-medium text-center hover:border-primary/50 transition-colors">11:15 AM</button>
+<button class="py-2.5 px-4 rounded-lg bg-surface-card border border-neutral-700 text-white text-sm font-medium text-center hover:border-primary/50 transition-colors">12:00 PM</button>
+<button class="py-2.5 px-4 rounded-lg bg-surface-card border border-neutral-700 text-white text-sm font-medium text-center hover:border-primary/50 transition-colors">01:30 PM</button>
+<button class="py-2.5 px-4 rounded-lg bg-surface-card border border-neutral-700 text-white text-sm font-medium text-center hover:border-primary/50 transition-colors">02:15 PM</button>
+<button class="py-2.5 px-4 rounded-lg bg-surface-card border border-neutral-700 text-white text-sm font-medium text-center hover:border-primary/50 transition-colors">03:00 PM</button>
+<button class="py-2.5 px-4 rounded-lg bg-surface-card border border-neutral-700 text-neutral-400 text-sm font-medium text-center line-through cursor-not-allowed opacity-50">04:30 PM</button>
+</div>
+</section>
+</main>
+<!-- Sticky Footer -->
+<footer class="fixed bottom-0 left-0 w-full z-40">
+<!-- Gradient fade from content to footer -->
+<div class="h-12 w-full bg-gradient-to-b from-transparent to-background-dark pointer-events-none"></div>
+<div class="bg-surface-dark border-t border-white/5 px-6 py-4 flex flex-col gap-4 pb-8 backdrop-blur-xl bg-opacity-95">
+<div class="flex items-center justify-between">
+<div class="flex flex-col">
+<span class="text-neutral-400 text-xs font-semibold uppercase tracking-wider">Total Payment</span>
+<span class="text-white text-2xl font-bold font-display">$65.00</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-neutral-400 text-xs font-medium">9 Oct • 10:30 AM</span>
+<span class="text-primary text-xs font-bold uppercase">Fade Cut + Marcus</span>
+</div>
+</div>
+<button class="w-full bg-primary hover:bg-yellow-500 text-black font-extrabold text-lg py-4 rounded-xl shadow-[0_4px_20px_rgba(201,167,74,0.3)] active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+<span>CONFIRM BOOKING</span>
+<span class="material-symbols-outlined font-bold">arrow_forward</span>
+</button>
+</div>
+</footer>
+</body></html>

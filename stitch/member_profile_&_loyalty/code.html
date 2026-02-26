@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Member Profile &amp; Loyalty - Legends Barberia</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Config -->
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#c9a74a",
+                        "primary-dark": "#b08d35",
+                        "primary-light": "#e0c470",
+                        "background-light": "#f8f7f6",
+                        "background-dark": "#121212", // Matte charcoal
+                        "surface-dark": "#1E1E1E", // Slightly lighter for cards
+                        "surface-lighter": "#2A2A2A",
+                    },
+                    fontFamily: {
+                        display: ["Plus Jakarta Sans", "sans-serif"]
+                    },
+                    boxShadow: {
+                        'neon': '0 0 10px rgba(201, 167, 74, 0.5), 0 0 20px rgba(201, 167, 74, 0.3)',
+                        'neon-sm': '0 0 5px rgba(201, 167, 74, 0.4)',
+                    },
+                    backgroundImage: {
+                        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+                        'mesh': 'radial-gradient(at 0% 0%, rgba(201,167,74,0.1) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(30,30,30,1) 0px, transparent 50%)',
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom subtle noise texture for background */
+        .bg-noise {
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+        }
+        
+        /* Custom scrollbar hiding */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-display bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 antialiased overflow-x-hidden">
+<div class="relative flex flex-col min-h-screen w-full max-w-md mx-auto bg-background-dark shadow-2xl overflow-hidden">
+<!-- Background Effects -->
+<div class="absolute inset-0 bg-noise pointer-events-none z-0"></div>
+<div class="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-primary/10 to-transparent pointer-events-none z-0"></div>
+<!-- Header / Navigation -->
+<div class="relative z-10 flex items-center justify-between p-4 pt-6">
+<button class="text-white/80 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-3xl">arrow_back</span>
+</button>
+<h1 class="text-sm font-bold tracking-[0.2em] text-white/60 uppercase">Legends Barberia</h1>
+<button class="text-white/80 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-3xl">notifications</span>
+</button>
+</div>
+<!-- Profile Hero Section -->
+<div class="relative z-10 flex flex-col items-center pt-2 pb-6 px-6">
+<div class="relative group">
+<!-- Avatar with Neon Glow Ring -->
+<div class="absolute -inset-1 bg-gradient-to-r from-primary to-primary-light rounded-full blur opacity-40 group-hover:opacity-75 transition duration-500"></div>
+<div class="relative w-28 h-28 p-[3px] rounded-full bg-background-dark ring-2 ring-primary shadow-neon">
+<img alt="Stylish man with beard portrait" class="w-full h-full rounded-full object-cover border-2 border-background-dark" data-alt="Portrait of Alexander Cruz" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlTvHb0dVl-cI-mbfXq26h4ieJwP057A1c5hDI4hWZ2i_jPXAmNsvtRF2hn8yhZtc8KtPy9sVi5pDriK6Pxi4SY7sq157-NylRtYs9YUyM5GBzFmclMG8q3eaZ6O7Xiq3V_mIePbWdoTBMlC4wpUQ1nWclHUZeZNUf6R_EkrBkInjg3HHQxMBcP4SjoeumVArSVILuIBnI-UdQAK-pwpDWXpQDh3DAnbNNWEndc9A0pFsBD2a9XEc6dKPlcVA54eFwze7c_j-an0Q"/>
+</div>
+<div class="absolute bottom-0 right-0 bg-primary text-background-dark rounded-full p-1.5 border-4 border-background-dark">
+<span class="material-symbols-outlined text-sm font-bold block">verified</span>
+</div>
+</div>
+<div class="mt-4 text-center">
+<h2 class="text-2xl font-extrabold text-white tracking-tight uppercase leading-none">Alexander <br/><span class="text-primary">'The Wolf'</span> Cruz</h2>
+<div class="mt-2 inline-flex items-center px-3 py-1 rounded border border-primary/30 bg-primary/10 backdrop-blur-sm">
+<span class="material-symbols-outlined text-primary text-sm mr-1.5">workspace_premium</span>
+<span class="text-xs font-bold text-primary tracking-widest uppercase">Gold Member</span>
+</div>
+</div>
+</div>
+<!-- Loyalty Progress -->
+<div class="relative z-10 px-6 pb-6">
+<div class="bg-surface-dark/80 backdrop-blur-md rounded-xl p-5 border border-white/5 shadow-lg">
+<div class="flex justify-between items-end mb-2">
+<div>
+<p class="text-xs text-white/50 font-medium uppercase tracking-wider mb-1">Current Status</p>
+<p class="text-white font-bold text-lg">150 XP to Platinum</p>
+</div>
+<p class="text-primary font-bold text-xl tabular-nums">850 <span class="text-white/40 text-sm font-normal">/ 1000</span></p>
+</div>
+<!-- Progress Bar -->
+<div class="h-3 w-full bg-surface-lighter rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-primary-dark via-primary to-primary-light w-[85%] rounded-full shadow-[0_0_10px_rgba(201,167,74,0.6)] relative overflow-hidden">
+<!-- Shimmer effect -->
+<div class="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12 translate-x-[-100%] animate-[shimmer_2s_infinite]"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Quick Actions Grid -->
+<div class="relative z-10 px-6 grid grid-cols-3 gap-3 mb-8">
+<button class="flex flex-col items-center justify-center gap-2 p-3 rounded-xl bg-surface-dark border border-white/5 hover:border-primary/50 hover:bg-surface-lighter transition-all group">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-black transition-colors">
+<span class="material-symbols-outlined">calendar_month</span>
+</div>
+<span class="text-xs font-medium text-white/80">Book Now</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-2 p-3 rounded-xl bg-surface-dark border border-white/5 hover:border-primary/50 hover:bg-surface-lighter transition-all group">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-black transition-colors">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+</div>
+<span class="text-xs font-medium text-white/80">Wallet</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-2 p-3 rounded-xl bg-surface-dark border border-white/5 hover:border-primary/50 hover:bg-surface-lighter transition-all group">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-black transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</div>
+<span class="text-xs font-medium text-white/80">Settings</span>
+</button>
+</div>
+<!-- Content Area -->
+<div class="relative z-10 flex-1 bg-surface-dark rounded-t-3xl p-6 pb-24 shadow-[0_-5px_20px_rgba(0,0,0,0.4)] border-t border-white/5">
+<!-- Referral Banner (Streetwear Sticker Style) -->
+<div class="relative overflow-hidden bg-gradient-to-r from-zinc-800 to-zinc-900 rounded-lg p-0 mb-8 border border-white/10 group cursor-pointer transform hover:scale-[1.02] transition-transform">
+<!-- Decorative Elements -->
+<div class="absolute top-0 right-0 p-2 opacity-10">
+<span class="material-symbols-outlined text-6xl">content_cut</span>
+</div>
+<div class="absolute -left-2 top-1/2 -translate-y-1/2 w-1.5 h-12 bg-primary rounded-r-full shadow-neon-sm"></div>
+<div class="p-5 flex items-center justify-between relative z-10">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="px-1.5 py-0.5 bg-primary text-black text-[10px] font-bold uppercase tracking-widest rounded-sm">Promo</span>
+<span class="text-xs text-primary font-bold tracking-wider uppercase">Street Team</span>
+</div>
+<h3 class="text-lg font-bold text-white leading-tight">Refer a homie,<br/>earn a free cut.</h3>
+</div>
+<div class="bg-white/5 p-2 rounded-full border border-white/10 group-hover:border-primary/50 transition-colors">
+<span class="material-symbols-outlined text-primary">arrow_forward</span>
+</div>
+</div>
+</div>
+<!-- Your Squad (Horizontal Scroll) -->
+<div class="mb-8">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-sm font-bold text-white uppercase tracking-wider">Your Squad</h3>
+<button class="text-xs text-primary hover:text-white transition-colors">View All</button>
+</div>
+<div class="flex gap-4 overflow-x-auto no-scrollbar pb-2">
+<!-- Barber 1 -->
+<div class="flex flex-col items-center gap-2 min-w-[70px]">
+<div class="relative">
+<img alt="Barber Jay portrait" class="w-16 h-16 rounded-full object-cover border-2 border-primary p-0.5" data-alt="Barber Jay profile picture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCblAREbgw-CuRA9JC-MvkCais1xQ6i-v5dPNdeahU2GfvotP6zXeXJkBWnmniaNnXlhvBHcvG_4XbvBU-ISLtEAQTt6CNaSnU5OkWGFbzNN-kWOSuz57bs-p2t0mpfWCQRvWqjbSR66xLlpWpKtmRAL7_JFk9a7OHzvXc2q__KEGbEARxL4qYuWS6v_NDO7EfbBDKSsxEBaU3PlbFnwisGqaYINQSOoF09WKhaRJkjhQ5Rb_kL2yrPGfmypdwmC4we2WIxHiIt1tc"/>
+<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-surface-dark"></div>
+</div>
+<span class="text-xs font-medium text-white">Jay</span>
+</div>
+<!-- Barber 2 -->
+<div class="flex flex-col items-center gap-2 min-w-[70px]">
+<div class="relative">
+<img alt="Barber Mike portrait" class="w-16 h-16 rounded-full object-cover border-2 border-surface-lighter opacity-60 grayscale hover:grayscale-0 hover:border-primary hover:opacity-100 transition-all p-0.5" data-alt="Barber Mike profile picture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5rgOY-nT2yJ3svLos_988P24craHy3NA_WytlLQ_POnEXUdNNANYP_aAs87Q5MidMjZlLFKG70b8Lu6lc3CwWlxaiMzmoin8F38faDgWtpKxkw1W7zvDFFRHNNE9blDDk6YbNXDz35qi0oC76qvvAH0Pblkhqe8eKbU6U-OmiIgJRBen4qavCq7cyScxYocC_VU3HzWQBsHhy-jnJEMlKgS227Dxr13ZCmafstGohsp1VSoONnxZjUChcXELCBk7ShBYD7ojAwIk"/>
+</div>
+<span class="text-xs font-medium text-white/60">Mike</span>
+</div>
+<!-- Barber 3 -->
+<div class="flex flex-col items-center gap-2 min-w-[70px]">
+<div class="relative">
+<img alt="Barber Sarah portrait" class="w-16 h-16 rounded-full object-cover border-2 border-surface-lighter opacity-60 grayscale hover:grayscale-0 hover:border-primary hover:opacity-100 transition-all p-0.5" data-alt="Barber Sarah profile picture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAVNlzBDuHJDGVj0771yoCi_Gk4UGkeZIoIoVxwpUUHhugBB-x4XXUUbjAj3mEdgXJkRZMFIG6CCajLFrT428lhTpFer_uZ5ZqJdF9hJ1FwDZ5GkykklCyi_FgX3OyKPvM82XmjjB83o5SypnQYjAk0cjLagcc8Px-0yJri6qcYfN2H9FyYYvHx4Ta0ifQh8rVldZ7gEzcBuZovJRyAazY5DJkRA7qZAx_mNrZMtCcXkWXnlmK7b2Dyx1SWoMhLaanX7tnIOLiRu0o"/>
+</div>
+<span class="text-xs font-medium text-white/60">Sarah</span>
+</div>
+<!-- Add Button -->
+<div class="flex flex-col items-center gap-2 min-w-[70px]">
+<button class="w-16 h-16 rounded-full border-2 border-dashed border-white/20 flex items-center justify-center hover:border-primary hover:bg-white/5 transition-colors">
+<span class="material-symbols-outlined text-white/40">add</span>
+</button>
+<span class="text-xs font-medium text-white/40">Find</span>
+</div>
+</div>
+</div>
+<!-- Recent Cuts History -->
+<div>
+<h3 class="text-sm font-bold text-white uppercase tracking-wider mb-4">History</h3>
+<div class="flex flex-col gap-3">
+<!-- History Item 1 -->
+<div class="flex items-center justify-between p-3 rounded-lg bg-surface-lighter/50 hover:bg-surface-lighter transition-colors border border-transparent hover:border-white/5">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-background-dark flex items-center justify-center text-white/50">
+<span class="material-symbols-outlined text-lg">content_cut</span>
+</div>
+<div>
+<p class="text-sm font-bold text-white">Fresh Fade + Beard</p>
+<p class="text-xs text-white/50">2 days ago • Jay</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold text-primary">$45.00</p>
+<div class="flex items-center justify-end text-[10px] text-green-500 gap-0.5 mt-0.5">
+<span class="material-symbols-outlined text-[10px]">check_circle</span>
+<span>Paid</span>
+</div>
+</div>
+</div>
+<!-- History Item 2 -->
+<div class="flex items-center justify-between p-3 rounded-lg bg-surface-lighter/50 hover:bg-surface-lighter transition-colors border border-transparent hover:border-white/5">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-background-dark flex items-center justify-center text-white/50">
+<span class="material-symbols-outlined text-lg">content_cut</span>
+</div>
+<div>
+<p class="text-sm font-bold text-white">Standard Cut</p>
+<p class="text-xs text-white/50">3 weeks ago • Mike</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold text-primary">$35.00</p>
+<div class="flex items-center justify-end text-[10px] text-green-500 gap-0.5 mt-0.5">
+<span class="material-symbols-outlined text-[10px]">check_circle</span>
+<span>Paid</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Navigation -->
+<div class="fixed bottom-0 w-full max-w-md bg-background-dark border-t border-white/5 px-6 pb-6 pt-3 z-50">
+<div class="flex items-center justify-between">
+<a class="flex flex-col items-center gap-1 group text-white/40 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">home</span>
+<span class="text-[10px] font-medium tracking-wide">Home</span>
+</a>
+<a class="flex flex-col items-center gap-1 group text-white/40 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">calendar_month</span>
+<span class="text-[10px] font-medium tracking-wide">Book</span>
+</a>
+<a class="relative -top-5 flex flex-col items-center justify-center" href="#">
+<div class="w-14 h-14 rounded-full bg-primary flex items-center justify-center shadow-neon hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-black text-2xl">qr_code_scanner</span>
+</div>
+</a>
+<a class="flex flex-col items-center gap-1 group text-white/40 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">storefront</span>
+<span class="text-[10px] font-medium tracking-wide">Shop</span>
+</a>
+<a class="flex flex-col items-center gap-1 group text-primary" href="#">
+<span class="material-symbols-outlined scale-110">person</span>
+<span class="text-[10px] font-medium tracking-wide">Profile</span>
+</a>
+</div>
+</div>
+</div>
+<!-- Animation Keyframes needed for shimmer -->
+<style>
+        @keyframes shimmer {
+            100% {
+                transform: translateX(100%);
+            }
+        }
+    </style>
+</body></html>

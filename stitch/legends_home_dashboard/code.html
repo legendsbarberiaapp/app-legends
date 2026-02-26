@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Legends Barberia Home</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#c9a74a",
+                        "background-light": "#f8f7f6",
+                        "background-dark": "#121212", 
+                        "matte-black": "#171717",
+                        "card-dark": "#1f1f1f",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        
+        .glass-panel {
+            background: rgba(31, 31, 31, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(201, 167, 74, 0.15);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased overflow-hidden h-screen w-full flex flex-col relative">
+<!-- Main Content Area with Scroll -->
+<main class="flex-1 overflow-y-auto no-scrollbar pb-24 relative z-0">
+<!-- Hero Section -->
+<div class="relative w-full h-[65vh] min-h-[450px]">
+<!-- Background Image -->
+<div class="absolute inset-0 bg-cover bg-center bg-no-repeat" data-alt="Barber cutting hair with clippers, client wearing gold chain" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCi75i_MbNHSh1MnLgtUuy12AKYmXFKiB7ezKE0ICCypPGsyu5hEnpJHXdLHstNihvQkN3Ye9-C3elQmMDTAS_4iojoicmVC0_R3Ng4qdRFDIGazmHMMzgcEtfmdp62TB--rSxch5lICO8Xp8agkbo5GI39wxyfD_mRxqBhvYLKUt6aeUAYh0L7iUG5hyUhuNXDgGjYU64zaNIZE7d1-FiA-uCvqDKRzU5zUGoNPY5ew8GNnlnjlaAH810QwS6XJdORlOE-mVGbAX4');"></div>
+<!-- Gradient Overlay for Readability -->
+<div class="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-background-dark"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-background-dark via-background-dark/20 to-transparent"></div>
+<!-- Top Header (Absolute) -->
+<div class="absolute top-0 left-0 w-full px-5 pt-14 pb-4 flex justify-between items-start z-10">
+<div class="flex flex-col">
+<p class="text-primary font-bold text-sm tracking-widest uppercase mb-1">Legends Barberia</p>
+<h1 class="text-white text-3xl font-extrabold leading-tight">Welcome back,<br/><span class="text-primary">Alex</span></h1>
+</div>
+<button class="relative p-2 rounded-full glass-panel hover:bg-white/10 transition-colors group">
+<span class="material-symbols-outlined text-white group-hover:text-primary transition-colors">notifications</span>
+<span class="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-primary border border-black animate-pulse"></span>
+</button>
+</div>
+<!-- Hero Status Content -->
+<div class="absolute bottom-4 left-0 w-full px-5 z-10">
+<div class="glass-panel p-4 rounded-xl border-l-4 border-l-primary flex items-center justify-between shadow-2xl shadow-black/50">
+<div>
+<p class="text-gray-400 text-xs font-medium uppercase tracking-wider">Status</p>
+<p class="text-white font-bold text-lg">Ready for a fresh cut?</p>
+</div>
+<div class="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">content_cut</span>
+</div>
+</div>
+</div>
+</div>
+<!-- News & Updates Section -->
+<div class="px-5 pt-8 pb-4">
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-white text-xl font-bold tracking-tight">News &amp; Updates</h2>
+<a class="text-primary text-sm font-medium hover:text-primary/80 transition-colors" href="#">View All</a>
+</div>
+<!-- Horizontal Scroll Container -->
+<div class="flex gap-4 overflow-x-auto no-scrollbar pb-4 snap-x snap-mandatory">
+<!-- Card 1 -->
+<div class="snap-center shrink-0 w-[280px] h-[320px] rounded-2xl overflow-hidden relative group cursor-pointer border border-white/5 hover:border-primary/50 transition-colors">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="Barber shop chair in dramatic lighting" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC04Y70sB9LitHvctzdpIHHywzTZImbeMPqDjAbXBgpGerSCM7rKndaVnySuYcyqJ9Hx9suE38ytGinL6cGejR0DfYYd2orKUC_nRJVbvXci3hC0cv55AlqCAnGE3SJmQy0c34rQQQe_PgxW3pD1fAGHvedPPPR63WfLJ3fga8BFGDHva31rsVZzshfT5K_j_ov6GUnpt8FnbxAZhX9DodiXxaUB4sV2xfXSsbIl5GmVT6c9_VP4ZDfRk-jfIqApRcvPpSCGS8QBo0');">
+</div>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
+<div class="absolute bottom-0 left-0 w-full p-5 flex flex-col gap-2">
+<span class="px-2 py-1 rounded bg-primary text-black text-[10px] font-bold uppercase w-fit">Promo</span>
+<h3 class="text-white font-bold text-xl leading-tight">Student Discount Tuesdays</h3>
+<p class="text-gray-300 text-sm line-clamp-2">Get 20% off all fades and beard trims every Tuesday with valid ID.</p>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="snap-center shrink-0 w-[280px] h-[320px] rounded-2xl overflow-hidden relative group cursor-pointer border border-white/5 hover:border-primary/50 transition-colors">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="Cool streetwear hoodie on a model" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAhsojak7tVVtJNfwjvopx_aE4nyycLgNLhtBgNNE7EtNm7tuIKRDXXt1eVmk0fqYxRE1kWAw6cmXdtd_MA3YXhbbyKCizKJTuq7ZQRKOa3GGJIcGPj3qD8KkX6H-FvHXt95ga96D9LrSMSVx70eTJyayBOw7a0fDp4v1qCIykbaWhXMY5ctIV7HWGCmwRwe77q0eUjO4wUDjsrDoWOKMqe3_1O70GsaOXrDfIiCa8IFLOsVuD0hzhGZKGtzdhHjI-k1dmS3H0JCIs');">
+</div>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
+<div class="absolute bottom-0 left-0 w-full p-5 flex flex-col gap-2">
+<span class="px-2 py-1 rounded bg-white/10 text-white backdrop-blur-sm text-[10px] font-bold uppercase w-fit border border-white/20">Merch</span>
+<h3 class="text-white font-bold text-xl leading-tight">Legends Hoodies Drop</h3>
+<p class="text-gray-300 text-sm line-clamp-2">New limited edition collection available in store now.</p>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="snap-center shrink-0 w-[280px] h-[320px] rounded-2xl overflow-hidden relative group cursor-pointer border border-white/5 hover:border-primary/50 transition-colors">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="Barber tools scissors and comb close up" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBdjxq8Jt0M2KJuAvQLKxI8Oaa0mCD2lEuUw51DD4-M9nHqNKhBqGUKvwpYaX12KfITfocE1S1fJoQHX_WZO_1RZw459_xcPbz5XXx9T__da0QPZot_QRt7By7N3NEpdw0PcqEbHVicd8TOPth-Tl23qDMd6Y7T8bP1Ypl1E7YvKAnziqAT_0MjOGSIz6ZcJC57qZ01BxjgXBxvqBNm3m0H7agu1mVYhglFnmSbkf2MIMDIEjo9Y1Y2TCQc7ij8RORZCoKBkSJIYwA');">
+</div>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
+<div class="absolute bottom-0 left-0 w-full p-5 flex flex-col gap-2">
+<span class="px-2 py-1 rounded bg-white/10 text-white backdrop-blur-sm text-[10px] font-bold uppercase w-fit border border-white/20">Guest Spot</span>
+<h3 class="text-white font-bold text-xl leading-tight">Mike from NYC</h3>
+<p class="text-gray-300 text-sm line-clamp-2">Catch Mike this weekend only. Slots filling fast.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Quick Actions Grid -->
+<div class="px-5 pb-24">
+<div class="grid grid-cols-2 gap-3">
+<button class="bg-card-dark p-4 rounded-xl flex flex-col gap-3 items-start border border-white/5 hover:border-primary/30 transition-all active:scale-95 group">
+<div class="h-10 w-10 rounded-full bg-background-dark border border-white/10 flex items-center justify-center text-gray-400 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined">history</span>
+</div>
+<div class="text-left">
+<p class="text-white font-bold">History</p>
+<p class="text-gray-500 text-xs">Past cuts</p>
+</div>
+</button>
+<button class="bg-card-dark p-4 rounded-xl flex flex-col gap-3 items-start border border-white/5 hover:border-primary/30 transition-all active:scale-95 group">
+<div class="h-10 w-10 rounded-full bg-background-dark border border-white/10 flex items-center justify-center text-gray-400 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined">storefront</span>
+</div>
+<div class="text-left">
+<p class="text-white font-bold">Shop</p>
+<p class="text-gray-500 text-xs">Products</p>
+</div>
+</button>
+</div>
+</div>
+</main>
+<!-- Floating Action Button (FAB) -->
+<div class="fixed bottom-24 right-5 z-20">
+<button class="group flex items-center gap-2 bg-primary hover:bg-yellow-500 text-matte-black h-14 pl-5 pr-6 rounded-full shadow-[0_0_20px_rgba(201,167,74,0.4)] hover:shadow-[0_0_25px_rgba(201,167,74,0.6)] transition-all transform hover:-translate-y-1 active:scale-95">
+<span class="material-symbols-outlined text-[24px] font-semibold">calendar_month</span>
+<span class="font-extrabold text-base tracking-wide uppercase">Book Now</span>
+</button>
+</div>
+<!-- Bottom Navigation Bar -->
+<div class="relative z-30 w-full border-t border-white/10 bg-matte-black/90 backdrop-blur-xl px-2 pb-5 pt-2">
+<div class="flex items-center justify-around">
+<a class="flex flex-1 flex-col items-center justify-end gap-1 rounded-full text-primary" href="#">
+<span class="material-symbols-outlined filled" style="font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;">home</span>
+<p class="text-xs font-bold leading-normal">Home</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-end gap-1 text-gray-500 hover:text-gray-300 transition-colors" href="#">
+<span class="material-symbols-outlined">content_cut</span>
+<p class="text-xs font-medium leading-normal">Book</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-end gap-1 text-gray-500 hover:text-gray-300 transition-colors" href="#">
+<span class="material-symbols-outlined">shopping_bag</span>
+<p class="text-xs font-medium leading-normal">Shop</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-end gap-1 text-gray-500 hover:text-gray-300 transition-colors" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+<p class="text-xs font-medium leading-normal">Profile</p>
+</a>
+</div>
+</div>
+</body></html>

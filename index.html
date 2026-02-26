@@ -1,0 +1,2040 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legends Barberia - Tu Corte. Tu Estilo. Tu Trono.</title>
+
+    <!-- App Icons and Manifest -->
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap"
+        rel="stylesheet">
+
+    <!-- Material Symbols -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+    <!-- Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#c9a74a",
+                        "primary-dark": "#b88a44",
+                        "primary-light": "#eecf72",
+                        "background-light": "#f8f7f6",
+                        "background-dark": "#121212",
+                        "matte-black": "#171717",
+                        "card-dark": "#1f1f1f",
+                        "surface-dark": "#1E1E1E",
+                        "surface-card": "#36332b",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'shimmer': 'shimmer 2.5s linear infinite',
+                    },
+                    keyframes: {
+                        shimmer: {
+                            '0%': { backgroundPosition: '-200% 0' },
+                            '100%': { backgroundPosition: '200% 0' }
+                        }
+                    }
+                },
+            },
+        }
+    </script>
+
+    <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+
+    <!-- Role System Scripts -->
+    <script src="auth-mock.js"></script>
+    <script src="role-manager.js"></script>
+    <script src="mock-data-admin.js"></script>
+    <script src="mock-data-barbero.js"></script>
+    <script src="firebase-adapter.js"></script>
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="font-display bg-background-dark text-slate-100 antialiased overflow-hidden select-none">
+
+    <!-- SPLASH SCREEN -->
+    <div id="splash-screen"
+        class="screen active relative flex h-screen w-full flex-col justify-between overflow-hidden">
+        <!-- Enhanced Background with radial gradient -->
+        <div class="absolute inset-0 bg-gradient-radial from-background-dark via-black to-black z-0"></div>
+        <div class="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black z-0"></div>
+        <div class="absolute inset-0 smoke-overlay z-0 animate-pulse-slow"></div>
+
+        <!-- Animated circles in background -->
+        <div class="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-primary/5 blur-3xl animate-pulse"></div>
+        <div class="absolute bottom-1/3 right-1/4 w-48 h-48 rounded-full bg-primary/10 blur-2xl animate-pulse-slow">
+        </div>
+
+        <!-- Top Safe Area Spacer -->
+        <div class="h-16 w-full z-10"></div>
+
+        <!-- Central Brand Content -->
+        <div
+            class="relative z-10 flex flex-col items-center justify-center flex-grow px-6 animate-[fadeIn_1.2s_ease-out]">
+            <!-- Enhanced Logo with better glow effect -->
+            <div class="mb-8 relative group">
+                <!-- Outer glow ring -->
+                <div
+                    class="absolute -inset-4 rounded-full bg-gradient-to-r from-primary via-primary-light to-primary opacity-20 blur-2xl group-hover:opacity-40 transition-all duration-700 animate-pulse-slow">
+                </div>
+                <!-- Middle ring -->
+                <div class="absolute -inset-2 rounded-full bg-primary/30 blur-lg transition-all duration-500">
+                </div>
+                <!-- Logo container -->
+                <div
+                    class="relative flex items-center justify-center w-32 h-32 rounded-full border-4 border-primary/60 bg-gradient-to-br from-black/80 to-background-dark/80 backdrop-blur-md shadow-2xl group-hover:border-primary transition-all duration-500 group-hover:scale-105 overflow-hidden">
+                    <img src="logo.png" alt="Legends Barberia Logo" class="w-full h-full object-cover">
+                </div>
+            </div>
+
+            <!-- Enhanced Brand Name with better hierarchy -->
+            <div class="text-center mb-3">
+                <h1 class="tracking-wider mb-1">
+                    <span
+                        class="block text-5xl font-black text-white leading-none tracking-tighter drop-shadow-[0_2px_20px_rgba(201,167,74,0.3)]">LEGENDS</span>
+                </h1>
+                <span
+                    class="block text-xs font-extrabold text-primary/90 tracking-[0.4em] uppercase mt-3 drop-shadow-sm">Barbería
+                    Profesional</span>
+            </div>
+
+            <!-- Enhanced Divider with animation -->
+            <div class="relative w-24 h-[2px] my-7 overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
+                <div
+                    class="absolute inset-0 bg-gradient-to-r from-transparent via-primary to-transparent w-1/2 animate-[shimmer_3s_ease-in-out_infinite]">
+                </div>
+            </div>
+
+            <!-- Enhanced Tagline -->
+            <p class="text-center text-xl italic font-semibold text-gold-gradient animate-shimmer drop-shadow-md">
+                Tu corte. Tu estilo. Tu trono.
+            </p>
+
+            <!-- Trust indicator -->
+            <div
+                class="mt-8 flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 backdrop-blur-sm border border-white/10">
+                <span class="material-symbols-outlined text-primary text-sm"
+                    style="font-variation-settings: 'FILL' 1">verified</span>
+                <span class="text-white/70 text-xs font-medium tracking-wide">Barbería Certificada Premium</span>
+            </div>
+        </div>
+
+        <!-- Enhanced Bottom Action Area -->
+        <div class="relative z-10 w-full px-6 pb-10 pt-8 bg-gradient-to-t from-black via-black/95 to-transparent">
+            <div class="flex flex-col gap-4 max-w-md mx-auto">
+                <!-- Google Login Button -->
+                <button onclick="handleGoogleLogin()"
+                    class="group relative flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 px-5 bg-white hover:bg-gray-100 border border-transparent backdrop-blur-sm transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.99] shadow-lg">
+                    <div class="relative flex items-center gap-3">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24">
+                            <path
+                                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                                fill="#4285F4"></path>
+                            <path
+                                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                                fill="#34A853"></path>
+                            <path
+                                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                                fill="#FBBC05"></path>
+                            <path
+                                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                                fill="#EA4335"></path>
+                        </svg>
+                        <span class="text-gray-900 text-base font-bold tracking-wide">Continuar con Google</span>
+                    </div>
+                </button>
+
+                <!-- Apple Login Button (Hidden - Requires Developer Account)
+                <button onclick="handleAppleLogin()"
+                    class="group relative flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 px-5 bg-black hover:bg-gray-900 border border-white/20 hover:border-white/40 backdrop-blur-sm transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.99] shadow-lg mt-2">
+                    <div class="relative flex items-center gap-3">
+                        <svg class="w-5 h-5" viewBox="0 0 384 512" fill="white">
+                            <path
+                                d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z">
+                            </path>
+                        </svg>
+                        <span class="text-white text-base font-bold tracking-wide">Continuar con Apple</span>
+                    </div>
+                </button>
+                -->
+
+                <!-- Terms Link -->
+                <p class="text-center text-xs text-slate-500/80 mt-3 leading-relaxed">
+                    Al continuar aceptas nuestros <a
+                        class="text-primary/90 hover:text-primary underline underline-offset-2 transition-colors font-medium"
+                        href="#">Términos</a> y <a
+                        class="text-primary/90 hover:text-primary underline underline-offset-2 transition-colors font-medium"
+                        href="#">Política de Privacidad</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="main-app" class="screen hidden">
+
+        <!-- HOME TAB -->
+        <div id="home-tab" class="tab-content active h-[100dvh] w-full flex flex-col relative">
+            <!-- Main Content Area with Scroll -->
+            <main class="flex-1 overflow-y-auto no-scrollbar relative z-0">
+                <!-- Enhanced Hero Section -->
+                <div class="relative w-full h-[68vh] min-h-[480px]">
+                    <!-- Background Image with better overlay -->
+                    <div class="absolute inset-0 bg-cover bg-center bg-no-repeat transform scale-105"
+                        style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCi75i_MbNHSh1MnLgtUuy12AKYmXFKiB7ezKE0ICCypPGsyu5hEnpJHXdLHstNihvQkN3Ye9-C3elQmMDTAS_4iojoicmVC0_R3Ng4qdRFDIGazmHMMzgcEtfmdp62TB--rSxch5lICO8Xp8agkbo5GI39wxyfD_mRxqBhvYLKUt6aeUAYh0L7iUG5hyUhuNXDgGjYU64zaNIZE7d1-FiA-uCvqDKRzU5zUGoNPY5ew8GNnlnjlaAH810QwS6XJdORlOE-mVGbAX4');">
+                    </div>
+
+                    <!-- Enhanced Gradient Overlays for better readability -->
+                    <div class="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-background-dark">
+                    </div>
+                    <div
+                        class="absolute inset-0 bg-gradient-to-t from-background-dark via-background-dark/60 to-transparent">
+                    </div>
+                    <!-- Vignette effect -->
+                    <div class="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/30"></div>
+
+                    <!-- Enhanced Top Header -->
+                    <div class="absolute top-0 left-0 w-full px-6 pt-14 pb-6 flex justify-between items-start z-10">
+                        <div class="flex flex-col">
+                            <div class="flex items-center gap-2 mb-2">
+                                <img src="logo.png" alt="Logo" class="h-6 w-auto object-contain">
+                                <p class="text-primary/90 font-extrabold text-xs tracking-[0.2em] uppercase">Legends
+                                    Barbería</p>
+                            </div>
+                            <h1 class="text-white text-[32px] font-black leading-[1.1] tracking-tight drop-shadow-2xl">
+                                Bienvenido de nuevo,<br>
+                                <span class="text-primary drop-shadow-[0_0_20px_rgba(201,167,74,0.5)]">Alex</span>
+                            </h1>
+                        </div>
+                        <button
+                            class="relative p-3 rounded-2xl bg-black/40 hover:bg-black/60 backdrop-blur-md border border-white/10 hover:border-primary/30 transition-all duration-300 group active:scale-95">
+                            <span
+                                class="material-symbols-outlined text-white group-hover:text-primary transition-colors text-[22px]">notifications</span>
+                            <span
+                                class="absolute top-2 right-2 h-3 w-3 rounded-full bg-gradient-to-br from-primary to-primary-dark border-2 border-black animate-pulse shadow-[0_0_10px_rgba(201,167,74,0.8)]"></span>
+                        </button>
+                    </div>
+
+                    <!-- Enhanced Hero Status Content -->
+                    <div class="absolute bottom-5 left-0 w-full px-6 z-10">
+                        <div class="relative group cursor-pointer">
+                            <!-- Glow effect -->
+                            <div
+                                class="absolute -inset-1 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20 rounded-2xl blur-lg group-hover:blur-xl transition-all duration-300 opacity-50 group-hover:opacity-75">
+                            </div>
+                            <!-- Card -->
+                            <div
+                                class="relative glass-panel p-5 rounded-2xl border-l-4 border-l-primary flex items-center justify-between shadow-2xl shadow-black/50 hover:shadow-primary/10 transition-all duration-300">
+                                <div class="flex-1">
+                                    <p class="text-primary/70 text-xs font-bold uppercase tracking-wider mb-1.5">Tu
+                                        Estado</p>
+                                    <p class="text-white font-bold text-lg leading-tight">¿Listo para un corte fresco?
+                                    </p>
+                                    <p class="text-white/60 text-xs mt-1 font-medium">Reserva tu próxima cita hoy</p>
+                                </div>
+                                <div
+                                    class="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center text-primary border border-primary/20 group-hover:scale-110 transition-transform duration-300">
+                                    <span class="material-symbols-outlined text-[28px]"
+                                        style="font-variation-settings: 'FILL' 0, 'wght' 300">content_cut</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Enhanced News & Updates Section -->
+                <div class="px-6 pt-10 pb-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="material-symbols-outlined text-primary text-lg"
+                                    style="font-variation-settings: 'FILL' 1">campaign</span>
+                                <h2 class="text-white text-2xl font-black tracking-tight">Noticias</h2>
+                            </div>
+                            <p class="text-white/50 text-xs font-medium">Mantente actualizado</p>
+                        </div>
+                        <a class="flex items-center gap-1.5 text-primary text-sm font-bold hover:text-primary-light transition-colors group"
+                            href="#">
+                            <span>Ver Todo</span>
+                            <span
+                                class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                        </a>
+                    </div>
+
+                    <!-- Enhanced Horizontal Scroll Container -->
+                    <div class="flex gap-5 overflow-x-auto no-scrollbar pb-6 snap-x snap-mandatory -mx-6 px-6">
+                        <!-- Enhanced Card 1 -->
+                        <div
+                            class="snap-center shrink-0 w-[290px] h-[340px] rounded-3xl overflow-hidden relative group cursor-pointer transform hover:-translate-y-2 transition-all duration-500">
+                            <!-- Glow effect on hover -->
+                            <div
+                                class="absolute -inset-[1px] bg-gradient-to-br from-primary via-primary-light to-primary opacity-0 group-hover:opacity-30 blur-xl transition-opacity duration-500 rounded-3xl">
+                            </div>
+
+                            <!-- Card content -->
+                            <div
+                                class="relative h-full rounded-3xl overflow-hidden border border-white/10 group-hover:border-primary/40 transition-colors duration-500">
+                                <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
+                                    style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC04Y70sB9LitHvctzdpIHHywzTZImbeMPqDjAbXBgpGerSCM7rKndaVnySuYcyqJ9Hx9suE38ytGinL6cGejR0DfYYd2orKUC_nRJVbvXci3hC0cv55AlqCAnGE3SJmQy0c34rQQQe_PgxW3pD1fAGHvedPPPR63WfLJ3fga8BFGDHva31rsVZzshfT5K_j_ov6GUnpt8FnbxAZhX9DodiXxaUB4sV2xfXSsbIl5GmVT6c9_VP4ZDfRk-jfIqApRcvPpSCGS8QBo0');">
+                                </div>
+                                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent">
+                                </div>
+
+                                <!-- Content -->
+                                <div class="absolute bottom-0 left-0 w-full p-6 flex flex-col gap-3">
+                                    <div class="flex items-center gap-2">
+                                        <span
+                                            class="px-3 py-1.5 rounded-full bg-primary text-black text-[11px] font-black uppercase tracking-wide shadow-lg">Promo</span>
+                                        <span class="text-primary/80 text-xs font-semibold">Válido hasta fin de
+                                            mes</span>
+                                    </div>
+                                    <h3 class="text-white font-black text-[22px] leading-tight drop-shadow-lg">Martes de
+                                        Descuento Estudiantil</h3>
+                                    <p class="text-gray-200 text-sm line-clamp-2 font-medium leading-relaxed">Obtén 20%
+                                        de descuento en perfilados los martes con credencial vigente.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Enhanced Card 2 -->
+                        <div
+                            class="snap-center shrink-0 w-[290px] h-[340px] rounded-3xl overflow-hidden relative group cursor-pointer transform hover:-translate-y-2 transition-all duration-500">
+                            <div
+                                class="absolute -inset-[1px] bg-gradient-to-br from-white/20 via-white/10 to-white/20 opacity-0 group-hover:opacity-40 blur-xl transition-opacity duration-500 rounded-3xl">
+                            </div>
+
+                            <div
+                                class="relative h-full rounded-3xl overflow-hidden border border-white/10 group-hover:border-white/30 transition-colors duration-500">
+                                <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
+                                    style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAhsojak7tVVtJNfwjvopx_aE4nyycLgNLhtBgNNE7EtNm7tuIKRDXXt1eVmk0fqYxRE1kWAw6cmXdtd_MA3YXhbbyKCizKJTuq7ZQRKOa3GGJIcGPj3qD8KkX6H-FvHXt95ga96D9LrSMSVx70eTJyayBOw7a0fDp4v1qCIykbaWhXMY5ctIV7HWGCmwRwe77q0eUjO4wUDjsrDoWOKMqe3_1O70GsaOXrDfIiCa8IFLOsVuD0hzhGZKGtzdhHjI-k1dmS3H0JCIs');">
+                                </div>
+                                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent">
+                                </div>
+
+                                <div class="absolute bottom-0 left-0 w-full p-6 flex flex-col gap-3">
+                                    <div class="flex items-center gap-2">
+                                        <span
+                                            class="px-3 py-1.5 rounded-full bg-white/20 text-white backdrop-blur-md text-[11px] font-black uppercase tracking-wide border border-white/30 shadow-lg">Mercancía</span>
+                                        <span class="text-white/70 text-xs font-semibold">Edición Limitada</span>
+                                    </div>
+                                    <h3 class="text-white font-black text-[22px] leading-tight drop-shadow-lg">Nuevo
+                                        Lanzamiento Legends</h3>
+                                    <p class="text-gray-200 text-sm line-clamp-2 font-medium leading-relaxed">Nueva
+                                        colección de edición limitada disponible en tienda ahora.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Enhanced Card 3 -->
+                        <div
+                            class="snap-center shrink-0 w-[290px] h-[340px] rounded-3xl overflow-hidden relative group cursor-pointer transform hover:-translate-y-2 transition-all duration-500">
+                            <div
+                                class="absolute -inset-[1px] bg-gradient-to-br from-primary/30 via-orange-500/20 to-primary/30 opacity-0 group-hover:opacity-40 blur-xl transition-opacity duration-500 rounded-3xl">
+                            </div>
+
+                            <div
+                                class="relative h-full rounded-3xl overflow-hidden border border-white/10 group-hover:border-orange-500/40 transition-colors duration-500">
+                                <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
+                                    style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBdjxq8Jt0M2KJuAvQLKxI8Oaa0mCD2lEuUw51DD4-M9nHqNKhBqGUKvwpYaX12KfITfocE1S1fJoQHX_WZO_1RZw459_xcPbz5XXx9T__da0QPZot_QRt7By7N3NEpdw0PcqEbHVicd8TOPth-Tl23qDMd6Y7T8bP1Ypl1E7YvKAnziqAT_0MjOGSIz6ZcJC57qZ01BxjgXBxvqBNm3m0H7agu1mVYhglFnmSbkf2MIMDIEjo9Y1Y2TCQc7ij8RORZCoKBkSJIYwA');">
+                                </div>
+                                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent">
+                                </div>
+
+                                <div class="absolute bottom-0 left-0 w-full p-6 flex flex-col gap-3">
+                                    <div class="flex items-center gap-2">
+                                        <span
+                                            class="px-3 py-1.5 rounded-full bg-orange-500/80 text-white backdrop-blur-md text-[11px] font-black uppercase tracking-wide border border-orange-400/50 shadow-lg">Invitado
+                                            Especial</span>
+                                        <span class="flex items-center gap-1 text-orange-400 text-xs font-semibold">
+                                            <span class="h-1.5 w-1.5 rounded-full bg-orange-400 animate-pulse"></span>
+                                            Solo este fin de semana
+                                        </span>
+                                    </div>
+                                    <h3 class="text-white font-black text-[22px] leading-tight drop-shadow-lg">Mike de
+                                        NYC</h3>
+                                    <p class="text-gray-200 text-sm line-clamp-2 font-medium leading-relaxed">Aprovecha
+                                        a Mike solo este fin de semana. Los cupos se acaban rápido.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Enhanced Quick Actions Grid -->
+                <div class="px-6 pt-2">
+                    <div class="grid grid-cols-2 gap-4 pb-10">
+                        <button
+                            class="relative bg-gradient-to-br from-card-dark to-surface-dark p-5 rounded-2xl flex flex-col gap-4 items-start border border-white/10 hover:border-primary/40 transition-all duration-300 active:scale-95 group overflow-hidden">
+                            <!-- Hover glow -->
+                            <div
+                                class="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            </div>
+
+                            <div
+                                class="relative h-12 w-12 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center text-primary group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                                <span class="material-symbols-outlined text-2xl"
+                                    style="font-variation-settings: 'FILL' 0, 'wght' 400">history</span>
+                            </div>
+                            <div class="relative text-left">
+                                <p class="text-white font-bold text-base mb-1">Historial</p>
+                                <p class="text-gray-400 text-xs font-medium">Ver cortes pasados</p>
+                            </div>
+
+                            <!-- Arrow indicator -->
+                            <div
+                                class="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300">
+                                <span class="material-symbols-outlined text-primary text-lg">arrow_forward</span>
+                            </div>
+                        </button>
+
+                        <button
+                            class="relative bg-gradient-to-br from-card-dark to-surface-dark p-5 rounded-2xl flex flex-col gap-4 items-start border border-white/10 hover:border-primary/40 transition-all duration-300 active:scale-95 group overflow-hidden">
+                            <div
+                                class="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            </div>
+
+                            <div
+                                class="relative h-12 w-12 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center text-primary group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                                <span class="material-symbols-outlined text-2xl"
+                                    style="font-variation-settings: 'FILL' 0, 'wght' 400">storefront</span>
+                            </div>
+                            <div class="relative text-left">
+                                <p class="text-white font-bold text-base mb-1">Tienda</p>
+                                <p class="text-gray-400 text-xs font-medium">Productos premium</p>
+                            </div>
+
+                            <div
+                                class="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300">
+                                <span class="material-symbols-outlined text-primary text-lg">arrow_forward</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+                <div class="w-full h-40"></div>
+            </main>
+
+            <!-- Enhanced Floating Action Button (FAB) -->
+            <div class="floating-action-button fixed bottom-24 right-6 z-20">
+                <!-- Pulsing glow ring -->
+                <div class="absolute -inset-2 bg-primary/30 rounded-full blur-xl animate-pulse"></div>
+
+                <button onclick="switchTab('booking')"
+                    class="relative group flex items-center gap-2.5 bg-gradient-to-r from-primary via-primary-light to-primary text-matte-black h-16 pl-6 pr-7 rounded-full shadow-[0_10px_40px_rgba(201,167,74,0.5)] hover:shadow-[0_15px_50px_rgba(201,167,74,0.7)] transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 active:scale-95">
+                    <!-- Shimmer effect -->
+                    <div
+                        class="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000 rounded-full">
+                    </div>
+
+                    <div class="relative flex items-center gap-2.5">
+                        <span class="material-symbols-outlined text-[26px] font-bold"
+                            style="font-variation-settings: 'FILL' 1">calendar_month</span>
+                        <span class="font-black text-base tracking-wide uppercase">Reservar Ahora</span>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <!-- SERVICES TAB -->
+        <div id="services-tab" class="tab-content hidden h-[100dvh] w-full overflow-y-auto no-scrollbar relative">
+            <div class="px-6 pt-10 pb-32">
+                <!-- Enhanced Header -->
+                <div class="mb-8">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="h-1 w-10 bg-primary rounded-full"></div>
+                        <span class="material-symbols-outlined text-primary text-lg"
+                            style="font-variation-settings: 'FILL' 1">content_cut</span>
+                    </div>
+                    <h2 class="text-3xl font-black text-white tracking-tight mb-2">Servicios Premium</h2>
+                    <p class="text-white/60 text-sm font-medium">Calidad profesional en cada corte</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- Enhanced Service Card 1 -->
+                    <div
+                        class="relative bg-gradient-to-br from-card-dark to-surface-dark p-6 rounded-2xl border border-white/10 hover:border-primary/40 transition-all duration-300 group cursor-pointer transform hover:-translate-y-1 active:scale-95 overflow-hidden">
+                        <!-- Hover glow effect -->
+                        <div
+                            class="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        </div>
+
+                        <div
+                            class="relative h-14 w-14 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/30 flex items-center justify-center text-primary mb-5 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
+                            <span class="material-symbols-outlined text-[28px]"
+                                style="font-variation-settings: 'FILL' 0, 'wght' 300">content_cut</span>
+                        </div>
+                        <div class="relative">
+                            <h3 class="text-white font-bold text-base mb-2 leading-tight">Corte Fade</h3>
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="material-symbols-outlined text-white/40 text-xs">schedule</span>
+                                <p class="text-gray-400 text-xs font-medium">45 min</p>
+                            </div>
+                            <p class="text-primary font-black text-xl">$45<span class="text-sm font-medium">.00</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced Service Card 2 -->
+                    <div
+                        class="relative bg-gradient-to-br from-card-dark to-surface-dark p-6 rounded-2xl border border-white/10 hover:border-primary/40 transition-all duration-300 group cursor-pointer transform hover:-translate-y-1 active:scale-95 overflow-hidden">
+                        <div
+                            class="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        </div>
+
+                        <div
+                            class="relative h-14 w-14 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/30 flex items-center justify-center text-primary mb-5 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
+                            <span class="material-symbols-outlined text-[28px]"
+                                style="font-variation-settings: 'FILL' 0, 'wght' 300">face</span>
+                        </div>
+                        <div class="relative">
+                            <h3 class="text-white font-bold text-base mb-2 leading-tight">Perfilado de Barba</h3>
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="material-symbols-outlined text-white/40 text-xs">schedule</span>
+                                <p class="text-gray-400 text-xs font-medium">30 min</p>
+                            </div>
+                            <p class="text-primary font-black text-xl">$25<span class="text-sm font-medium">.00</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced Service Card 3 -->
+                    <div
+                        class="relative bg-gradient-to-br from-card-dark to-surface-dark p-6 rounded-2xl border border-white/10 hover:border-primary/40 transition-all duration-300 group cursor-pointer transform hover:-translate-y-1 active:scale-95 overflow-hidden">
+                        <div
+                            class="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        </div>
+
+                        <div
+                            class="relative h-14 w-14 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/30 flex items-center justify-center text-primary mb-5 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
+                            <span class="material-symbols-outlined text-[28px]"
+                                style="font-variation-settings: 'FILL' 0, 'wght' 300">spa</span>
+                        </div>
+                        <div class="relative">
+                            <h3 class="text-white font-bold text-base mb-2 leading-tight">Servicio Completo</h3>
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="material-symbols-outlined text-white/40 text-xs">schedule</span>
+                                <p class="text-gray-400 text-xs font-medium">90 min</p>
+                            </div>
+                            <p class="text-primary font-black text-xl">$65<span class="text-sm font-medium">.00</span>
+                            </p>
+                        </div>
+                        <!-- Popular badge -->
+                        <div
+                            class="absolute top-3 right-3 px-2 py-1 bg-primary/20 border border-primary/40 rounded-full">
+                            <span class="text-primary text-[9px] font-black uppercase tracking-wider">Popular</span>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced Service Card 4 -->
+                    <div
+                        class="relative bg-gradient-to-br from-card-dark to-surface-dark p-6 rounded-2xl border border-white/10 hover:border-primary/40 transition-all duration-300 group cursor-pointer transform hover:-translate-y-1 active:scale-95 overflow-hidden">
+                        <div
+                            class="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        </div>
+
+                        <div
+                            class="relative h-14 w-14 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/30 flex items-center justify-center text-primary mb-5 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
+                            <span class="material-symbols-outlined text-[28px]"
+                                style="font-variation-settings: 'FILL' 0, 'wght' 300">straighten</span>
+                        </div>
+                        <div class="relative">
+                            <h3 class="text-white font-bold text-base mb-2 leading-tight">Marcado</h3>
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="material-symbols-outlined text-white/40 text-xs">schedule</span>
+                                <p class="text-gray-400 text-xs font-medium">20 min</p>
+                            </div>
+                            <p class="text-primary font-black text-xl">$20<span class="text-sm font-medium">.00</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced Service Card 5 -->
+                    <div
+                        class="relative bg-gradient-to-br from-card-dark to-surface-dark p-6 rounded-2xl border border-white/10 hover:border-primary/40 transition-all duration-300 group cursor-pointer transform hover:-translate-y-1 active:scale-95 overflow-hidden">
+                        <div
+                            class="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        </div>
+
+                        <div
+                            class="relative h-14 w-14 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/30 flex items-center justify-center text-primary mb-5 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
+                            <span class="material-symbols-outlined text-[28px]"
+                                style="font-variation-settings: 'FILL' 0, 'wght' 300">brush</span>
+                        </div>
+                        <div class="relative">
+                            <h3 class="text-white font-bold text-base mb-2 leading-tight">Diseño Capilar</h3>
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="material-symbols-outlined text-white/40 text-xs">schedule</span>
+                                <p class="text-gray-400 text-xs font-medium">60 min</p>
+                            </div>
+                            <p class="text-primary font-black text-xl">$55<span class="text-sm font-medium">.00</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced Service Card 6 -->
+                    <div
+                        class="relative bg-gradient-to-br from-card-dark to-surface-dark p-6 rounded-2xl border border-white/10 hover:border-primary/40 transition-all duration-300 group cursor-pointer transform hover:-translate-y-1 active:scale-95 overflow-hidden">
+                        <div
+                            class="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        </div>
+
+                        <div
+                            class="relative h-14 w-14 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/30 flex items-center justify-center text-primary mb-5 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
+                            <span class="material-symbols-outlined text-[28px]"
+                                style="font-variation-settings: 'FILL' 0, 'wght' 300">waves</span>
+                        </div>
+                        <div class="relative">
+                            <h3 class="text-white font-bold text-base mb-2 leading-tight">Toalla Caliente</h3>
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="material-symbols-outlined text-white/40 text-xs">schedule</span>
+                                <p class="text-gray-400 text-xs font-medium">40 min</p>
+                            </div>
+                            <p class="text-primary font-black text-xl">$35<span class="text-sm font-medium">.00</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BARBERS TAB -->
+        <div id="barbers-tab" class="tab-content hidden h-[100dvh] w-full overflow-y-auto no-scrollbar relative">
+            <div class="px-6 pt-10 pb-32">
+                <!-- Enhanced Header -->
+                <div class="mb-8">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="h-1 w-10 bg-primary rounded-full"></div>
+                        <span class="material-symbols-outlined text-primary text-lg"
+                            style="font-variation-settings: 'FILL' 1">group</span>
+                    </div>
+                    <h2 class="text-3xl font-black text-white tracking-tight mb-2">Barberos Élite</h2>
+                    <p class="text-white/60 text-sm font-medium">Expertos en su craft, dedicados a tu estilo</p>
+                </div>
+
+                <div class="flex flex-col gap-6">
+                    <!-- Enhanced Barber Card 1 - Marcus -->
+                    <article
+                        class="group relative flex flex-col overflow-hidden rounded-3xl bg-gradient-to-br from-card-dark to-surface-dark border border-white/10 shadow-2xl hover:border-primary/40 transition-all duration-500 transform hover:-translate-y-2">
+                        <!-- Glow effect on hover -->
+                        <div
+                            class="absolute -inset-[2px] bg-gradient-to-br from-primary/20 via-primary/10 to-transparent opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500 rounded-3xl">
+                        </div>
+
+                        <div class="relative h-96 w-full overflow-hidden">
+                            <img alt="Master Barber Marcus"
+                                class="h-full w-full object-cover object-top transition-transform duration-700 group-hover:scale-110"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9NHJJonycagDPbQzJv9Nnfyh4ok8Fo0LCVk9JAIfmucuVjoM1KO4youxqHiTbxc765L3IEO1MxKVfnZNwzYjrq5-BbMTJWY6CjwPz2QPue05MZ69iAh72dVQo0hMtlM3lU__yzXEkZDotOmtnTeX4o_6ob39dn4BE7WVCQmWcFs9soNCqgeVRIwMuqnc0gjY6MscJlsOggV3Bn01gb6X5QMG63ADaomuQ8uoPGq9B9uiHKNLz5XG-iiAVbH35HeZNWI3H1DlYaiA" />
+
+                            <!-- Enhanced gradients -->
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent"></div>
+                            <div
+                                class="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/40">
+                            </div>
+
+                            <!-- Rating Badge -->
+                            <div
+                                class="absolute top-4 right-4 flex items-center gap-1.5 rounded-2xl bg-black/70 backdrop-blur-xl px-3 py-2 border border-primary/30 shadow-xl">
+                                <span class="material-symbols-outlined text-[16px] text-primary"
+                                    style="font-variation-settings: 'FILL' 1">star</span>
+                                <span class="text-primary font-black text-sm">5.0</span>
+                            </div>
+
+                            <!-- Content overlay -->
+                            <div class="absolute bottom-0 left-0 right-0 p-6">
+                                <!-- Availability status -->
+                                <div class="flex items-center gap-2 mb-3">
+                                    <div
+                                        class="h-2.5 w-2.5 rounded-full bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.8)] animate-pulse">
+                                    </div>
+                                    <span class="text-xs font-black uppercase tracking-widest text-green-400">Disponible
+                                        Hoy</span>
+                                </div>
+
+                                <!-- Name and title -->
+                                <h3 class="text-[28px] font-black text-white leading-none mb-2 drop-shadow-2xl">
+                                    Marcus <span class="text-primary">"The Blade"</span>
+                                </h3>
+                                <p class="text-sm font-semibold text-slate-200 leading-relaxed">Maestro Barbero •
+                                    Especialista en Fade a Cero</p>
+
+                                <!-- Stats -->
+                                <div class="flex items-center gap-4 mt-4">
+                                    <div class="flex items-center gap-1.5">
+                                        <span
+                                            class="material-symbols-outlined text-primary/80 text-sm">calendar_month</span>
+                                        <span class="text-white/70 text-xs font-medium">250+ cortes</span>
+                                    </div>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-primary/80 text-sm">schedule</span>
+                                        <span class="text-white/70 text-xs font-medium">8 años exp.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Enhanced footer -->
+                        <div
+                            class="relative flex items-center justify-between p-5 bg-gradient-to-br from-surface-dark to-card-dark border-t border-white/5">
+                            <div class="flex flex-col">
+                                <span
+                                    class="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1">Desde</span>
+                                <span class="text-2xl font-black text-primary">$45<span
+                                        class="text-base font-medium">.00</span></span>
+                            </div>
+                            <button onclick="switchTab('booking')"
+                                class="flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primary-light px-6 py-3 text-sm font-black text-black transition-all hover:shadow-[0_0_20px_rgba(201,167,74,0.5)] transform hover:scale-105 active:scale-95 uppercase tracking-wide">
+                                <span>Reservar</span>
+                                <span class="material-symbols-outlined text-[20px]"
+                                    style="font-variation-settings: 'FILL' 1">calendar_add_on</span>
+                            </button>
+                        </div>
+                    </article>
+
+                    <!-- Enhanced Barber Card 2 - Dante -->
+                    <article
+                        class="group relative flex flex-col overflow-hidden rounded-3xl bg-gradient-to-br from-card-dark to-surface-dark border border-white/10 shadow-2xl hover:border-orange-500/40 transition-all duration-500 transform hover:-translate-y-2">
+                        <div
+                            class="absolute -inset-[2px] bg-gradient-to-br from-orange-500/20 via-orange-500/10 to-transparent opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500 rounded-3xl">
+                        </div>
+
+                        <div class="relative h-96 w-full overflow-hidden">
+                            <img alt="Barber Dante"
+                                class="h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-110"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFuN_EVD0Nclg7NeMPhtilPwhb_MmknV-5h7-DQR5sLFFgqsjtrK93NJCfzA-dQqV9N5iFgrm_xUvYaX2jqByK6Ii87_KfSFs6tQP8X4cw3LcBDKSZcyLzdnXuHS4UE1b7CMIooeg6bWnEongXF1DR4CCBc_b0BmovrClxLajtnOjaTypPP6wSZ9Qf9lmlj70vz-oxplu0njwKAp7nqIPLEuJxq6UCv7RxiZ7QfY0ozNtf8eX1IiMZ2s5Pw_LTAU3QOadF8UNyuSU" />
+
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent"></div>
+                            <div
+                                class="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/40">
+                            </div>
+
+                            <div
+                                class="absolute top-4 right-4 flex items-center gap-1.5 rounded-2xl bg-black/70 backdrop-blur-xl px-3 py-2 border border-primary/30 shadow-xl">
+                                <span class="material-symbols-outlined text-[16px] text-primary"
+                                    style="font-variation-settings: 'FILL' 1">star</span>
+                                <span class="text-primary font-black text-sm">4.9</span>
+                            </div>
+
+                            <div class="absolute bottom-0 left-0 right-0 p-6">
+                                <div class="flex items-center gap-2 mb-3">
+                                    <div
+                                        class="h-2.5 w-2.5 rounded-full bg-orange-500 shadow-[0_0_12px_rgba(249,115,22,0.8)] animate-pulse">
+                                    </div>
+                                    <span class="text-xs font-black uppercase tracking-widest text-orange-400">Próximo
+                                        Turno: 4:00 PM</span>
+                                </div>
+
+                                <h3 class="text-[28px] font-black text-white leading-none mb-2 drop-shadow-2xl">
+                                    Dante <span class="text-primary">"Fade"</span> K.
+                                </h3>
+                                <p class="text-sm font-semibold text-slate-200 leading-relaxed">Arte Capilar • Estilo
+                                    Preciso</p>
+
+                                <div class="flex items-center gap-4 mt-4">
+                                    <div class="flex items-center gap-1.5">
+                                        <span
+                                            class="material-symbols-outlined text-primary/80 text-sm">calendar_month</span>
+                                        <span class="text-white/70 text-xs font-medium">180+ cortes</span>
+                                    </div>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-primary/80 text-sm">schedule</span>
+                                        <span class="text-white/70 text-xs font-medium">5 años exp.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div
+                            class="relative flex items-center justify-between p-5 bg-gradient-to-br from-surface-dark to-card-dark border-t border-white/5">
+                            <div class="flex flex-col">
+                                <span
+                                    class="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1">Desde</span>
+                                <span class="text-2xl font-black text-primary">$45<span
+                                        class="text-base font-medium">.00</span></span>
+                            </div>
+                            <button onclick="switchTab('booking')"
+                                class="flex items-center gap-2 rounded-xl bg-white/10 border border-white/20 backdrop-blur-sm px-6 py-3 text-sm font-black text-white transition-all hover:bg-white/20 hover:border-primary/40 transform hover:scale-105 active:scale-95 uppercase tracking-wide">
+                                <span>Reservar</span>
+                            </button>
+                        </div>
+                    </article>
+
+                    <!-- Enhanced Barber Card 3 - Leo -->
+                    <article
+                        class="group relative flex flex-col overflow-hidden rounded-3xl bg-gradient-to-br from-card-dark to-surface-dark border border-white/10 shadow-2xl hover:border-primary/40 transition-all duration-500 transform hover:-translate-y-2">
+                        <div
+                            class="absolute -inset-[2px] bg-gradient-to-br from-primary/20 via-primary/10 to-transparent opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500 rounded-3xl">
+                        </div>
+
+                        <div class="relative h-96 w-full overflow-hidden">
+                            <img alt="Barber Leo"
+                                class="h-full w-full object-cover object-top transition-transform duration-700 group-hover:scale-110"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDaIFvrunwSVrTSLeRohh7hf4zXi3hVhuM4xNmGnOhSldkybGMLs0JAZQSF9VajI8Zl-_RdJaB5xPVkSl9-IiFtPdmDoDkA_fIScec7IAITwzWO_dXrx18bU8vY07de_vsMvdUnZfVgP2TSuXnNYhDwodbq9aBccFZRm2v-Gh6dEK6ckPnc1iUilf45gXm316FuWmdW3pfeHp0Ka8yVs01ztJ4LYWF_tnPAoafUUCsHBniW9gnYO2pCo0t1vzN_OykeliHRcQrb4yU" />
+
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent"></div>
+                            <div
+                                class="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/40">
+                            </div>
+
+                            <div
+                                class="absolute top-4 right-4 flex items-center gap-1.5 rounded-2xl bg-black/70 backdrop-blur-xl px-3 py-2 border border-primary/30 shadow-xl">
+                                <span class="material-symbols-outlined text-[16px] text-primary"
+                                    style="font-variation-settings: 'FILL' 1">star</span>
+                                <span class="text-primary font-black text-sm">4.8</span>
+                            </div>
+
+                            <div class="absolute bottom-0 left-0 right-0 p-6">
+                                <div class="flex items-center gap-2 mb-3">
+                                    <div
+                                        class="h-2.5 w-2.5 rounded-full bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.8)] animate-pulse">
+                                    </div>
+                                    <span class="text-xs font-black uppercase tracking-widest text-green-400">Disponible
+                                        Hoy</span>
+                                </div>
+
+                                <h3 class="text-[28px] font-black text-white leading-none mb-2 drop-shadow-2xl">
+                                    Leo <span class="text-primary">"Razor"</span> S.
+                                </h3>
+                                <p class="text-sm font-semibold text-slate-200 leading-relaxed">Perfilado de Barba •
+                                    Toalla Caliente</p>
+
+                                <div class="flex items-center gap-4 mt-4">
+                                    <div class="flex items-center gap-1.5">
+                                        <span
+                                            class="material-symbols-outlined text-primary/80 text-sm">calendar_month</span>
+                                        <span class="text-white/70 text-xs font-medium">120+ cortes</span>
+                                    </div>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-primary/80 text-sm">schedule</span>
+                                        <span class="text-white/70 text-xs font-medium">3 años exp.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div
+                            class="relative flex items-center justify-between p-5 bg-gradient-to-br from-surface-dark to-card-dark border-t border-white/5">
+                            <div class="flex flex-col">
+                                <span
+                                    class="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1">Desde</span>
+                                <span class="text-2xl font-black text-primary">$35<span
+                                        class="text-base font-medium">.00</span></span>
+                            </div>
+                            <button onclick="switchTab('booking')"
+                                class="flex items-center gap-2 rounded-xl bg-white/10 border border-white/20 backdrop-blur-sm px-6 py-3 text-sm font-black text-white transition-all hover:bg-white/20 hover:border-primary/40 transform hover:scale-105 active:scale-95 uppercase tracking-wide">
+                                <span>Reservar</span>
+                            </button>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOOKING TAB -->
+        <div id="booking-tab" class="tab-content hidden h-[100dvh] w-full flex flex-col relative">
+            <div class="flex-1 overflow-y-auto no-scrollbar relative">
+                <div class="px-6 pt-8 pb-48">
+                    <!-- Enhanced Header -->
+                    <div class="flex items-center gap-4 mb-8">
+                        <button onclick="switchTab('home')"
+                            class="p-3 rounded-2xl border border-white/10 bg-surface-dark/80 backdrop-blur-sm flex items-center justify-center text-white hover:text-primary hover:border-primary/30 transition-all active:scale-95 group">
+                            <span
+                                class="material-symbols-outlined group-hover:-translate-x-0.5 transition-transform">arrow_back</span>
+                        </button>
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="material-symbols-outlined text-primary text-lg"
+                                    style="font-variation-settings: 'FILL' 1">event_available</span>
+                                <h2 class="text-2xl font-black text-white tracking-tight">Agendar Cita</h2>
+                            </div>
+                            <p class="text-white/50 text-xs font-medium">Completa tu reserva en 3 pasos</p>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced Service Selection -->
+                    <div class="mb-8">
+                        <div class="flex items-center gap-2 mb-4">
+                            <div
+                                class="flex items-center justify-center w-7 h-7 rounded-full bg-primary/20 border border-primary/40">
+                                <span class="text-primary text-xs font-black">1</span>
+                            </div>
+                            <h3 class="text-sm font-black text-white uppercase tracking-wider">Selecciona tu Servicio
+                            </h3>
+                        </div>
+                        <div class="flex gap-3 overflow-x-auto no-scrollbar pb-2 -mx-6 px-6">
+                            <button
+                                class="relative flex-shrink-0 px-7 py-4 rounded-2xl bg-gradient-to-br from-primary to-primary-light text-black font-black text-sm shadow-[0_4px_20px_rgba(201,167,74,0.3)] transform hover:scale-105 transition-all active:scale-95 overflow-hidden">
+                                <span class="relative z-10">Degradado</span>
+                                <div
+                                    class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000">
+                                </div>
+                            </button>
+                            <button
+                                class="flex-shrink-0 px-7 py-4 rounded-2xl bg-surface-card border-2 border-white/10 text-white font-semibold text-sm hover:border-primary/50 hover:bg-surface-dark transition-all active:scale-95">
+                                Arreglo de Barba
+                            </button>
+                            <button
+                                class="flex-shrink-0 px-7 py-4 rounded-2xl bg-surface-card border-2 border-white/10 text-white font-semibold text-sm hover:border-primary/50 hover:bg-surface-dark transition-all active:scale-95">
+                                Servicio Completo
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced Barber Selection -->
+                    <div class="mb-8">
+                        <div class="flex items-center gap-2 mb-4">
+                            <div
+                                class="flex items-center justify-center w-7 h-7 rounded-full bg-primary/20 border border-primary/40">
+                                <span class="text-primary text-xs font-black">2</span>
+                            </div>
+                            <h3 class="text-sm font-black text-white uppercase tracking-wider">Elige tu Barbero</h3>
+                        </div>
+                        <div class="flex gap-4 overflow-x-auto no-scrollbar pb-2 -mx-6 px-6">
+                            <button
+                                class="relative flex-shrink-0 flex flex-col items-center gap-3 p-4 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border-2 border-primary/50 shadow-[0_4px_20px_rgba(201,167,74,0.2)] transform hover:scale-105 transition-all active:scale-95">
+                                <div class="relative">
+                                    <div class="absolute -inset-1 bg-primary/30 rounded-full blur-md"></div>
+                                    <div
+                                        class="relative w-20 h-20 rounded-full overflow-hidden ring-4 ring-primary shadow-xl">
+                                        <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4aS707M9sHolZNl68PNDKw0TF4u8QHqa1sHhBa61TZjOHj3NdRx28R4lb-t-ESU8KNQsQs2T7jCj4QpRWSdnxuAAEkfD-TpLHhsoL4CXMlKwGsXEHZgYvxGxleZY-dADMMY9oke1RMpD8eGi9e1Fb4AZAc2M_odDApxI_gBekwYCM1o5cnw_XUbxj37xeCd4qFVsRqvpjX3hyBT7PIizxgW6HaPcvGKj0olJHPQKBrSu0uBcg4OLlX-wyle3HnlrRIz15Trqxros"
+                                            alt="Marcus" class="w-full h-full object-cover">
+                                    </div>
+                                    <div
+                                        class="absolute -bottom-1 -right-1 bg-green-500 border-4 border-surface-card rounded-full p-1">
+                                        <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                                    </div>
+                                </div>
+                                <div class="text-center">
+                                    <span class="text-sm font-black text-white block">Marcus</span>
+                                    <span class="text-xs text-primary font-semibold">Disponible</span>
+                                </div>
+                            </button>
+
+                            <button
+                                class="flex-shrink-0 flex flex-col items-center gap-3 p-4 rounded-2xl bg-surface-card border-2 border-white/10 hover:border-primary/30 transition-all active:scale-95">
+                                <div class="relative">
+                                    <div class="w-20 h-20 rounded-full overflow-hidden border-2 border-white/20">
+                                        <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5ekLBeOdYSEYcI1KWRDYpsuLP6UzZIsk2a95MHILRpFFSE1AK3jBpbTFUKvTUnAXNCmfpdpcD_fnKwUAEOPd6CJPvegJbtwZ0seofSYiw2HC31aUzjE2MNLbdaijh_pjGfgO2PZDjRKspu2RfT9eMt1cBsf7HtxiIafaJi-dKH9yT4Cq1nGF3uL5vNIj-qAH3PJwQR_Osrt7MLyL0SZ47LqxbZR1xnTkddfXrW69bB1r_R4fcVuvW5NCFCqdMhgGXxBurPdiT2NM"
+                                            alt="Jax" class="w-full h-full object-cover grayscale opacity-80">
+                                    </div>
+                                </div>
+                                <div class="text-center">
+                                    <span class="text-sm font-semibold text-white/70 block">Jax</span>
+                                    <span class="text-xs text-white/40 font-medium">4:30 PM</span>
+                                </div>
+                            </button>
+
+                            <button
+                                class="flex-shrink-0 flex flex-col items-center gap-3 p-4 rounded-2xl bg-surface-card border-2 border-white/10 hover:border-primary/30 transition-all active:scale-95">
+                                <div class="relative">
+                                    <div class="w-20 h-20 rounded-full overflow-hidden border-2 border-white/20">
+                                        <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuAVsr5k3EiD7AuIFpUnShvmqHVAO2FqrBHCHs0qgR8XCxpGyqBgz1iTcPSpbMGZ-nWwlnv2OkbrPNd1WY6Ku-PQqylefgy8PF69HoseHtFQDqN-bLBtk5ZhEOEuC3OB_eDwliDXX3eZLWi48yc3CFfE5XogJhsjPgOYRweSj-E6gD6ty5iiRQAz1W1AJ3IeUZYq5BSCSYB7t0_TrXDrJbTM6TreHVn1e4NCWSfUOoK1GaFL0j0UrKIJHuUI0PcSBsJiKSXZpj4aDCE"
+                                            alt="Leo" class="w-full h-full object-cover grayscale opacity-80">
+                                    </div>
+                                    <div
+                                        class="absolute -bottom-1 -right-1 bg-green-500 border-4 border-surface-card rounded-full p-1">
+                                        <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                                    </div>
+                                </div>
+                                <div class="text-center">
+                                    <span class="text-sm font-semibold text-white/70 block">Leo</span>
+                                    <span class="text-xs text-green-400 font-medium">Disponible</span>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced Date & Time -->
+                    <div class="mb-8">
+                        <div class="flex items-center gap-2 mb-4">
+                            <div
+                                class="flex items-center justify-center w-7 h-7 rounded-full bg-primary/20 border border-primary/40">
+                                <span class="text-primary text-xs font-black">3</span>
+                            </div>
+                            <h3 class="text-sm font-black text-white uppercase tracking-wider">Fecha y Hora</h3>
+                        </div>
+                        <div
+                            class="bg-gradient-to-br from-surface-card to-card-dark p-6 rounded-2xl border border-white/10 shadow-xl">
+                            <div class="grid grid-cols-7 gap-2 mb-4">
+                                <span class="text-[10px] font-bold text-neutral-500 uppercase text-center">Lun</span>
+                                <span class="text-[10px] font-bold text-neutral-500 uppercase text-center">Mar</span>
+                                <span class="text-[10px] font-bold text-neutral-500 uppercase text-center">Mie</span>
+                                <span class="text-[10px] font-bold text-neutral-500 uppercase text-center">Jue</span>
+                                <span class="text-[10px] font-bold text-neutral-500 uppercase text-center">Vie</span>
+                                <span class="text-[10px] font-bold text-neutral-500 uppercase text-center">Sab</span>
+                                <span class="text-[10px] font-bold text-neutral-500 uppercase text-center">Dom</span>
+                            </div>
+                            <div class="grid grid-cols-7 gap-2 mb-6">
+                                <div></div>
+                                <div></div>
+                                <button
+                                    class="aspect-square rounded-lg flex items-center justify-center text-sm font-medium text-neutral-400">1</button>
+                                <button
+                                    class="aspect-square rounded-lg flex items-center justify-center text-sm font-medium text-neutral-400">2</button>
+                                <button
+                                    class="aspect-square rounded-lg flex items-center justify-center text-sm font-medium text-neutral-400">3</button>
+                                <button
+                                    class="aspect-square rounded-lg flex items-center justify-center text-sm font-medium text-neutral-400">4</button>
+                                <button
+                                    class="aspect-square rounded-lg flex items-center justify-center text-sm font-medium text-neutral-400">5</button>
+                                <button
+                                    class="aspect-square rounded-lg flex items-center justify-center text-sm font-medium text-white">6</button>
+                                <button
+                                    class="aspect-square rounded-lg flex items-center justify-center text-sm font-medium text-white">7</button>
+                                <button
+                                    class="aspect-square rounded-lg flex items-center justify-center text-sm font-medium text-white">8</button>
+                                <button
+                                    class="aspect-square rounded-lg flex items-center justify-center text-sm font-bold bg-primary text-black shadow-[0_0_15px_rgba(201,167,74,0.4)]">9</button>
+                                <button
+                                    class="aspect-square rounded-lg flex items-center justify-center text-sm font-medium text-white">10</button>
+                            </div>
+
+                            <h4
+                                class="text-xs font-black text-white/80 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-primary text-sm">schedule</span>
+                                Horarios Disponibles
+                            </h4>
+                            <div class="grid grid-cols-3 gap-3">
+                                <button
+                                    class="py-3 rounded-xl bg-background-dark/80 text-white text-sm font-semibold border-2 border-white/10 hover:border-primary/40 hover:bg-surface-dark transition-all active:scale-95">
+                                    09:45 AM
+                                </button>
+                                <button
+                                    class="relative py-3 rounded-xl bg-gradient-to-br from-primary to-primary-light text-black text-sm font-black border-2 border-primary shadow-[0_4px_20px_rgba(201,167,74,0.4)] transform hover:scale-105 transition-all active:scale-95 overflow-hidden">
+                                    <span class="relative z-10">10:30 AM</span>
+                                    <div
+                                        class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 translate-x-[-200%] hover:translate-x-[200%] transition-transform duration-1000">
+                                    </div>
+                                </button>
+                                <button
+                                    class="py-3 rounded-xl bg-background-dark/80 text-white text-sm font-semibold border-2 border-white/10 hover:border-primary/40 hover:bg-surface-dark transition-all active:scale-95">
+                                    11:15 AM
+                                </button>
+                                <button
+                                    class="py-3 rounded-xl bg-background-dark/80 text-white text-sm font-semibold border-2 border-white/10 hover:border-primary/40 hover:bg-surface-dark transition-all active:scale-95">
+                                    12:00 PM
+                                </button>
+                                <button
+                                    class="py-3 rounded-xl bg-background-dark/80 text-white text-sm font-semibold border-2 border-white/10 hover:border-primary/40 hover:bg-surface-dark transition-all active:scale-95">
+                                    01:30 PM
+                                </button>
+                                <button
+                                    class="py-3 rounded-xl bg-background-dark/80 text-white text-sm font-semibold border-2 border-white/10 hover:border-primary/40 hover:bg-surface-dark transition-all active:scale-95">
+                                    02:15 PM
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhanced Sticky Footer -->
+            <div
+                class="fixed bottom-[85px] left-0 w-full z-40 bg-gradient-to-t from-black via-surface-dark to-surface-dark/95 border-t border-white/10 px-6 py-5 flex flex-col gap-5 rounded-t-3xl backdrop-blur-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+                <!-- Summary Details -->
+                <div
+                    class="flex items-start justify-between p-4 bg-gradient-to-br from-card-dark/80 to-surface-dark/80 rounded-2xl border border-white/5">
+                    <div class="flex flex-col gap-1">
+                        <span class="text-primary/70 text-[10px] font-black uppercase tracking-widest">Total a
+                            Pagar</span>
+                        <span class="text-white text-3xl font-black tracking-tight">$45<span
+                                class="text-lg font-medium">.00</span></span>
+                    </div>
+                    <div class="flex flex-col items-end gap-1">
+                        <div class="flex items-center gap-1.5 text-white/60">
+                            <span class="material-symbols-outlined text-xs">event</span>
+                            <span class="text-xs font-semibold">9 Oct • 10:30 AM</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 mt-1">
+                            <span class="px-2 py-1 bg-primary/20 border border-primary/30 rounded-md">
+                                <span
+                                    class="text-primary text-[10px] font-black uppercase tracking-wide">Degradado</span>
+                            </span>
+                            <span class="px-2 py-1 bg-white/5 border border-white/10 rounded-md">
+                                <span class="text-white/80 text-[10px] font-bold">Marcus</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Enhanced Confirm Button -->
+                <button
+                    class="relative group w-full bg-gradient-to-r from-primary via-primary-light to-primary hover:shadow-[0_8px_30px_rgba(201,167,74,0.5)] text-black font-black text-base py-5 rounded-2xl shadow-[0_6px_25px_rgba(201,167,74,0.4)] active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 overflow-hidden">
+                    <div
+                        class="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000">
+                    </div>
+                    <span class="relative z-10 uppercase tracking-wide">Confirmar Reserva</span>
+                    <span class="relative z-10 material-symbols-outlined font-bold text-xl"
+                        style="font-variation-settings: 'FILL' 1">arrow_forward</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- PROFILE TAB -->
+        <div id="profile-tab" class="tab-content hidden h-screen w-full overflow-y-auto no-scrollbar pb-48">
+            <div class="relative">
+                <!-- Enhanced Background Effects -->
+                <div
+                    class="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-primary/15 via-primary/5 to-transparent pointer-events-none">
+                </div>
+                <div
+                    class="absolute top-20 left-1/2 -translate-x-1/2 w-64 h-64 bg-primary/20 rounded-full blur-3xl pointer-events-none">
+                </div>
+
+                <!-- Enhanced Profile Hero Section -->
+                <div class="relative z-10 flex flex-col items-center pt-16 pb-8 px-6">
+                    <div class="relative group cursor-pointer">
+                        <!-- Animated outer glow -->
+                        <div
+                            class="absolute -inset-3 bg-gradient-to-r from-primary via-primary-light to-primary rounded-full blur-xl opacity-50 group-hover:opacity-80 transition-all duration-700 animate-pulse-slow">
+                        </div>
+
+                        <!-- Middle ring with rotation -->
+                        <div
+                            class="absolute -inset-1 bg-gradient-to-r from-primary to-primary-light rounded-full blur-md opacity-60">
+                        </div>
+
+                        <!-- Avatar container -->
+                        <div
+                            class="relative w-32 h-32 p-[4px] rounded-full bg-gradient-to-br from-primary via-primary-light to-primary shadow-[0_0_30px_rgba(201,167,74,0.6)] group-hover:scale-105 transition-transform duration-500">
+                            <div class="w-full h-full rounded-full bg-background-dark p-[3px]">
+                                <img alt="User profile"
+                                    class="w-full h-full rounded-full object-cover ring-2 ring-background-dark"
+                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlTvHb0dVl-cI-mbfXq26h4ieJwP057A1c5hDI4hWZ2i_jPXAmNsvtRF2hn8yhZtc8KtPy9sVi5pDriK6Pxi4SY7sq157-NylRtYs9YUyM5GBzFmclMG8q3eaZ6O7Xiq3V_mIePbWdoTBMlC4wpUQ1nWclHUZeZNUf6R_EkrBkInjg3HHQxMBcP4SjoeumVArSVILuIBnI-UdQAK-pwpDWXpQDh3DAnbNNWEndc9A0pFsBD2a9XEc6dKPlcVA54eFwze7c_j-an0Q" />
+                            </div>
+                        </div>
+
+                        <!-- Verified badge -->
+                        <div
+                            class="absolute -bottom-1 -right-1 bg-gradient-to-br from-primary to-primary-light rounded-full p-2 border-4 border-background-dark shadow-lg">
+                            <span class="material-symbols-outlined text-sm font-bold block text-black"
+                                style="font-variation-settings: 'FILL' 1">verified</span>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced name section -->
+                    <div class="mt-6 text-center">
+                        <h2 class="text-[28px] font-black text-white tracking-tight leading-tight mb-1">
+                            Alexander<br>
+                            <span class="text-primary drop-shadow-[0_0_15px_rgba(201,167,74,0.6)]">'The Wolf'</span>
+                            Cruz
+                        </h2>
+                        <p class="text-white/50 text-sm font-medium mb-4">Miembro desde Enero 2024</p>
+
+                        <!-- Enhanced membership badge -->
+                        <div
+                            class="inline-flex items-center px-5 py-2.5 rounded-xl border-2 border-primary/40 bg-gradient-to-r from-primary/20 to-primary/10 backdrop-blur-md shadow-lg">
+                            <span class="material-symbols-outlined text-primary text-base mr-2"
+                                style="font-variation-settings: 'FILL' 1">workspace_premium</span>
+                            <span class="text-sm font-black text-primary tracking-wider uppercase">Miembro Oro</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Enhanced Loyalty Progress -->
+                <div class="relative z-10 px-6 pb-8">
+                    <div class="relative group">
+                        <!-- Glow effect -->
+                        <div
+                            class="absolute -inset-[1px] bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20 rounded-2xl blur-lg opacity-60 group-hover:opacity-100 transition-opacity duration-500">
+                        </div>
+
+                        <!-- Card -->
+                        <div
+                            class="relative bg-gradient-to-br from-surface-dark via-card-dark to-surface-dark backdrop-blur-xl rounded-2xl p-6 border border-white/10 shadow-2xl">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <span class="material-symbols-outlined text-primary text-lg"
+                                            style="font-variation-settings: 'FILL' 1">trending_up</span>
+                                        <p class="text-xs text-primary/80 font-black uppercase tracking-widest">Tu
+                                            Progreso</p>
+                                    </div>
+                                    <p class="text-white font-black text-xl leading-tight">150 XP para Platino</p>
+                                    <p class="text-white/40 text-xs font-medium mt-1">¡Sigue así, casi lo logras!</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-primary font-black text-3xl tabular-nums">850</p>
+                                    <p class="text-white/30 text-xs font-semibold">/ 1000 XP</p>
+                                </div>
+                            </div>
+
+                            <!-- Enhanced Progress Bar -->
+                            <div
+                                class="relative h-4 w-full bg-surface-card/80 rounded-full overflow-hidden border border-white/5">
+                                <!-- Progress fill -->
+                                <div class="absolute inset-0 h-full bg-gradient-to-r from-primary-dark via-primary to-primary-light rounded-full shadow-[0_0_15px_rgba(201,167,74,0.7)]"
+                                    style="width: 85%;">
+                                    <!-- Animated shimmer -->
+                                    <div
+                                        class="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12 animate-[shimmer_2s_ease-in-out_infinite]">
+                                    </div>
+
+                                    <!-- Glow at the end -->
+                                    <div
+                                        class="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-[0_0_10px_rgba(255,255,255,0.8)]">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Milestone indicators -->
+                            <div class="flex justify-between mt-3 px-1">
+                                <div class="text-center">
+                                    <div class="w-2 h-2 rounded-full bg-primary mx-auto mb-1"></div>
+                                    <span class="text-[9px] text-white/40 font-semibold uppercase">Bronce</span>
+                                </div>
+                                <div class="text-center">
+                                    <div class="w-2 h-2 rounded-full bg-primary mx-auto mb-1"></div>
+                                    <span class="text-[9px] text-primary font-black uppercase">Oro</span>
+                                </div>
+                                <div class="text-center">
+                                    <div class="w-2 h-2 rounded-full bg-white/20 mx-auto mb-1"></div>
+                                    <span class="text-[9px] text-white/40 font-semibold uppercase">Platino</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions Grid -->
+                <div class="relative z-10 px-6 grid grid-cols-3 gap-3 mb-8">
+                    <button onclick="switchTab('booking')"
+                        class="flex flex-col items-center justify-center gap-2 p-3 rounded-xl bg-surface-dark border border-white/5 hover:border-primary/50 hover:bg-surface-card transition-all group">
+                        <div
+                            class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-black transition-colors">
+                            <span class="material-symbols-outlined">calendar_month</span>
+                        </div>
+                        <span class="text-xs font-medium text-white/80">Reservar Ahora</span>
+                    </button>
+
+                    <button
+                        class="flex flex-col items-center justify-center gap-2 p-3 rounded-xl bg-surface-dark border border-white/5 hover:border-primary/50 hover:bg-surface-card transition-all group">
+                        <div
+                            class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-black transition-colors">
+                            <span class="material-symbols-outlined">account_balance_wallet</span>
+                        </div>
+                        <span class="text-xs font-medium text-white/80">Billetera</span>
+                    </button>
+
+                    <button
+                        class="flex flex-col items-center justify-center gap-2 p-3 rounded-xl bg-surface-dark border border-white/5 hover:border-primary/50 hover:bg-surface-card transition-all group">
+                        <div
+                            class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-black transition-colors">
+                            <span class="material-symbols-outlined">settings</span>
+                        </div>
+                        <span class="text-xs font-medium text-white/80">Ajustes</span>
+                    </button>
+                </div>
+
+                <!-- Enhanced Recent Cuts History -->
+                <div class="px-6 pb-8">
+                    <div class="flex items-center justify-between mb-5">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary text-lg"
+                                style="font-variation-settings: 'FILL' 1">history</span>
+                            <h3 class="text-base font-black text-white uppercase tracking-wide">Historial Reciente</h3>
+                        </div>
+                        <a href="#"
+                            class="text-primary text-xs font-bold hover:text-primary-light transition-colors flex items-center gap-1">
+                            <span>Ver todo</span>
+                            <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                        </a>
+                    </div>
+                    <div class="flex flex-col gap-4">
+                        <!-- Enhanced History Item 1 -->
+                        <div
+                            class="group relative flex items-center justify-between p-4 rounded-2xl bg-gradient-to-br from-surface-dark to-card-dark hover:from-card-dark hover:to-surface-dark transition-all duration-300 border border-white/10 hover:border-primary/30 cursor-pointer active:scale-[0.99]">
+                            <div class="flex items-center gap-4">
+                                <div
+                                    class="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/30 flex items-center justify-center text-primary shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                    <span class="material-symbols-outlined text-xl"
+                                        style="font-variation-settings: 'FILL' 0, 'wght' 300">content_cut</span>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-white mb-1 leading-tight">Fresh Fade + Barba</p>
+                                    <div class="flex items-center gap-2 text-xs text-white/50">
+                                        <span class="font-medium">Hace 2 días</span>
+                                        <span class="w-1 h-1 rounded-full bg-white/30"></span>
+                                        <span class="font-semibold text-primary/80">Marcus</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-base font-black text-primary mb-1">$45<span class="text-xs">.00</span>
+                                </p>
+                                <div
+                                    class="flex items-center justify-end gap-1 px-2 py-0.5 bg-green-500/20 border border-green-500/30 rounded-md">
+                                    <span class="material-symbols-outlined text-[11px] text-green-400"
+                                        style="font-variation-settings: 'FILL' 1">check_circle</span>
+                                    <span
+                                        class="text-[10px] text-green-400 font-bold uppercase tracking-wide">Pagado</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Enhanced History Item 2 -->
+                        <div
+                            class="group relative flex items-center justify-between p-4 rounded-2xl bg-gradient-to-br from-surface-dark to-card-dark hover:from-card-dark hover:to-surface-dark transition-all duration-300 border border-white/10 hover:border-primary/30 cursor-pointer active:scale-[0.99]">
+                            <div class="flex items-center gap-4">
+                                <div
+                                    class="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/30 flex items-center justify-center text-primary shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                    <span class="material-symbols-outlined text-xl"
+                                        style="font-variation-settings: 'FILL' 0, 'wght' 300">content_cut</span>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-white mb-1 leading-tight">Corte Estándar</p>
+                                    <div class="flex items-center gap-2 text-xs text-white/50">
+                                        <span class="font-medium">Hace 3 semanas</span>
+                                        <span class="w-1 h-1 rounded-full bg-white/30"></span>
+                                        <span class="font-semibold text-primary/80">Dante</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-base font-black text-primary mb-1">$35<span class="text-xs">.00</span>
+                                </p>
+                                <div
+                                    class="flex items-center justify-end gap-1 px-2 py-0.5 bg-green-500/20 border border-green-500/30 rounded-md">
+                                    <span class="material-symbols-outlined text-[11px] text-green-400"
+                                        style="font-variation-settings: 'FILL' 1">check_circle</span>
+                                    <span
+                                        class="text-[10px] text-green-400 font-bold uppercase tracking-wide">Pagado</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Enhanced History Item 3 -->
+                        <div
+                            class="group relative flex items-center justify-between p-4 rounded-2xl bg-gradient-to-br from-surface-dark to-card-dark hover:from-card-dark hover:to-surface-dark transition-all duration-300 border border-white/10 hover:border-primary/30 cursor-pointer active:scale-[0.99]">
+                            <div class="flex items-center gap-4">
+                                <div
+                                    class="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/30 flex items-center justify-center text-primary shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                    <span class="material-symbols-outlined text-xl"
+                                        style="font-variation-settings: 'FILL' 0, 'wght' 300">waves</span>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-white mb-1 leading-tight">Hot Towel Shave</p>
+                                    <div class="flex items-center gap-2 text-xs text-white/50">
+                                        <span class="font-medium">Hace 1 mes</span>
+                                        <span class="w-1 h-1 rounded-full bg-white/30"></span>
+                                        <span class="font-semibold text-primary/80">Leo</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-base font-black text-primary mb-1">$35<span class="text-xs">.00</span>
+                                </p>
+                                <div
+                                    class="flex items-center justify-end gap-1 px-2 py-0.5 bg-green-500/20 border border-green-500/30 rounded-md">
+                                    <span class="material-symbols-outlined text-[11px] text-green-400"
+                                        style="font-variation-settings: 'FILL' 1">check_circle</span>
+                                    <span
+                                        class="text-[10px] text-green-400 font-bold uppercase tracking-wide">Pagado</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================
+             BARBERO TABS (5 tabs)
+             ============================================ -->
+
+        <!-- BARBERO DASHBOARD TAB -->
+        <div id="barbero-dashboard-tab" class="tab-content hidden h-[100dvh] w-full overflow-y-auto bg-background-dark">
+            <div class="px-6 py-8 pb-28">
+                <!-- Header -->
+                <div class="mb-8">
+                    <h1 class="text-3xl font-black text-white mb-2">Dashboard</h1>
+                    <p class="text-white/60 text-sm">Vista general de tu día</p>
+                </div>
+
+                <!-- Today Stats Grid -->
+                <div class="grid grid-cols-2 gap-4 mb-8">
+                    <div class="stat-card p-4 rounded-2xl">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="material-symbols-outlined text-primary text-2xl">calendar_today</span>
+                            <span class="text-3xl font-black text-white">8</span>
+                        </div>
+                        <p class="text-white/60 text-xs font-medium">Citas Hoy</p>
+                    </div>
+                    <div class="stat-card p-4 rounded-2xl">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="material-symbols-outlined text-primary text-2xl">payments</span>
+                            <span class="text-3xl font-black text-white">$225</span>
+                        </div>
+                        <p class="text-white/60 text-xs font-medium">Ingresos Hoy</p>
+                    </div>
+                    <div class="stat-card p-4 rounded-2xl">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="material-symbols-outlined text-primary text-2xl">check_circle</span>
+                            <span class="text-3xl font-black text-white">5</span>
+                        </div>
+                        <p class="text-white/60 text-xs font-medium">Completadas</p>
+                    </div>
+                    <div class="stat-card p-4 rounded-2xl">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="material-symbols-outlined text-primary text-2xl">schedule</span>
+                            <span class="text-3xl font-black text-white">3</span>
+                        </div>
+                        <p class="text-white/60 text-xs font-medium">Pendientes</p>
+                    </div>
+                </div>
+
+                <!-- Próximas Citas -->
+                <div class="mb-6">
+                    <h2 class="text-xl font-black text-white mb-4">Próximas Citas</h2>
+                    <div class="space-y-3">
+                        <!-- Cita 1 -->
+                        <div
+                            class="p-4 rounded-2xl bg-gradient-to-br from-card-dark to-surface-dark border border-white/10">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                                        <span class="material-symbols-outlined text-primary">person</span>
+                                    </div>
+                                    <div>
+                                        <p class="text-white font-bold">Alex Rodriguez</p>
+                                        <p class="text-white/50 text-xs">Fresh Fade + Beard</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-primary font-black">2:30 PM</p>
+                                    <p class="text-white/50 text-xs">45 min</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <span
+                                    class="px-3 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded-full">Confirmada</span>
+                                <span
+                                    class="px-3 py-1 bg-primary/20 text-primary text-xs font-bold rounded-full">$45.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BARBERO CITAS TAB -->
+        <div id="barbero-citas-tab" class="tab-content hidden h-[100dvh] w-full overflow-y-auto bg-background-dark">
+            <div class="px-6 py-8 pb-28">
+                <div class="mb-8">
+                    <h1 class="text-3xl font-black text-white mb-2">Mis Citas</h1>
+                    <p class="text-white/60 text-sm">Gestiona tus reservaciones</p>
+                </div>
+
+                <!-- Calendario Placeholder -->
+                <div
+                    class="mb-6 p-6 rounded-2xl bg-gradient-to-br from-card-dark to-surface-dark border border-white/10 text-center">
+                    <span class="material-symbols-outlined text-primary text-5xl mb-3"
+                        style="font-variation-settings: 'FILL' 0">event</span>
+                    <p class="text-white/60 text-sm">Calendario semanal (placeholder)</p>
+                </div>
+
+                <!-- Lista de Citas -->
+                <div>
+                    <h2 class="text-xl font-black text-white mb-4">Citas de Hoy</h2>
+                    <div class="space-y-3">
+                        <div
+                            class="p-4 rounded-2xl bg-gradient-to-br from-surface-dark to-card-dark border border-white/10">
+                            <p class="text-white font-bold mb-1">John Davis - 3:30 PM</p>
+                            <p class="text-white/50 text-sm mb-3">Classic Cut • 30 min • $35.00</p>
+                            <div class="flex gap-2">
+                                <button
+                                    class="flex-1 px-4 py-2 bg-green-500/20 text-green-400 text-xs font-bold rounded-lg">Confirmar</button>
+                                <button
+                                    class="flex-1 px-4 py-2 bg-red-500/20 text-red-400 text-xs font-bold rounded-lg">Cancelar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BARBERO SERVICIOS TAB -->
+        <div id="barbero-servicios-tab" class="tab-content hidden h-[100dvh] w-full overflow-y-auto bg-background-dark">
+            <div class="px-6 py-8 pb-28">
+                <div class="mb-8">
+                    <h1 class="text-3xl font-black text-white mb-2">Mis Servicios</h1>
+                    <p class="text-white/60 text-sm">Servicios que ofreces</p>
+                </div>
+
+                <div class="space-y-3">
+                    <!-- Servicio 1 -->
+                    <div
+                        class="p-4 rounded-2xl bg-gradient-to-br from-card-dark to-surface-dark border border-white/10">
+                        <div class="flex items-center justify-between mb-2">
+                            <div>
+                                <p class="text-white font-bold">Fresh Fade</p>
+                                <p class="text-white/50 text-xs">30 min • $35.00</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span
+                                    class="px-3 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded-full">Activo</span>
+                            </div>
+                        </div>
+                        <p class="text-white/40 text-xs">Reservado 142 veces</p>
+                    </div>
+
+                    <!-- Servicio 2 -->
+                    <div
+                        class="p-4 rounded-2xl bg-gradient-to-br from-card-dark to-surface-dark border border-white/10">
+                        <div class="flex items-center justify-between mb-2">
+                            <div>
+                                <p class="text-white font-bold">Beard Trim</p>
+                                <p class="text-white/50 text-xs">15 min • $20.00</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span
+                                    class="px-3 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded-full">Activo</span>
+                            </div>
+                        </div>
+                        <p class="text-white/40 text-xs">Reservado 98 veces</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BARBERO ESTADISTICAS TAB -->
+        <div id="barbero-estadisticas-tab"
+            class="tab-content hidden h-[100dvh] w-full overflow-y-auto bg-background-dark">
+            <div class="px-6 py-8 pb-28">
+                <div class="mb-8">
+                    <h1 class="text-3xl font-black text-white mb-2">Estadísticas</h1>
+                    <p class="text-white/60 text-sm">Tu rendimiento</p>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="stat-card p-4 rounded-2xl text-center">
+                        <p class="text-4xl font-black text-primary mb-1">4.9</p>
+                        <p class="text-white/60 text-xs">Rating Promedio</p>
+                    </div>
+                    <div class="stat-card p-4 rounded-2xl text-center">
+                        <p class="text-4xl font-black text-primary mb-1">847</p>
+                        <p class="text-white/60 text-xs">Total Cortes</p>
+                    </div>
+                </div>
+
+                <!-- Gráfica Placeholder -->
+                <div
+                    class="p-6 rounded-2xl bg-gradient-to-br from-card-dark to-surface-dark border border-white/10 text-center mb-6">
+                    <span class="material-symbols-outlined text-primary text-5xl mb-3">show_chart</span>
+                    <p class="text-white/60 text-sm">Gráficas de rendimiento (placeholder)</p>
+                </div>
+
+                <!-- Top Services -->
+                <div>
+                    <h2 class="text-xl font-black text-white mb-4">Servicios Más Solicitados</h2>
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between p-3 rounded-xl bg-white/5">
+                            <span class="text-white text-sm font-bold">Fresh Fade</span>
+                            <span class="text-primary text-sm font-black">35%</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 rounded-xl bg-white/5">
+                            <span class="text-white text-sm font-bold">Beard Trim</span>
+                            <span class="text-primary text-sm font-black">24%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BARBERO PERFIL TAB -->
+        <div id="barbero-perfil-tab" class="tab-content hidden h-[100dvh] w-full overflow-y-auto bg-background-dark">
+            <div class="px-6 py-8 pb-28">
+                <div class="mb-8">
+                    <h1 class="text-3xl font-black text-white mb-2">Mi Perfil</h1>
+                    <p class="text-white/60 text-sm">Información personal</p>
+                </div>
+
+                <!-- Profile Card -->
+                <div
+                    class="p-6 rounded-2xl bg-gradient-to-br from-card-dark to-surface-dark border border-white/10 mb-6 text-center">
+                    <div class="w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4">
+                        <span class="material-symbols-outlined text-primary text-5xl">person</span>
+                    </div>
+                    <h2 class="text-2xl font-black text-white mb-1">Marcus Williams</h2>
+                    <p class="text-white/60 text-sm mb-4">marcus@legends.com</p>
+                    <span class="role-badge barbero">Barbero</span>
+                </div>
+
+                <!-- Info Sections -->
+                <div class="space-y-4">
+                    <div class="p-4 rounded-xl bg-white/5">
+                        <p class="text-white/50 text-xs mb-1">Especialidades</p>
+                        <p class="text-white font-bold">Fade, Beard Trim, Hot Towel Shave</p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-white/5">
+                        <p class="text-white/50 text-xs mb-1">Experiencia</p>
+                        <p class="text-white font-bold">8 años</p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-white/5">
+                        <p class="text-white/50 text-xs mb-1">Rating</p>
+                        <p class="text-white font-bold">4.9 ⭐</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================
+             ADMIN TABS (5 tabs)
+             ============================================ -->
+
+        <!-- ADMIN DASHBOARD TAB -->
+        <div id="admin-dashboard-tab" class="tab-content hidden h-[100dvh] w-full overflow-y-auto bg-background-dark">
+            <div class="px-6 py-8 pb-28">
+                <!-- Header -->
+                <div class="mb-8">
+                    <h1 class="text-3xl font-black text-white mb-2">Admin Dashboard</h1>
+                    <p class="text-white/60 text-sm">Panel de control general</p>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-2 gap-4 mb-8">
+                    <div class="stat-card p-4 rounded-2xl">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="material-symbols-outlined text-primary text-2xl">payments</span>
+                            <span class="text-3xl font-black text-white">$4.8K</span>
+                        </div>
+                        <p class="text-white/60 text-xs font-medium">Ingresos Totales</p>
+                    </div>
+                    <div class="stat-card p-4 rounded-2xl">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="material-symbols-outlined text-primary text-2xl">event</span>
+                            <span class="text-3xl font-black text-white">24</span>
+                        </div>
+                        <p class="text-white/60 text-xs font-medium">Citas Hoy</p>
+                    </div>
+                    <div class="stat-card p-4 rounded-2xl">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="material-symbols-outlined text-primary text-2xl">group</span>
+                            <span class="text-3xl font-black text-white">342</span>
+                        </div>
+                        <p class="text-white/60 text-xs font-medium">Usuarios Activos</p>
+                    </div>
+                    <div class="stat-card p-4 rounded-2xl">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="material-symbols-outlined text-primary text-2xl">content_cut</span>
+                            <span class="text-3xl font-black text-white">5</span>
+                        </div>
+                        <p class="text-white/60 text-xs font-medium">Barberos Activos</p>
+                    </div>
+                </div>
+
+                <!-- Actividad Reciente -->
+                <div>
+                    <h2 class="text-xl font-black text-white mb-4">Actividad Reciente</h2>
+                    <div class="space-y-3">
+                        <div class="p-3 rounded-xl bg-white/5 flex items-center gap-3">
+                            <span class="material-symbols-outlined text-green-400">check_circle</span>
+                            <div class="flex-1">
+                                <p class="text-white text-sm font-bold">Nueva reserva</p>
+                                <p class="text-white/50 text-xs">Alex R. - Fresh Fade - 10:30 AM</p>
+                            </div>
+                        </div>
+                        <div class="p-3 rounded-xl bg-white/5 flex items-center gap-3">
+                            <span class="material-symbols-outlined text-blue-400">person_add</span>
+                            <div class="flex-1">
+                                <p class="text-white text-sm font-bold">Nuevo usuario</p>
+                                <p class="text-white/50 text-xs">Sarah M. se registró - 9:45 AM</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ADMIN USUARIOS TAB (Gestión de Roles) -->
+        <div id="admin-usuarios-tab" class="tab-content hidden h-[100dvh] w-full overflow-y-auto bg-background-dark">
+            <div class="px-6 py-8 pb-28">
+                <div class="mb-8">
+                    <h1 class="text-3xl font-black text-white mb-2">Gestión de Usuarios</h1>
+                    <p class="text-white/60 text-sm">Administra usuarios y roles</p>
+                </div>
+
+                <!-- Lista de Usuarios -->
+                <div class="space-y-3">
+                    <!-- Usuario 1 - Cliente -->
+                    <div class="p-4 bg-gradient-to-br from-card-dark to-surface-dark rounded-xl border border-white/10">
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-blue-400">person</span>
+                                </div>
+                                <div>
+                                    <p class="text-white font-bold">Alex Rodriguez</p>
+                                    <p class="text-white/50 text-xs">alex@cliente.com</p>
+                                </div>
+                            </div>
+                            <span class="role-badge cliente">Cliente</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="changeUserRole('client_001', 'barbero')"
+                                class="flex-1 px-4 py-2 bg-primary text-black text-xs font-bold rounded-lg hover:scale-105 transition-transform active:scale-95">
+                                → Hacer Barbero
+                            </button>
+                            <button class="px-4 py-2 bg-white/10 text-white text-xs font-bold rounded-lg">
+                                Ver Perfil
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Usuario 2 - Barbero -->
+                    <div class="p-4 bg-gradient-to-br from-card-dark to-surface-dark rounded-xl border border-white/10">
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-primary">content_cut</span>
+                                </div>
+                                <div>
+                                    <p class="text-white font-bold">Marcus Williams</p>
+                                    <p class="text-white/50 text-xs">marcus@legends.com</p>
+                                </div>
+                            </div>
+                            <span class="role-badge barbero">Barbero</span>
+                        </div>
+                        <div class="mb-3 grid grid-cols-3 gap-2 text-center">
+                            <div class="p-2 rounded bg-white/5">
+                                <p class="text-xs text-white/50">Cortes</p>
+                                <p class="text-sm font-black text-primary">847</p>
+                            </div>
+                            <div class="p-2 rounded bg-white/5">
+                                <p class="text-xs text-white/50">Rating</p>
+                                <p class="text-sm font-black text-primary">4.9</p>
+                            </div>
+                            <div class="p-2 rounded bg-white/5">
+                                <p class="text-xs text-white/50">Ingresos</p>
+                                <p class="text-sm font-black text-primary">$2.3K</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="changeUserRole('barber_001', 'cliente')"
+                                class="flex-1 px-4 py-2 bg-white/20 text-white text-xs font-bold rounded-lg hover:scale-105 transition-transform active:scale-95">
+                                → Hacer Cliente
+                            </button>
+                            <button class="px-4 py-2 bg-white/10 text-white text-xs font-bold rounded-lg">
+                                Ver Stats
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Usuario 3 - Otro Cliente -->
+                    <div class="p-4 bg-gradient-to-br from-card-dark to-surface-dark rounded-xl border border-white/10">
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-blue-400">person</span>
+                                </div>
+                                <div>
+                                    <p class="text-white font-bold">John Davis</p>
+                                    <p class="text-white/50 text-xs">john@cliente.com</p>
+                                </div>
+                            </div>
+                            <span class="role-badge cliente">Cliente</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="changeUserRole('client_002', 'barbero')"
+                                class="flex-1 px-4 py-2 bg-primary text-black text-xs font-bold rounded-lg hover:scale-105 transition-transform active:scale-95">
+                                → Hacer Barbero
+                            </button>
+                            <button class="px-4 py-2 bg-white/10 text-white text-xs font-bold rounded-lg">
+                                Ver Perfil
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Usuario 4 - Admin (tú) -->
+                    <div
+                        class="p-4 bg-gradient-to-br from-card-dark to-surface-dark rounded-xl border border-red-500/20">
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-red-400">admin_panel_settings</span>
+                                </div>
+                                <div>
+                                    <p class="text-white font-bold">Admin Legends</p>
+                                    <p class="text-white/50 text-xs">admin@legends.com</p>
+                                </div>
+                            </div>
+                            <span class="role-badge admin">Admin</span>
+                        </div>
+                        <p class="text-white/40 text-xs text-center">Este es tu usuario actual</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ADMIN BARBEROS TAB -->
+        <div id="admin-barberos-tab" class="tab-content hidden h-[100dvh] w-full overflow-y-auto bg-background-dark">
+            <div class="px-6 py-8 pb-28">
+                <div class="mb-8">
+                    <h1 class="text-3xl font-black text-white mb-2">Gestión de Barberos</h1>
+                    <p class="text-white/60 text-sm">Administra tu equipo</p>
+                </div>
+
+                <!-- Lista de Barberos -->
+                <div class="space-y-3">
+                    <!-- Barbero 1 -->
+                    <div
+                        class="p-4 rounded-2xl bg-gradient-to-br from-card-dark to-surface-dark border border-white/10">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-primary text-2xl">person</span>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-white font-bold">Marcus Williams</p>
+                                <p class="text-white/50 text-xs">Fade, Beard Trim, Hot Towel</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-primary font-black text-lg">4.9</p>
+                                <p class="text-white/50 text-xs">Rating</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 mb-3">
+                            <div class="p-2 rounded bg-white/5 text-center">
+                                <p class="text-xs text-white/50">Cortes</p>
+                                <p class="text-sm font-black text-white">847</p>
+                            </div>
+                            <div class="p-2 rounded bg-white/5 text-center">
+                                <p class="text-xs text-white/50">Mes</p>
+                                <p class="text-sm font-black text-white">$2.3K</p>
+                            </div>
+                            <div class="p-2 rounded bg-white/5 text-center">
+                                <p class="text-xs text-white/50">Estado</p>
+                                <p class="text-sm font-black text-green-400">Activo</p>
+                            </div>
+                        </div>
+                        <button
+                            class="w-full px-4 py-2 bg-white/10 text-white text-xs font-bold rounded-lg hover:bg-white/15 transition">
+                            Ver Detalles
+                        </button>
+                    </div>
+
+                    <!-- Barbero 2 -->
+                    <div
+                        class="p-4 rounded-2xl bg-gradient-to-br from-card-dark to-surface-dark border border-white/10">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-primary text-2xl">person</span>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-white font-bold">Dante Johnson</p>
+                                <p class="text-white/50 text-xs">Classic Cut, Shave, Color</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-primary font-black text-lg">4.8</p>
+                                <p class="text-white/50 text-xs">Rating</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 mb-3">
+                            <div class="p-2 rounded bg-white/5 text-center">
+                                <p class="text-xs text-white/50">Cortes</p>
+                                <p class="text-sm font-black text-white">634</p>
+                            </div>
+                            <div class="p-2 rounded bg-white/5 text-center">
+                                <p class="text-xs text-white/50">Mes</p>
+                                <p class="text-sm font-black text-white">$1.9K</p>
+                            </div>
+                            <div class="p-2 rounded bg-white/5 text-center">
+                                <p class="text-xs text-white/50">Estado</p>
+                                <p class="text-sm font-black text-green-400">Activo</p>
+                            </div>
+                        </div>
+                        <button
+                            class="w-full px-4 py-2 bg-white/10 text-white text-xs font-bold rounded-lg hover:bg-white/15 transition">
+                            Ver Detalles
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ADMIN REPORTES TAB -->
+        <div id="admin-reportes-tab" class="tab-content hidden h-[100dvh] w-full overflow-y-auto bg-background-dark">
+            <div class="px-6 py-8 pb-28">
+                <div class="mb-8">
+                    <h1 class="text-3xl font-black text-white mb-2">Reportes</h1>
+                    <p class="text-white/60 text-sm">Análisis de ingresos y rendimiento</p>
+                </div>
+
+                <!-- Stats Mensuales -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="stat-card p-4 rounded-2xl text-center">
+                        <p class="text-xs text-white/50 mb-1">Este Mes</p>
+                        <p class="text-3xl font-black text-primary">$28.5K</p>
+                    </div>
+                    <div class="stat-card p-4 rounded-2xl text-center">
+                        <p class="text-xs text-white/50 mb-1">Mes Anterior</p>
+                        <p class="text-3xl font-black text-white">$26.3K</p>
+                    </div>
+                </div>
+
+                <!-- Gráfica Placeholder -->
+                <div
+                    class="p-8 rounded-2xl bg-gradient-to-br from-card-dark to-surface-dark border border-white/10 text-center mb-6">
+                    <span class="material-symbols-outlined text-primary text-6xl mb-3">bar_chart</span>
+                    <p class="text-white/60 text-sm">Gráfica de ingresos semanales (placeholder)</p>
+                </div>
+
+                <!-- Top Servicios -->
+                <div class="mb-6">
+                    <h2 class="text-xl font-black text-white mb-4">Servicios Más Vendidos</h2>
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between p-3 rounded-xl bg-white/5">
+                            <div>
+                                <p class="text-white font-bold">Fresh Fade</p>
+                                <p class="text-white/50 text-xs">142 reservas</p>
+                            </div>
+                            <p class="text-primary font-black">$4,970</p>
+                        </div>
+                        <div class="flex items-center justify-between p-3 rounded-xl bg-white/5">
+                            <div>
+                                <p class="text-white font-bold">Hot Towel Shave</p>
+                                <p class="text-white/50 text-xs">76 reservas</p>
+                            </div>
+                            <p class="text-primary font-black">$2,660</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Barberos -->
+                <div>
+                    <h2 class="text-xl font-black text-white mb-4">Top Performers</h2>
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between p-3 rounded-xl bg-white/5">
+                            <div>
+                                <p class="text-white font-bold">Marcus Williams</p>
+                                <p class="text-white/50 text-xs">847 cortes • 4.9 ⭐</p>
+                            </div>
+                            <p class="text-primary font-black">$2.3K</p>
+                        </div>
+                        <div class="flex items-center justify-between p-3 rounded-xl bg-white/5">
+                            <div>
+                                <p class="text-white font-bold">Dante Johnson</p>
+                                <p class="text-white/50 text-xs">634 cortes • 4.8 ⭐</p>
+                            </div>
+                            <p class="text-primary font-black">$1.9K</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ADMIN CONFIG TAB -->
+        <div id="admin-config-tab" class="tab-content hidden h-[100dvh] w-full overflow-y-auto bg-background-dark">
+            <div class="px-6 py-8 pb-28">
+                <div class="mb-8">
+                    <h1 class="text-3xl font-black text-white mb-2">Configuración</h1>
+                    <p class="text-white/60 text-sm">Ajustes generales de la barbería</p>
+                </div>
+
+                <!-- Configuraciones -->
+                <div class="space-y-4">
+                    <!-- Horarios -->
+                    <div class="p-4 rounded-xl bg-white/5">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-white font-bold">Horarios de Operación</p>
+                            <span class="material-symbols-outlined text-primary">schedule</span>
+                        </div>
+                        <p class="text-white/50 text-xs">Lun-Vie: 9:00 AM - 8:00 PM</p>
+                        <p class="text-white/50 text-xs">Sáb: 9:00 AM - 6:00 PM</p>
+                        <p class="text-white/50 text-xs">Dom: Cerrado</p>
+                    </div>
+
+                    <!-- Servicios -->
+                    <div class="p-4 rounded-xl bg-white/5">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-white font-bold">Gestión de Servicios</p>
+                            <span class="material-symbols-outlined text-primary">content_cut</span>
+                        </div>
+                        <p class="text-white/50 text-xs">6 servicios activos</p>
+                        <button class="mt-3 px-4 py-2 bg-primary text-black text-xs font-bold rounded-lg w-full">
+                            Editar Servicios
+                        </button>
+                    </div>
+
+                    <!-- Notificaciones -->
+                    <div class="p-4 rounded-xl bg-white/5">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-white font-bold">Notificaciones</p>
+                            <span class="material-symbols-outlined text-primary">notifications</span>
+                        </div>
+                        <div class="space-y-2 mt-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-white/70 text-sm">Email</span>
+                                <div class="w-12 h-6 bg-primary/30 rounded-full flex items-center px-1">
+                                    <div class="w-4 h-4 bg-primary rounded-full ml-auto"></div>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-white/70 text-sm">Push</span>
+                                <div class="w-12 h-6 bg-primary/30 rounded-full flex items-center px-1">
+                                    <div class="w-4 h-4 bg-primary rounded-full ml-auto"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Firebase Integration -->
+                    <div class="p-4 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-white font-bold">Firebase Integration</p>
+                            <span class="material-symbols-outlined text-primary">cloud</span>
+                        </div>
+                        <p class="text-white/50 text-xs mb-3">Base de datos en la nube lista para conectar</p>
+                        <button
+                            class="px-4 py-2 bg-primary/20 text-primary text-xs font-bold rounded-lg w-full border border-primary/30">
+                            Conectar Firebase
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Bottom Navigation Bar - Dynamic Content -->
+        <div
+            class="fixed bottom-0 left-0 right-0 z-30 w-full border-t border-white/10 bg-gradient-to-t from-matte-black via-matte-black/95 to-matte-black/90 backdrop-blur-2xl px-4 pb-6 pt-3 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+            <div class="bottom-nav-container flex items-center justify-around max-w-md mx-auto gap-2">
+                <!-- Contenido generado dinámicamente por roleManager.renderNavigation() -->
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
