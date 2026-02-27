@@ -3,6 +3,11 @@
  * Adaptador completo utilizando Firebase SDK Compat (v9/v10)
  */
 
+// =============================================
+// EMAIL ADMIN HARDCODEADO - ÚNICO ADMINISTRADOR
+// =============================================
+const ADMIN_EMAIL = 'legends.barberia.app@gmail.com';
+
 class FirebaseAuthAdapter {
     constructor() {
         this.auth = null;
@@ -69,15 +74,22 @@ class FirebaseAuthAdapter {
         return await this.auth.signOut();
     }
 
+    /**
+     * Crear o recuperar documento de usuario en Firestore.
+     * Si el email es ADMIN_EMAIL, forzar rol 'admin'.
+     */
     async ensureUserDocument(firebaseUser) {
         const userRef = this.db.collection('users').doc(firebaseUser.uid);
         const doc = await userRef.get();
+
+        // Determinar el rol: admin si es el email hardcodeado
+        const isAdmin = firebaseUser.email && firebaseUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
 
         if (!doc.exists) {
             const newUserData = {
                 uid: firebaseUser.uid,
                 email: firebaseUser.email || '',
-                role: 'cliente',
+                role: isAdmin ? 'admin' : 'cliente',
                 displayName: firebaseUser.displayName || 'Nuevo Usuario',
                 photoURL: firebaseUser.photoURL || null,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -88,10 +100,20 @@ class FirebaseAuthAdapter {
                 }
             };
             await userRef.set(newUserData);
+            console.log(`✓ Nuevo usuario creado: ${newUserData.displayName} (${newUserData.role})`);
             return newUserData;
         }
 
-        return doc.data();
+        const existingData = doc.data();
+
+        // Si es admin pero en Firestore no tiene rol admin, actualizarlo
+        if (isAdmin && existingData.role !== 'admin') {
+            await userRef.update({ role: 'admin' });
+            existingData.role = 'admin';
+            console.log('✓ Rol actualizado a admin para:', firebaseUser.email);
+        }
+
+        return existingData;
     }
 
     async getUserRole(uid) {
@@ -112,6 +134,52 @@ class FirebaseAuthAdapter {
         return doc.exists ? doc.data() : null;
     }
 
+    /**
+     * Obtener TODOS los usuarios registrados (para panel de admin).
+     */
+    async getAllUsers() {
+        if (!this.initialized) return [];
+        try {
+            const snapshot = await this.db.collection('users').get();
+            const users = [];
+            snapshot.forEach(doc => {
+                users.push({ uid: doc.id, ...doc.data() });
+            });
+            console.log(`✓ ${users.length} usuarios cargados desde Firestore`);
+            return users;
+        } catch (error) {
+            console.error('❌ Error cargando usuarios:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Cambiar el rol de un usuario en Firestore.
+     * No permite cambiar el rol del admin.
+     */
+    async setUserRole(uid, newRole) {
+        if (!this.initialized) return false;
+
+        try {
+            // Verificar que no se esté cambiando al admin
+            const userDoc = await this.db.collection('users').doc(uid).get();
+            if (userDoc.exists) {
+                const userData = userDoc.data();
+                if (userData.email && userData.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+                    console.warn('⚠ No se puede cambiar el rol del administrador');
+                    return false;
+                }
+            }
+
+            await this.db.collection('users').doc(uid).update({ role: newRole });
+            console.log(`✓ Rol de ${uid} cambiado a: ${newRole}`);
+            return true;
+        } catch (error) {
+            console.error('❌ Error cambiando rol:', error);
+            return false;
+        }
+    }
+
     integrateWithRoleManager(roleManager) {
         if (!this.initialized) this.initFirebase();
 
@@ -130,6 +198,7 @@ class FirebaseAuthAdapter {
                 // Setear rol
                 roleManager.currentUser = userData;
                 roleManager.currentRole = userData.role;
+                roleManager.viewingAsRole = userData.role;  // Admin empieza viendo su propia vista
                 roleManager.initialized = true;
                 roleManager.renderForRole();
 

@@ -107,15 +107,15 @@
             <div class="mb-8 relative group">
                 <!-- Outer glow ring -->
                 <div
-                    class="absolute -inset-4 rounded-full bg-gradient-to-r from-primary via-primary-light to-primary opacity-20 blur-2xl group-hover:opacity-40 transition-all duration-700 animate-pulse-slow">
+                    class="absolute -inset-4 rounded-3xl bg-gradient-to-r from-primary via-primary-light to-primary opacity-20 blur-2xl group-hover:opacity-40 transition-all duration-700 animate-pulse-slow">
                 </div>
                 <!-- Middle ring -->
-                <div class="absolute -inset-2 rounded-full bg-primary/30 blur-lg transition-all duration-500">
+                <div class="absolute -inset-2 rounded-3xl bg-primary/30 blur-lg transition-all duration-500">
                 </div>
                 <!-- Logo container -->
                 <div
-                    class="relative flex items-center justify-center w-32 h-32 rounded-full border-4 border-primary/60 bg-gradient-to-br from-black/80 to-background-dark/80 backdrop-blur-md shadow-2xl group-hover:border-primary transition-all duration-500 group-hover:scale-105 overflow-hidden">
-                    <img src="logo.png" alt="Legends Barberia Logo" class="w-full h-full object-cover">
+                    class="relative flex items-center justify-center w-36 h-36 rounded-3xl border-4 border-primary/60 bg-gradient-to-br from-black/80 to-background-dark/80 backdrop-blur-md shadow-2xl group-hover:border-primary transition-all duration-500 group-hover:scale-105 overflow-hidden">
+                    <img src="logo.png" alt="Legends Barberia Logo" class="w-full h-full object-cover rounded-2xl">
                 </div>
             </div>
 
@@ -1688,118 +1688,24 @@
         <!-- ADMIN USUARIOS TAB (Gestión de Roles) -->
         <div id="admin-usuarios-tab" class="tab-content hidden h-[100dvh] w-full overflow-y-auto bg-background-dark">
             <div class="px-6 py-8 pb-28">
-                <div class="mb-8">
-                    <h1 class="text-3xl font-black text-white mb-2">Gestión de Usuarios</h1>
-                    <p class="text-white/60 text-sm">Administra usuarios y roles</p>
+                <div class="mb-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h1 class="text-3xl font-black text-white mb-2">Gestión de Usuarios</h1>
+                            <p class="text-white/60 text-sm">Administra usuarios y asigna roles</p>
+                        </div>
+                        <button onclick="loadUsersForAdmin()"
+                            class="p-3 rounded-xl bg-white/5 border border-white/10 hover:border-primary/30 transition-all active:scale-95">
+                            <span class="material-symbols-outlined text-primary">refresh</span>
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Lista de Usuarios -->
-                <div class="space-y-3">
-                    <!-- Usuario 1 - Cliente -->
-                    <div class="p-4 bg-gradient-to-br from-card-dark to-surface-dark rounded-xl border border-white/10">
-                        <div class="flex justify-between items-start mb-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center">
-                                    <span class="material-symbols-outlined text-blue-400">person</span>
-                                </div>
-                                <div>
-                                    <p class="text-white font-bold">Alex Rodriguez</p>
-                                    <p class="text-white/50 text-xs">alex@cliente.com</p>
-                                </div>
-                            </div>
-                            <span class="role-badge cliente">Cliente</span>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="changeUserRole('client_001', 'barbero')"
-                                class="flex-1 px-4 py-2 bg-primary text-black text-xs font-bold rounded-lg hover:scale-105 transition-transform active:scale-95">
-                                → Hacer Barbero
-                            </button>
-                            <button class="px-4 py-2 bg-white/10 text-white text-xs font-bold rounded-lg">
-                                Ver Perfil
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Usuario 2 - Barbero -->
-                    <div class="p-4 bg-gradient-to-br from-card-dark to-surface-dark rounded-xl border border-white/10">
-                        <div class="flex justify-between items-start mb-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                                    <span class="material-symbols-outlined text-primary">content_cut</span>
-                                </div>
-                                <div>
-                                    <p class="text-white font-bold">Marcus Williams</p>
-                                    <p class="text-white/50 text-xs">marcus@legends.com</p>
-                                </div>
-                            </div>
-                            <span class="role-badge barbero">Barbero</span>
-                        </div>
-                        <div class="mb-3 grid grid-cols-3 gap-2 text-center">
-                            <div class="p-2 rounded bg-white/5">
-                                <p class="text-xs text-white/50">Cortes</p>
-                                <p class="text-sm font-black text-primary">847</p>
-                            </div>
-                            <div class="p-2 rounded bg-white/5">
-                                <p class="text-xs text-white/50">Rating</p>
-                                <p class="text-sm font-black text-primary">4.9</p>
-                            </div>
-                            <div class="p-2 rounded bg-white/5">
-                                <p class="text-xs text-white/50">Ingresos</p>
-                                <p class="text-sm font-black text-primary">$2.3K</p>
-                            </div>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="changeUserRole('barber_001', 'cliente')"
-                                class="flex-1 px-4 py-2 bg-white/20 text-white text-xs font-bold rounded-lg hover:scale-105 transition-transform active:scale-95">
-                                → Hacer Cliente
-                            </button>
-                            <button class="px-4 py-2 bg-white/10 text-white text-xs font-bold rounded-lg">
-                                Ver Stats
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Usuario 3 - Otro Cliente -->
-                    <div class="p-4 bg-gradient-to-br from-card-dark to-surface-dark rounded-xl border border-white/10">
-                        <div class="flex justify-between items-start mb-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center">
-                                    <span class="material-symbols-outlined text-blue-400">person</span>
-                                </div>
-                                <div>
-                                    <p class="text-white font-bold">John Davis</p>
-                                    <p class="text-white/50 text-xs">john@cliente.com</p>
-                                </div>
-                            </div>
-                            <span class="role-badge cliente">Cliente</span>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="changeUserRole('client_002', 'barbero')"
-                                class="flex-1 px-4 py-2 bg-primary text-black text-xs font-bold rounded-lg hover:scale-105 transition-transform active:scale-95">
-                                → Hacer Barbero
-                            </button>
-                            <button class="px-4 py-2 bg-white/10 text-white text-xs font-bold rounded-lg">
-                                Ver Perfil
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Usuario 4 - Admin (tú) -->
-                    <div
-                        class="p-4 bg-gradient-to-br from-card-dark to-surface-dark rounded-xl border border-red-500/20">
-                        <div class="flex justify-between items-start mb-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
-                                    <span class="material-symbols-outlined text-red-400">admin_panel_settings</span>
-                                </div>
-                                <div>
-                                    <p class="text-white font-bold">Admin Legends</p>
-                                    <p class="text-white/50 text-xs">admin@legends.com</p>
-                                </div>
-                            </div>
-                            <span class="role-badge admin">Admin</span>
-                        </div>
-                        <p class="text-white/40 text-xs text-center">Este es tu usuario actual</p>
+                <!-- Contenedor dinámico - se llena desde Firestore -->
+                <div id="admin-users-list">
+                    <div class="flex flex-col items-center gap-3 py-8">
+                        <div class="auth-checking-spinner"></div>
+                        <p class="text-white/50 text-sm">Cargando usuarios...</p>
                     </div>
                 </div>
             </div>
