@@ -248,28 +248,30 @@ class RoleManager {
                     const headerSection = adminDashboard.querySelector('.mb-8') || adminDashboard.querySelector('div > div');
                     if (headerSection) {
                         const selector = document.createElement('div');
-                        selector.className = 'admin-view-selector mt-6';
+                        selector.className = 'admin-view-selector';
                         selector.innerHTML = `
-                            <p class="text-white/50 text-xs font-bold uppercase tracking-wider mb-3">
-                                <span class="material-symbols-outlined text-sm align-middle mr-1" style="font-variation-settings: 'FILL' 1">visibility</span>
-                                Previsualizar Vista
-                            </p>
-                            <div class="grid grid-cols-3 gap-3">
-                                <button onclick="roleManager.switchViewTo('admin')"
-                                    class="p-3 rounded-xl bg-red-500/20 border border-red-500/40 text-center transition-all active:scale-95 hover:bg-red-500/30">
-                                    <span class="material-symbols-outlined text-red-400 text-2xl mb-1" style="font-variation-settings: 'FILL' 1">admin_panel_settings</span>
-                                    <p class="text-red-400 text-[10px] font-black uppercase">Admin</p>
-                                </button>
-                                <button onclick="roleManager.switchViewTo('barbero')"
-                                    class="p-3 rounded-xl bg-primary/20 border border-primary/40 text-center transition-all active:scale-95 hover:bg-primary/30">
-                                    <span class="material-symbols-outlined text-primary text-2xl mb-1" style="font-variation-settings: 'FILL' 1">content_cut</span>
-                                    <p class="text-primary text-[10px] font-black uppercase">Barbero</p>
-                                </button>
-                                <button onclick="roleManager.switchViewTo('cliente')"
-                                    class="p-3 rounded-xl bg-blue-500/20 border border-blue-500/40 text-center transition-all active:scale-95 hover:bg-blue-500/30">
-                                    <span class="material-symbols-outlined text-blue-400 text-2xl mb-1" style="font-variation-settings: 'FILL' 1">person</span>
-                                    <p class="text-blue-400 text-[10px] font-black uppercase">Usuario</p>
-                                </button>
+                            <div class="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] mt-2 mb-2">
+                                <p class="text-white/30 text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-xs text-primary" style="font-variation-settings: 'FILL' 1">visibility</span>
+                                    Previsualizar como
+                                </p>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <button onclick="roleManager.switchViewTo('admin')"
+                                        class="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-red-500/15 border border-red-500/25 text-center transition-all active:scale-95 hover:bg-red-500/25">
+                                        <span class="material-symbols-outlined text-red-400 text-base" style="font-variation-settings: 'FILL' 1">admin_panel_settings</span>
+                                        <span class="text-red-400 text-[10px] font-black uppercase">Admin</span>
+                                    </button>
+                                    <button onclick="roleManager.switchViewTo('barbero')"
+                                        class="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-primary/15 border border-primary/25 text-center transition-all active:scale-95 hover:bg-primary/25">
+                                        <span class="material-symbols-outlined text-primary text-base" style="font-variation-settings: 'FILL' 1">content_cut</span>
+                                        <span class="text-primary text-[10px] font-black uppercase">Barbero</span>
+                                    </button>
+                                    <button onclick="roleManager.switchViewTo('cliente')"
+                                        class="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-blue-500/15 border border-blue-500/25 text-center transition-all active:scale-95 hover:bg-blue-500/25">
+                                        <span class="material-symbols-outlined text-blue-400 text-base" style="font-variation-settings: 'FILL' 1">person</span>
+                                        <span class="text-blue-400 text-[10px] font-black uppercase">Usuario</span>
+                                    </button>
+                                </div>
                             </div>
                         `;
                         headerSection.after(selector);

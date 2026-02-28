@@ -94,8 +94,20 @@ function switchTab(tabName) {
     }
 
     // Auto-cargar datos cuando se entra a tabs específicos de admin
+    if (tabName === 'admin-dashboard' && typeof loadDashboardStats === 'function') {
+        loadDashboardStats();
+    }
+
     if (tabName === 'admin-usuarios' && typeof loadUsersForAdmin === 'function') {
         loadUsersForAdmin();
+    }
+
+    if (tabName === 'admin-barberos' && typeof barberManager !== 'undefined') {
+        if (!barberManager.initialized) {
+            barberManager.init();
+        } else {
+            barberManager.loadBarbers();
+        }
     }
 }
 
@@ -329,7 +341,6 @@ function renderUserSection(title, users, icon, color, showActions = false) {
         html += `<div class="space-y-2">`;
         users.forEach(user => {
             const isAdmin = user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
-            const roleBadge = user.role === 'admin' ? 'Admin' : user.role === 'barbero' ? 'Barbero' : 'Usuario';
 
             html += `
                 <div class="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/8 transition-colors">
@@ -344,26 +355,23 @@ function renderUserSection(title, users, icon, color, showActions = false) {
                     <div class="flex items-center gap-2 shrink-0">
             `;
 
-            if (showActions && !isAdmin) {
-                if (user.role === 'cliente') {
-                    html += `
-                        <button onclick="toggleUserRole('${user.uid}', 'barbero')"
-                            class="px-3 py-1.5 rounded-lg bg-primary/20 text-primary text-[10px] font-black uppercase border border-primary/30 hover:bg-primary/30 transition-all active:scale-95">
-                            Hacer Barbero
-                        </button>
-                    `;
-                } else if (user.role === 'barbero') {
-                    html += `
-                        <button onclick="toggleUserRole('${user.uid}', 'cliente')"
-                            class="px-3 py-1.5 rounded-lg bg-blue-500/20 text-blue-400 text-[10px] font-black uppercase border border-blue-500/30 hover:bg-blue-500/30 transition-all active:scale-95">
-                            Hacer Usuario
-                        </button>
-                    `;
-                }
-            } else if (isAdmin) {
+            if (isAdmin) {
                 html += `
                     <span class="px-2 py-1 rounded-lg bg-red-500/20 text-red-400 text-[10px] font-black uppercase border border-red-500/30">
                         Protegido
+                    </span>
+                `;
+            } else if (user.role === 'barbero') {
+                html += `
+                    <span class="px-2 py-1 rounded-lg bg-primary/20 text-primary text-[10px] font-black uppercase border border-primary/30">
+                        <span class="material-symbols-outlined text-[10px] align-middle mr-0.5" style="font-variation-settings: 'FILL' 1">content_cut</span>
+                        Barbero
+                    </span>
+                `;
+            } else {
+                html += `
+                    <span class="px-2 py-1 rounded-lg bg-blue-500/10 text-blue-400/60 text-[10px] font-bold uppercase border border-blue-500/20">
+                        Usuario
                     </span>
                 `;
             }
@@ -395,6 +403,31 @@ async function toggleUserRole(uid, newRole) {
     }
 }
 
+/**
+ * Cargar estadísticas reales en el dashboard admin
+ */
+async function loadDashboardStats() {
+    try {
+        if (!firebaseAdapter || !firebaseAdapter.db) return;
+
+        // Conteo de usuarios
+        const usersSnapshot = await firebaseAdapter.db.collection('users').get();
+        const totalUsers = usersSnapshot.size;
+        const el1 = document.getElementById('dash-usuarios');
+        if (el1) el1.textContent = totalUsers;
+
+        // Conteo de barberos
+        const barbersSnapshot = await firebaseAdapter.db.collection('barberos').get();
+        const totalBarbers = barbersSnapshot.size;
+        const el2 = document.getElementById('dash-barberos');
+        if (el2) el2.textContent = totalBarbers;
+
+    } catch (error) {
+        console.error('Error cargando stats del dashboard:', error);
+    }
+}
+
 // Exportar funciones admin al window
 window.loadUsersForAdmin = loadUsersForAdmin;
 window.toggleUserRole = toggleUserRole;
+window.loadDashboardStats = loadDashboardStats;

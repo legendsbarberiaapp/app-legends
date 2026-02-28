@@ -232,6 +232,7 @@ body::before {
 
 /* Pulsing notification dot */
 @keyframes pulse-dot {
+
     0%,
     100% {
         opacity: 1;
@@ -418,4 +419,633 @@ body::before {
     border-right-color: #eecf72;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
+}
+
+/* =========================================
+   BARBER MANAGER STYLES
+   ========================================= */
+
+/* Barber Cards */
+.barber-card {
+    opacity: 0;
+    animation: barberCardIn 0.4s ease-out forwards;
+}
+
+@keyframes barberCardIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.barber-card-inner {
+    padding: 1.25rem;
+    border-radius: 1.25rem;
+    background: linear-gradient(135deg, rgba(42, 38, 28, 0.9), rgba(30, 30, 30, 0.9));
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.barber-card-inner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(201, 167, 74, 0.4), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.barber-card-inner:hover {
+    border-color: rgba(201, 167, 74, 0.25);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3), 0 0 20px rgba(201, 167, 74, 0.08);
+}
+
+.barber-card-inner:hover::before {
+    opacity: 1;
+}
+
+.barber-info-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 0.75rem;
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Empty State */
+.barber-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1.5rem;
+    text-align: center;
+}
+
+.barber-empty-icon {
+    width: 5rem;
+    height: 5rem;
+    border-radius: 1.5rem;
+    background: rgba(201, 167, 74, 0.05);
+    border: 1px dashed rgba(201, 167, 74, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Modal Overlay */
+.barber-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    padding: 1rem;
+}
+
+.barber-modal-overlay.visible {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.barber-modal {
+    width: 100%;
+    max-width: 480px;
+    max-height: 80vh;
+    background: linear-gradient(180deg, #1f1c13, #121212);
+    border-radius: 1.5rem;
+    border: 1px solid rgba(201, 167, 74, 0.15);
+    display: flex;
+    flex-direction: column;
+    transform: translateY(30px) scale(0.97);
+    opacity: 0;
+    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.3s ease;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(201, 167, 74, 0.05);
+}
+
+.barber-modal-overlay.visible .barber-modal {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+}
+
+/* Modal Header */
+.barber-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    flex-shrink: 0;
+}
+
+/* Modal Body */
+.barber-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem 1.5rem;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.barber-modal-body::-webkit-scrollbar {
+    display: none;
+}
+
+/* Modal Footer */
+.barber-modal-footer {
+    padding: 1rem 1.5rem 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    gap: 0.75rem;
+    flex-shrink: 0;
+}
+
+/* Form Sections */
+.barber-form-section {
+    margin-bottom: 1.5rem;
+}
+
+.barber-form-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+/* Select */
+.barber-form-select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 600;
+    appearance: none;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%23c9a74a' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+}
+
+.barber-form-select:focus {
+    border-color: rgba(201, 167, 74, 0.5);
+    box-shadow: 0 0 0 3px rgba(201, 167, 74, 0.1);
+}
+
+.barber-form-select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.barber-form-select option {
+    background: #1E1E1E;
+    color: white;
+    padding: 0.5rem;
+}
+
+/* Input */
+.barber-form-input {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #c9a74a;
+    font-size: 1.125rem;
+    font-weight: 800;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+.barber-form-input:focus {
+    border-color: rgba(201, 167, 74, 0.5);
+    box-shadow: 0 0 0 3px rgba(201, 167, 74, 0.1);
+}
+
+.barber-form-input::placeholder {
+    color: rgba(255, 255, 255, 0.2);
+    font-weight: 500;
+}
+
+/* Nivel Buttons */
+.barber-nivel-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.875rem 0.5rem;
+    border-radius: 0.875rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px solid rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.barber-nivel-btn:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.barber-nivel-btn.active-blue {
+    background: rgba(59, 130, 246, 0.12);
+    border-color: rgba(59, 130, 246, 0.5);
+    color: #60a5fa;
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.15);
+}
+
+.barber-nivel-btn.active-purple {
+    background: rgba(168, 85, 247, 0.12);
+    border-color: rgba(168, 85, 247, 0.5);
+    color: #c084fc;
+    box-shadow: 0 0 15px rgba(168, 85, 247, 0.15);
+}
+
+.barber-nivel-btn.active-gold {
+    background: rgba(201, 167, 74, 0.12);
+    border-color: rgba(201, 167, 74, 0.5);
+    color: #c9a74a;
+    box-shadow: 0 0 15px rgba(201, 167, 74, 0.2);
+}
+
+/* Placeholder Button */
+.barber-placeholder-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: not-allowed;
+    transition: all 0.3s ease;
+}
+
+/* Schedule Container */
+.barber-schedule-container {
+    border-radius: 0.875rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+}
+
+.barber-schedule-day {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    transition: background 0.2s ease;
+}
+
+.barber-schedule-day:last-child {
+    border-bottom: none;
+}
+
+.barber-schedule-day:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* Day Toggle */
+.barber-day-toggle {
+    width: 2.5rem;
+    height: 1.375rem;
+    border-radius: 99px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.barber-day-toggle.active {
+    background: rgba(201, 167, 74, 0.4);
+}
+
+.barber-day-toggle-dot {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.barber-day-toggle.active .barber-day-toggle-dot {
+    background: #c9a74a;
+    transform: translateX(1.1rem);
+    box-shadow: 0 0 8px rgba(201, 167, 74, 0.6);
+}
+
+/* Service Toggle Button */
+.svc-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.svc-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(201, 167, 74, 0.2);
+}
+
+.svc-toggle-arrow {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Collapsible Panel */
+.svc-panel {
+    overflow: hidden;
+    transition: max-height 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    max-height: 500px;
+}
+
+.svc-panel.collapsed {
+    max-height: 0px;
+}
+
+.svc-panel .svc-chips-grid {
+    padding: 0.5rem 0;
+}
+
+/* Service Chips Grid */
+.svc-chips-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.svc-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 0.625rem;
+    border-radius: 0.625rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.svc-chip:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.svc-chip.active {
+    background: rgba(201, 167, 74, 0.1);
+    border-color: rgba(201, 167, 74, 0.45);
+    box-shadow: 0 0 12px rgba(201, 167, 74, 0.1);
+}
+
+.svc-chip-check {
+    width: 1.125rem;
+    height: 1.125rem;
+    border-radius: 0.375rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1.5px solid rgba(255, 255, 255, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: transparent;
+    transition: all 0.25s ease;
+    flex-shrink: 0;
+}
+
+.svc-chip.active .svc-chip-check,
+.adic-item.active .svc-chip-check {
+    background: rgba(201, 167, 74, 0.25);
+    border-color: #c9a74a;
+    color: #c9a74a;
+}
+
+.svc-chip-name {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.45);
+    transition: color 0.25s ease;
+    white-space: nowrap;
+}
+
+.svc-chip.active .svc-chip-name {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.svc-chip-desc-btn {
+    width: 1.375rem;
+    height: 1.375rem;
+    border-radius: 0.375rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.15);
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.svc-chip-desc-btn:hover {
+    color: #c9a74a;
+    background: rgba(201, 167, 74, 0.12);
+}
+
+/* Adicionales Items */
+.adic-item {
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1.5px solid rgba(255, 255, 255, 0.06);
+    transition: all 0.25s ease;
+    overflow: hidden;
+}
+
+.adic-item.active {
+    background: rgba(201, 167, 74, 0.06);
+    border-color: rgba(201, 167, 74, 0.3);
+}
+
+.adic-item-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 0.75rem;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.adic-item-header:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.adic-item-name {
+    flex: 1;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.45);
+    transition: color 0.25s ease;
+}
+
+.adic-item.active .adic-item-name {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.adic-prices {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0 0.75rem 0.625rem;
+    padding-top: 0;
+}
+
+.adic-prices.hidden {
+    display: none;
+}
+
+.adic-price-field {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.adic-price-input {
+    width: 100%;
+    padding: 0.375rem 0.375rem 0.375rem 1.5rem;
+    border-radius: 0.5rem;
+    background: #1a1a17;
+    border: 1px solid rgba(201, 167, 74, 0.2);
+    color: #c9a74a;
+    -webkit-text-fill-color: #c9a74a;
+    font-size: 0.8rem;
+    font-weight: 800;
+    outline: none;
+    transition: all 0.2s ease;
+    color-scheme: dark;
+}
+
+.adic-price-input:focus {
+    border-color: rgba(201, 167, 74, 0.5);
+    box-shadow: 0 0 8px rgba(201, 167, 74, 0.1);
+}
+
+/* Time Input */
+.barber-time-input {
+    width: 6.5rem;
+    padding: 0.5rem 0.375rem;
+    border-radius: 0.5rem;
+    background: #151512 !important;
+    border: 1px solid rgba(201, 167, 74, 0.25);
+    color: #c9a74a !important;
+    -webkit-text-fill-color: #c9a74a !important;
+    font-size: 0.85rem;
+    font-weight: 800;
+    text-align: center;
+    outline: none;
+    transition: all 0.3s ease;
+    color-scheme: dark;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.barber-time-input:focus {
+    border-color: rgba(201, 167, 74, 0.6);
+    background: #1c1a14 !important;
+    box-shadow: 0 0 10px rgba(201, 167, 74, 0.15);
+}
+
+.barber-time-input::-webkit-calendar-picker-indicator {
+    filter: invert(0.75) sepia(1) saturate(5) hue-rotate(10deg);
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.barber-time-input::-webkit-datetime-edit {
+    color: #c9a74a;
+    -webkit-text-fill-color: #c9a74a;
+}
+
+.barber-time-input::-webkit-datetime-edit-fields-wrapper {
+    color: #c9a74a;
+    -webkit-text-fill-color: #c9a74a;
+}
+
+.barber-time-input::-webkit-datetime-edit-hour-field,
+.barber-time-input::-webkit-datetime-edit-minute-field,
+.barber-time-input::-webkit-datetime-edit-ampm-field,
+.barber-time-input::-webkit-datetime-edit-text {
+    color: #c9a74a !important;
+    -webkit-text-fill-color: #c9a74a !important;
+}
+
+/* Confirm Dialog */
+.barber-confirm-dialog {
+    width: 90%;
+    max-width: 380px;
+    padding: 2rem;
+    border-radius: 1.5rem;
+    background: linear-gradient(180deg, #1f1c13, #121212);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin: auto;
+    transform: scale(0.9);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+.barber-modal-overlay.visible .barber-confirm-dialog {
+    transform: scale(1);
+}
+
+/* Toast */
+.barber-toast {
+    position: fixed;
+    top: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100%);
+    z-index: 200;
+    opacity: 0;
+    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.barber-toast.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
 }
