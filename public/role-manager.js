@@ -161,29 +161,18 @@ class RoleManager {
 
         if (!this.isRealAdmin()) return;
 
-        // Si está viendo otro rol, agregar botón en el perfil activo
+        // Si está viendo otro rol, mostrar botón flotante "Volver a Admin"
         if (this.isViewingAsOtherRole()) {
-            const activeRole = this.viewingAsRole;
-            // Buscar el perfil del rol que se está viendo
-            let profileTab = null;
-            if (activeRole === 'cliente') {
-                profileTab = document.getElementById('profile-tab');
-            } else if (activeRole === 'barbero') {
-                profileTab = document.getElementById('barbero-perfil-tab');
-            }
-
-            if (profileTab) {
-                const switchBtn = document.createElement('div');
-                switchBtn.className = 'admin-view-switch-btn fixed top-4 left-1/2 -translate-x-1/2 z-50';
-                switchBtn.innerHTML = `
-                    <button onclick="roleManager.switchViewTo('admin')"
-                        class="flex items-center gap-2 px-5 py-2.5 rounded-full bg-red-500/90 backdrop-blur-xl text-white text-xs font-black uppercase tracking-wider shadow-[0_4px_20px_rgba(239,68,68,0.4)] hover:bg-red-500 transition-all active:scale-95 border border-red-400/30">
-                        <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1">admin_panel_settings</span>
-                        <span>Volver a Admin</span>
-                    </button>
-                `;
-                document.body.appendChild(switchBtn);
-            }
+            const switchBtn = document.createElement('div');
+            switchBtn.className = 'admin-view-switch-btn fixed top-4 left-1/2 -translate-x-1/2 z-50';
+            switchBtn.innerHTML = `
+                <button onclick="roleManager.switchViewTo('admin')"
+                    class="flex items-center gap-2 px-5 py-2.5 rounded-full bg-red-500/90 backdrop-blur-xl text-white text-xs font-black uppercase tracking-wider shadow-[0_4px_20px_rgba(239,68,68,0.4)] hover:bg-red-500 transition-all active:scale-95 border border-red-400/30">
+                    <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1">admin_panel_settings</span>
+                    <span>Volver a Admin</span>
+                </button>
+            `;
+            document.body.appendChild(switchBtn);
         }
 
         // Si está en vista admin, agregar selector de vista en el dashboard

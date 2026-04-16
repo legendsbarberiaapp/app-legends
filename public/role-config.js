@@ -28,10 +28,7 @@ const ROLE_CONFIGS = {
     barbero: {
         tabs: [
             { id: 'barbero-dashboard', icon: 'dashboard', label: 'Dashboard', fill: true },
-            { id: 'barbero-citas', icon: 'calendar_today', label: 'Mis Citas', fill: false },
-            { id: 'barbero-servicios', icon: 'content_cut', label: 'Servicios', fill: false },
-            { id: 'barbero-estadisticas', icon: 'analytics', label: 'Stats', fill: false },
-            { id: 'barbero-perfil', icon: 'account_circle', label: 'Perfil', fill: false }
+            { id: 'barbero-citas', icon: 'calendar_today', label: 'Mis Citas', fill: false }
         ],
         defaultTab: 'barbero-dashboard',
         showFAB: false
@@ -41,9 +38,7 @@ const ROLE_CONFIGS = {
         tabs: [
             { id: 'admin-dashboard', icon: 'admin_panel_settings', label: 'Admin', fill: true },
             { id: 'admin-usuarios', icon: 'group', label: 'Usuarios', fill: false },
-            { id: 'admin-barberos', icon: 'content_cut', label: 'Barberos', fill: false },
-            { id: 'admin-reportes', icon: 'bar_chart', label: 'Reportes', fill: false },
-            { id: 'admin-config', icon: 'settings', label: 'Config', fill: false }
+            { id: 'admin-barberos', icon: 'content_cut', label: 'Barberos', fill: false }
         ],
         defaultTab: 'admin-dashboard',
         showFAB: false
