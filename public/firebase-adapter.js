@@ -183,10 +183,6 @@ class FirebaseAuthAdapter {
     integrateWithRoleManager(roleManager) {
         if (!this.initialized) this.initFirebase();
 
-        // Limpiar mock defaults
-        roleManager.loadUserFromStorage = () => null;
-        roleManager.saveUserToStorage = () => { };
-
         this.auth.onAuthStateChanged(async (firebaseUser) => {
             const loadingState = document.getElementById('auth-loading-state');
             const loginButtons = document.getElementById('auth-login-buttons');
@@ -303,9 +299,4 @@ document.addEventListener('DOMContentLoaded', () => {
             firebaseAdapter.integrateWithRoleManager(roleManager);
         }
     });
-
-    // Sobreescribir enterApp normal para impedir saltar login si está desconectado
-    window.enterApp = () => {
-        alert("Por favor inicia sesión para continuar.");
-    };
 });

@@ -269,57 +269,6 @@ class RoleManager {
 
         console.log('✓ UI de Perfil Sincronizada con Google');
     }
-
-    // Guardar usuario en localStorage
-    saveUserToStorage(user) {
-        try {
-            localStorage.setItem('legends_current_user', JSON.stringify(user));
-            console.log('💾 Usuario guardado en localStorage');
-        } catch (error) {
-            console.error('❌ Error guardando usuario:', error);
-        }
-    }
-
-    // Cargar usuario desde localStorage
-    loadUserFromStorage() {
-        try {
-            const userJson = localStorage.getItem('legends_current_user');
-            return userJson ? JSON.parse(userJson) : null;
-        } catch (error) {
-            console.error('❌ Error cargando usuario:', error);
-            return null;
-        }
-    }
-
-    // Obtener rol actual (real)
-    getCurrentRole() {
-        return this.currentRole;
-    }
-
-    // Obtener rol que se está viendo (puede ser diferente al real si es admin)
-    getViewingRole() {
-        return this.viewingAsRole || this.currentRole;
-    }
-
-    // Obtener usuario actual
-    getCurrentUser() {
-        return this.currentUser;
-    }
-
-    // Verificar si el usuario es admin
-    isAdmin() {
-        return this.currentRole === 'admin';
-    }
-
-    // Verificar si el usuario es barbero
-    isBarbero() {
-        return this.currentRole === 'barbero';
-    }
-
-    // Verificar si el usuario es cliente
-    isCliente() {
-        return this.currentRole === 'cliente';
-    }
 }
 
 // Instancia global

@@ -1,39 +1,9 @@
 /**
- * LEGENDS BARBERIA - APP LOGIC
- * Ciclo de vida del splash, navegación entre tabs y selección de rol.
+ * LEGENDS BARBERIA - NAVEGACIÓN ENTRE TABS
+ * Cambio de tab + lazy-load del partial + auto-carga de datos para tabs de admin.
+ * El ciclo de vida del login vive en firebase-adapter.js.
  * Las interacciones táctiles viven en interactions.js.
- * La UI del admin (usuarios, dashboard) vive en admin/.
  */
-
-// =============================================
-// CICLO DE VIDA: SPLASH -> APP
-// =============================================
-
-function enterApp() {
-    const splashScreen = document.getElementById('splash-screen');
-    const mainApp = document.getElementById('main-app');
-
-    splashScreen.style.opacity = '0';
-    splashScreen.style.transition = 'opacity 0.5s ease-out';
-
-    setTimeout(() => {
-        splashScreen.classList.remove('active');
-        splashScreen.classList.add('hidden');
-        mainApp.classList.remove('hidden');
-        mainApp.classList.add('active');
-
-        mainApp.style.opacity = '0';
-        setTimeout(() => {
-            mainApp.style.opacity = '1';
-            mainApp.style.transition = 'opacity 0.5s ease-in';
-            roleManager.init();
-        }, 50);
-    }, 500);
-}
-
-// =============================================
-// NAVEGACIÓN ENTRE TABS
-// =============================================
 
 async function switchTab(tabName) {
     const allTabs = document.querySelectorAll('.tab-content');
@@ -101,57 +71,4 @@ function autoLoadDataForTab(tabName) {
     }
 }
 
-// =============================================
-// SELECCIÓN DE ROL (SPLASH DE PRUEBAS)
-// =============================================
-
-function selectRole(role) {
-    sessionStorage.setItem('selected_role_temp', role);
-
-    const display = document.getElementById('selected-role-display');
-    if (display) display.textContent = `Rol seleccionado: ${role.toUpperCase()}`;
-
-    document.querySelectorAll('.role-selector-btn').forEach(btn => {
-        btn.classList.remove('bg-primary', 'text-black');
-        btn.classList.add('bg-white/10', 'text-white');
-    });
-
-    event.target.classList.remove('bg-white/10', 'text-white');
-    event.target.classList.add('bg-primary', 'text-black');
-
-    console.log(`✓ Rol seleccionado: ${role}`);
-}
-
-// =============================================
-// INICIALIZACIÓN
-// =============================================
-
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('Legends Barberia App Loaded');
-
-    const selectedRole = sessionStorage.getItem('selected_role_temp');
-    if (selectedRole) {
-        if (typeof roleManager !== 'undefined') {
-            roleManager.currentRole = selectedRole;
-        }
-        sessionStorage.removeItem('selected_role_temp');
-    }
-});
-
-let resizeTimer;
-window.addEventListener('resize', () => {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => console.log('Window resized'), 250);
-});
-
-document.addEventListener('visibilitychange', () => {
-    console.log(document.hidden ? 'App hidden' : 'App visible');
-});
-
-// =============================================
-// EXPORTS AL WINDOW (para onclick en HTML)
-// =============================================
-
-window.enterApp = enterApp;
 window.switchTab = switchTab;
-window.selectRole = selectRole;
