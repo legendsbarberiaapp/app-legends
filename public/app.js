@@ -69,6 +69,9 @@ function autoLoadDataForTab(tabName) {
             barberManager.loadBarbers();
         }
     }
+    if (tabName === 'booking' && typeof initBooking === 'function') {
+        initBooking();
+    }
 }
 
 window.switchTab = switchTab;
