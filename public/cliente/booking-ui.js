@@ -2,23 +2,16 @@
  * LEGENDS BARBERIA - BOOKING UI (CLIENTE)
  * Reserva de cita en 3 pasos: servicio, barbero, fecha/hora.
  * Al confirmar crea un documento en la colección `citas` vía CitasService.
- *
- * TODO: los servicios principales están hardcodeados aquí. Cuando agreguemos
- * un catálogo admin de servicios con precio/duración, mover esta lista a Firestore.
+ * Los servicios los lee de window.SERVICIOS_CATALOG (servicios-catalog.js).
  */
 
 (function () {
     'use strict';
 
-    // =====================================================
-    // CATÁLOGO DE SERVICIOS (temporal, hasta mover a admin)
-    // =====================================================
-    const SERVICIOS = [
-        { id: 'corte-clasico', nombre: 'Corte Clásico', precio: 40 },
-        { id: 'corte-barba', nombre: 'Corte + Barba', precio: 60 },
-        { id: 'afeitado', nombre: 'Afeitado Premium', precio: 35 },
-        { id: 'degradado', nombre: 'Degradado', precio: 45 }
-    ];
+    // Fuente única: public/cliente/servicios-catalog.js
+    function getServicios() {
+        return window.SERVICIOS_CATALOG || [];
+    }
 
     const HORARIOS = [
         '09:00', '09:45', '10:30', '11:15',
@@ -51,7 +44,7 @@
         const container = document.getElementById('booking-servicios');
         if (!container) return;
 
-        container.innerHTML = SERVICIOS.map(s => {
+        container.innerHTML = getServicios().map(s => {
             const isSelected = state.servicio && state.servicio.id === s.id;
             const base = 'flex-shrink-0 px-7 py-4 rounded-2xl text-sm transition-all active:scale-95';
             const classes = isSelected
@@ -221,7 +214,7 @@
     // =====================================================
 
     function selectServicio(id) {
-        state.servicio = SERVICIOS.find(s => s.id === id) || null;
+        state.servicio = getServicios().find(s => s.id === id) || null;
         renderServicios();
         renderResumen();
     }
