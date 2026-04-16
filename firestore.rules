@@ -1,0 +1,98 @@
+rules_version = '2';
+
+// Reglas para Legends Barbería
+// Pégalas en: Firebase Console -> Firestore Database -> Rules
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: verifica si el request está autenticado
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Helper: lee el rol del usuario que hace la request
+    function userRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && userRole() == 'admin';
+    }
+
+    function isBarbero() {
+      return isSignedIn() && userRole() == 'barbero';
+    }
+
+    // ============================================
+    // USERS
+    // ============================================
+    match /users/{uid} {
+      // Cualquier usuario logeado puede leer su propio doc;
+      // admin puede leer todos (para el panel de usuarios).
+      allow read: if isSignedIn() && (request.auth.uid == uid || isAdmin());
+
+      // Crear: solo uno mismo al registrarse (ensureUserDocument).
+      allow create: if isSignedIn() && request.auth.uid == uid;
+
+      // Update: admin puede cambiar roles; el propio usuario puede actualizar su info.
+      allow update: if isAdmin() || (isSignedIn() && request.auth.uid == uid);
+
+      allow delete: if isAdmin();
+    }
+
+    // ============================================
+    // BARBEROS (catálogo)
+    // ============================================
+    match /barberos/{barberoId} {
+      allow read: if isSignedIn();                  // todos ven quién hay
+      allow create, update, delete: if isAdmin();   // solo admin administra
+    }
+
+    // ============================================
+    // SERVICIOS_CORTE y ADICIONALES (catálogos)
+    // ============================================
+    match /servicios_corte/{id} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+    match /adicionales/{id} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ============================================
+    // CITAS (el corazón del flujo de reserva)
+    // ============================================
+    match /citas/{citaId} {
+
+      // LEER:
+      // - el cliente dueño de la cita
+      // - el barbero asignado a esa cita
+      // - cualquier admin
+      allow read: if isSignedIn() && (
+        resource.data.clienteId == request.auth.uid ||
+        resource.data.barberoId == request.auth.uid ||
+        isAdmin() ||
+        isBarbero()
+      );
+
+      // CREAR: solo el propio cliente puede agendar para sí mismo, y nace pendiente.
+      allow create: if isSignedIn()
+                    && request.resource.data.clienteId == request.auth.uid
+                    && request.resource.data.estado == 'pendiente';
+
+      // ACTUALIZAR:
+      // - admin puede confirmar/cancelar
+      // - el cliente puede cancelar su propia cita
+      // - el barbero puede completar/cancelar su cita asignada
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        resource.data.clienteId == request.auth.uid ||
+        resource.data.barberoId == request.auth.uid
+      );
+
+      // BORRAR: solo admin (normalmente se cancela, no se borra).
+      allow delete: if isAdmin();
+    }
+  }
+}
