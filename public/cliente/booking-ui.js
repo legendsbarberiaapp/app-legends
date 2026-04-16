@@ -36,6 +36,13 @@
         hora: null        // "HH:mm"
     };
 
+    // Permite que otros tabs (barbers, services) preseleccionen algo
+    // ANTES de cambiar al tab booking. initBooking lo recoge y lo aplica.
+    const pendingPreselection = {
+        servicio: null,
+        barbero: null
+    };
+
     // =====================================================
     // RENDERERS
     // =====================================================
@@ -310,6 +317,17 @@
 
     async function initBooking() {
         resetState();
+
+        // Aplicar preselecciones si otro tab envió algo
+        if (pendingPreselection.servicio) {
+            state.servicio = pendingPreselection.servicio;
+            pendingPreselection.servicio = null;
+        }
+        if (pendingPreselection.barbero) {
+            state.barbero = pendingPreselection.barbero;
+            pendingPreselection.barbero = null;
+        }
+
         renderServicios();
         renderFechas();
         renderHorarios();
@@ -317,7 +335,17 @@
         await renderBarberos();
     }
 
+    /**
+     * Llamado desde barbers-ui / services-ui antes de switchTab('booking').
+     * Guarda la selección para que initBooking la aplique cuando se abra el tab.
+     */
+    function preselectBooking({ servicio = null, barbero = null } = {}) {
+        if (servicio) pendingPreselection.servicio = servicio;
+        if (barbero) pendingPreselection.barbero = barbero;
+    }
+
     window.initBooking = initBooking;
     window.confirmarReserva = confirmarReserva;
+    window.preselectBooking = preselectBooking;
     console.log('✓ BookingUI loaded');
 })();
