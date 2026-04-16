@@ -1,0 +1,138 @@
+/**
+ * LEGENDS BARBERIA - ADMIN: CITAS PENDIENTES
+ * Lista las citas con estado 'pendiente' y permite al admin confirmarlas
+ * (pasan a 'confirmada') o rechazarlas (pasan a 'cancelada').
+ * Se muestra en el dashboard del admin.
+ */
+
+(function () {
+    'use strict';
+
+    const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const DIAS_SEMANA = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+    function formatearFecha(isoDate) {
+        if (!isoDate) return '';
+        const [y, m, d] = isoDate.split('-').map(Number);
+        const fecha = new Date(y, m - 1, d);
+        return `${DIAS_SEMANA[fecha.getDay()]} ${fecha.getDate()} ${MESES[fecha.getMonth()]}`;
+    }
+
+    function renderCitaCard(cita) {
+        const foto = cita.clientePhotoURL
+            || `https://ui-avatars.com/api/?name=${encodeURIComponent(cita.clienteNombre || 'Cliente')}&background=c9a74a&color=000`;
+
+        return `
+            <div class="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                <div class="flex items-start gap-3">
+                    <img src="${foto}" alt=""
+                        class="w-10 h-10 rounded-full object-cover border-2 border-primary/30 shrink-0">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-start justify-between gap-2 mb-1">
+                            <p class="text-white text-xs font-black truncate">${cita.clienteNombre || 'Cliente'}</p>
+                            <span class="text-primary text-xs font-black shrink-0">$${cita.servicioPrecio || 0}</span>
+                        </div>
+                        <p class="text-white/50 text-[11px] truncate">${cita.servicioNombre || 'Servicio'} con ${cita.barberoNombre || 'Barbero'}</p>
+                        <div class="flex items-center gap-1.5 mt-1.5">
+                            <span class="material-symbols-outlined text-white/30 text-xs">event</span>
+                            <span class="text-white/60 text-[10px] font-semibold">${formatearFecha(cita.fecha)} • ${cita.hora || ''}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-2 mt-3">
+                    <button onclick="adminConfirmarCita('${cita.id}')"
+                        class="flex-1 px-3 py-2 rounded-lg bg-green-500/15 border border-green-500/30 text-green-400 text-[11px] font-black uppercase tracking-wide hover:bg-green-500/25 transition-all active:scale-95">
+                        <span class="material-symbols-outlined text-xs align-middle mr-1" style="font-variation-settings: 'FILL' 1">check</span>
+                        Confirmar
+                    </button>
+                    <button onclick="adminRechazarCita('${cita.id}')"
+                        class="flex-1 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/25 text-red-400/80 text-[11px] font-black uppercase tracking-wide hover:bg-red-500/20 transition-all active:scale-95">
+                        <span class="material-symbols-outlined text-xs align-middle mr-1" style="font-variation-settings: 'FILL' 1">close</span>
+                        Rechazar
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    async function initCitasPendientes() {
+        const container = document.getElementById('admin-citas-pendientes-container');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="flex flex-col items-center gap-3 py-8">
+                <div class="auth-checking-spinner"></div>
+                <p class="text-white/50 text-xs">Cargando citas pendientes...</p>
+            </div>
+        `;
+
+        try {
+            const pendientes = await CitasService.listPendientes();
+
+            if (pendientes.length === 0) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center gap-2 py-8 px-4 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+                        <span class="material-symbols-outlined text-white/20 text-4xl" style="font-variation-settings: 'FILL' 1">inbox</span>
+                        <p class="text-white/40 text-xs font-medium text-center">Sin citas pendientes</p>
+                        <p class="text-white/25 text-[10px] text-center">Cuando un cliente reserve aparecerá aquí</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = pendientes.map(renderCitaCard).join('');
+            console.log(`✓ ${pendientes.length} citas pendientes renderizadas`);
+
+        } catch (error) {
+            console.error('❌ Error cargando citas pendientes:', error);
+            container.innerHTML = `
+                <div class="text-center py-6">
+                    <span class="material-symbols-outlined text-red-400 text-4xl mb-2">error</span>
+                    <p class="text-red-400 text-xs">Error al cargar citas pendientes</p>
+                    <button onclick="initCitasPendientes()" class="mt-3 px-4 py-2 bg-primary/20 text-primary text-xs font-bold rounded-lg border border-primary/30">
+                        Reintentar
+                    </button>
+                </div>
+            `;
+        }
+    }
+
+    async function adminConfirmarCita(citaId) {
+        const adminUid = roleManager && roleManager.currentUser && roleManager.currentUser.uid;
+        if (!adminUid) {
+            alert('No se pudo identificar tu sesión admin.');
+            return;
+        }
+
+        if (!confirm('¿Confirmar esta cita? El barbero y el cliente la verán como confirmada.')) return;
+
+        const ok = await CitasService.confirmar(citaId, adminUid);
+        if (ok) {
+            if (typeof window.showToast === 'function') {
+                window.showToast('Cita confirmada ✓', 'success');
+            }
+            await initCitasPendientes();
+        } else {
+            alert('No se pudo confirmar. Intenta de nuevo.');
+        }
+    }
+
+    async function adminRechazarCita(citaId) {
+        if (!confirm('¿Rechazar esta cita? El cliente verá la reserva como cancelada.')) return;
+
+        const ok = await CitasService.cancelar(citaId);
+        if (ok) {
+            if (typeof window.showToast === 'function') {
+                window.showToast('Cita rechazada', 'success');
+            }
+            await initCitasPendientes();
+        } else {
+            alert('No se pudo rechazar. Intenta de nuevo.');
+        }
+    }
+
+    window.initCitasPendientes = initCitasPendientes;
+    window.adminConfirmarCita = adminConfirmarCita;
+    window.adminRechazarCita = adminRechazarCita;
+    console.log('✓ AdminCitasUI loaded');
+})();

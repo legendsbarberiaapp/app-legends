@@ -56,8 +56,9 @@ function updateNavIndicator(tabName) {
 }
 
 function autoLoadDataForTab(tabName) {
-    if (tabName === 'admin-dashboard' && typeof loadDashboardStats === 'function') {
-        loadDashboardStats();
+    if (tabName === 'admin-dashboard') {
+        if (typeof loadDashboardStats === 'function') loadDashboardStats();
+        if (typeof initCitasPendientes === 'function') initCitasPendientes();
     }
     if (tabName === 'admin-usuarios' && typeof loadUsersForAdmin === 'function') {
         loadUsersForAdmin();
