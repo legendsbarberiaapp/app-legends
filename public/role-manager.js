@@ -15,58 +15,6 @@ class RoleManager {
         this.initialized = false;
     }
 
-    // Inicializar sistema de roles
-    init() {
-        console.log('🔧 Inicializando RoleManager...');
-
-        // Cargar usuario desde localStorage
-        const savedUser = this.loadUserFromStorage();
-
-        if (savedUser) {
-            this.currentUser = savedUser;
-            this.currentRole = savedUser.role;
-            this.viewingAsRole = savedUser.role;
-            console.log(`✓ Usuario cargado: ${savedUser.displayName} (${savedUser.role})`);
-        } else {
-            // Usuario por defecto para testing (cliente)
-            this.setRole('cliente', MOCK_USERS.cliente);
-            console.log('⚠ No hay usuario guardado, usando cliente por defecto');
-        }
-
-        this.initialized = true;
-        this.renderForRole();
-    }
-
-    // Establecer rol actual
-    setRole(role, userData = null) {
-        const roleUpper = role.toUpperCase();
-
-        if (!ROLES[roleUpper]) {
-            console.error(`❌ Rol inválido: ${role}`);
-            return false;
-        }
-
-        this.currentRole = role;
-        this.viewingAsRole = role;
-
-        if (userData) {
-            this.currentUser = userData;
-            this.saveUserToStorage(userData);
-        } else {
-            // Usar mock user predefinido
-            this.currentUser = MOCK_USERS[role];
-            this.saveUserToStorage(MOCK_USERS[role]);
-        }
-
-        // Renderizar interfaz para el nuevo rol
-        if (this.initialized) {
-            this.renderForRole();
-        }
-
-        console.log(`✓ Rol cambiado a: ${role.toUpperCase()}`);
-        return true;
-    }
-
     /**
      * CAMBIAR VISTA (solo para admin)
      * Permite al admin ver la interfaz exacta de otro rol,

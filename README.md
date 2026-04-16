@@ -44,21 +44,38 @@ Una aplicación móvil estática para barbería urbana de lujo con estética hip
 ```
 APP LEGENDS/
 │
-├── index.html          # Archivo principal HTML
-├── styles.css          # Estilos personalizados
-├── app.js             # Lógica de navegación
-├── parametros.md      # Guía de estética (IMPORTANTE)
-├── README.md          # Este archivo
+├── index.html                  # Wrapper principal (tabs + splash + login)
+├── styles.css                  # Estilos personalizados
+├── parametros.md               # Guía de estética
+├── HANDOFF.md                  # Notas de la refactorización
+├── README.md                   # Este archivo
 │
-├── Guia para crear la app  # Instrucciones originales
-│
-└── stitch/            # Diseños de referencia de Stitch
-    ├── legends_splash_screen/
-    ├── legends_home_dashboard/
-    ├── premium_services_menu/
-    ├── elite_barbers_team/
-    ├── appointment_booking_flow/
-    └── member_profile_&_loyalty/
+└── public/
+    ├── app.js                  # Ciclo de vida + navegación entre tabs
+    ├── role-config.js          # Roles válidos y tabs por rol
+    ├── role-manager.js         # Render de la interfaz según el rol
+    ├── firebase-adapter.js     # Auth (Google) + acceso a Firestore
+    ├── barber-manager.js       # Facade del panel de barberos (admin)
+    ├── screen-loader.js        # Carga lazy de los partials HTML
+    ├── interactions.js         # Touch, haptic, scroll suave
+    │
+    ├── screens/                # Contenido HTML de cada tab
+    │   ├── cliente/            # home, services, barbers, booking, profile
+    │   ├── barbero/            # dashboard, citas, servicios, stats, perfil
+    │   └── admin/              # dashboard, usuarios, barberos, reportes, config
+    │
+    ├── services/               # Capa de datos (Firebase puro, sin UI)
+    │   ├── barbers-service.js
+    │   ├── servicios-service.js
+    │   └── adicionales-service.js
+    │
+    ├── admin/                  # UI del panel de administración
+    │   ├── usuarios-ui.js
+    │   ├── dashboard-ui.js
+    │   └── (barbers-list-ui, barber-modal-ui, pickers, confirm-dialog)
+    │
+    └── components/
+        └── toast.js            # window.showToast() global
 ```
 
 ---
@@ -246,7 +263,7 @@ Para modificar o extender este proyecto:
 Para preguntas o soporte:
 - Revisa `parametros.md` para guía de estética
 - Revisa `Guia para crear la app` para contexto original
-- Consulta archivos de referencia en carpeta `stitch/`
+- Revisa `HANDOFF.md` para el estado de la refactorización
 
 ---
 

@@ -1,59 +1,17 @@
 /**
- * LEGENDS BARBERIA - AUTH MOCK
- * Sistema de autenticación mock preparado para Firebase
+ * LEGENDS BARBERIA - ROLE CONFIG
+ * Catálogo de roles válidos y configuración de cada uno
+ * (tabs visibles, tab por defecto, FAB, etc.).
+ * Firebase provee los datos reales del usuario; aquí solo definimos
+ * qué interfaz le corresponde a cada rol.
  */
 
-// Definición de roles
 const ROLES = {
     ADMIN: 'admin',
     BARBERO: 'barbero',
     CLIENTE: 'cliente'
 };
 
-// Usuarios mock para testing
-const MOCK_USERS = {
-    admin: {
-        uid: 'admin_001',
-        email: 'admin@legends.com',
-        role: 'admin',
-        displayName: 'Admin Legends',
-        photoURL: null,
-        createdAt: Date.now(),
-        metadata: {
-            permissions: ['all']
-        }
-    },
-    barbero: {
-        uid: 'barber_001',
-        email: 'marcus@legends.com',
-        role: 'barbero',
-        displayName: 'Marcus Williams',
-        photoURL: null,
-        createdAt: Date.now(),
-        metadata: {
-            specialties: ['Fade', 'Beard Trim', 'Hot Towel Shave'],
-            rating: 4.9,
-            totalCuts: 847,
-            yearsExperience: 8
-        }
-    },
-    cliente: {
-        uid: 'client_001',
-        email: 'alex@cliente.com',
-        role: 'cliente',
-        displayName: 'Alex Rodriguez',
-        photoURL: null,
-        createdAt: Date.now(),
-        metadata: {
-            loyaltyPoints: 350,
-            tier: 'Oro',
-            totalVisits: 12,
-            favoriteBarbero: 'barber_001'
-        }
-    }
-};
-
-// Configuración de tabs por rol
 const ROLE_CONFIGS = {
     cliente: {
         tabs: [
@@ -92,4 +50,4 @@ const ROLE_CONFIGS = {
     }
 };
 
-console.log('✓ Auth Mock loaded - Roles:', Object.keys(ROLES));
+console.log('✓ Role Config loaded - Roles:', Object.keys(ROLES));
