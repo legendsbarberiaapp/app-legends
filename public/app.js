@@ -73,6 +73,9 @@ function autoLoadDataForTab(tabName) {
     if (tabName === 'booking' && typeof initBooking === 'function') {
         initBooking();
     }
+    if (tabName === 'profile' && typeof initProfile === 'function') {
+        initProfile();
+    }
     if (tabName === 'barbero-citas' && typeof initBarberoCitas === 'function') {
         initBarberoCitas();
     }
