@@ -72,6 +72,9 @@ function autoLoadDataForTab(tabName) {
     if (tabName === 'booking' && typeof initBooking === 'function') {
         initBooking();
     }
+    if (tabName === 'barbero-citas' && typeof initBarberoCitas === 'function') {
+        initBarberoCitas();
+    }
 }
 
 window.switchTab = switchTab;

@@ -223,7 +223,10 @@
         const b = barberos.find(x => x.id === id);
         if (!b) return;
         state.barbero = {
-            id: b.id,
+            // Usamos userId del barbero (su UID de Firebase Auth) como identificador
+            // de la cita. Esto alinea con las reglas de Firestore y permite al
+            // barbero consultar sus propias citas con su UID.
+            id: b.userId || b.id,
             nombre: b.nombre || b.displayName || 'Barbero',
             photoURL: b.photoURL || b.foto || null
         };
