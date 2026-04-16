@@ -1,0 +1,22 @@
+<div class="px-6 py-8 pb-28">
+    <div class="mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-black text-white mb-2">Gestión de Usuarios</h1>
+                <p class="text-white/60 text-sm">Administra usuarios y asigna roles</p>
+            </div>
+            <button onclick="loadUsersForAdmin()"
+                class="p-3 rounded-xl bg-white/5 border border-white/10 hover:border-primary/30 transition-all active:scale-95">
+                <span class="material-symbols-outlined text-primary">refresh</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Contenedor dinámico - se llena desde Firestore -->
+    <div id="admin-users-list">
+        <div class="flex flex-col items-center gap-3 py-8">
+            <div class="auth-checking-spinner"></div>
+            <p class="text-white/50 text-sm">Cargando usuarios...</p>
+        </div>
+    </div>
+</div>

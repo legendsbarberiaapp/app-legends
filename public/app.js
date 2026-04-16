@@ -31,7 +31,7 @@ function enterApp() {
 }
 
 // Switch between tabs
-function switchTab(tabName) {
+async function switchTab(tabName) {
     // Hide all tab contents
     const allTabs = document.querySelectorAll('.tab-content');
     allTabs.forEach(tab => {
@@ -42,6 +42,11 @@ function switchTab(tabName) {
     // Show selected tab
     const selectedTab = document.getElementById(`${tabName}-tab`);
     if (selectedTab) {
+        // Lazy load del contenido si viene de un partial
+        if (selectedTab.dataset.partial && selectedTab.dataset.loaded !== 'true'
+            && typeof window.loadPartialIntoTab === 'function') {
+            await window.loadPartialIntoTab(selectedTab);
+        }
         selectedTab.classList.remove('hidden');
         selectedTab.classList.add('active');
     }
