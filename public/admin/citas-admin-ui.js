@@ -83,6 +83,19 @@
         `;
     }
 
+    function updateCountBadge(count) {
+        const badge = document.getElementById('admin-citas-pendientes-count');
+        if (!badge) return;
+        if (count > 0) {
+            badge.textContent = String(count);
+            badge.classList.remove('hidden');
+            badge.classList.add('inline-flex');
+        } else {
+            badge.classList.add('hidden');
+            badge.classList.remove('inline-flex');
+        }
+    }
+
     async function initCitasPendientes() {
         const container = document.getElementById('admin-citas-pendientes-container');
         if (!container) return;
@@ -96,6 +109,7 @@
 
         try {
             const pendientes = await CitasService.listPendientes();
+            updateCountBadge(pendientes.length);
 
             if (pendientes.length === 0) {
                 container.innerHTML = `

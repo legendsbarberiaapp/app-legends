@@ -92,6 +92,8 @@
             <h2 class="text-white/40 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
                 <span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1">pending_actions</span>
                 Citas Pendientes
+                <span id="admin-citas-pendientes-count"
+                    class="ml-1 hidden items-center justify-center min-w-[22px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-black shadow-[0_0_10px_rgba(239,68,68,0.6)] animate-pulse">0</span>
             </h2>
             <button onclick="if(typeof initCitasPendientes==='function')initCitasPendientes()"
                 class="p-2 rounded-lg bg-white/[0.03] border border-white/[0.06] text-white/40 hover:text-primary hover:border-primary/20 transition-all active:scale-95"

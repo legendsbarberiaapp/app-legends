@@ -107,6 +107,33 @@
         `;
     }
 
+    /**
+     * Muestra un toast si el cliente tiene alguna cita recientemente
+     * confirmada por el admin desde su última visita a home. Usa
+     * localStorage para recordar el último momento en que se notificó.
+     */
+    function notificarConfirmacionesNuevas(user, citas) {
+        const key = `legends_last_seen_conf_${user.uid}`;
+        const lastSeenIso = localStorage.getItem(key);
+        const lastSeen = lastSeenIso ? new Date(lastSeenIso) : new Date(0);
+
+        const nuevas = citas.filter(c => {
+            if (c.estado !== 'confirmada') return false;
+            if (!c.confirmedAt || typeof c.confirmedAt.toDate !== 'function') return false;
+            return c.confirmedAt.toDate() > lastSeen;
+        });
+
+        if (nuevas.length > 0 && typeof window.showToast === 'function') {
+            const msg = nuevas.length === 1
+                ? `¡Tu cita con ${nuevas[0].barberoNombre} fue confirmada!`
+                : `${nuevas.length} de tus citas fueron confirmadas ✓`;
+            // Pequeño delay para que el toast no coincida con transición de tab
+            setTimeout(() => window.showToast(msg, 'success'), 400);
+        }
+
+        localStorage.setItem(key, new Date().toISOString());
+    }
+
     async function initHome() {
         const container = document.getElementById('home-proxima-container');
         if (!container) return;
@@ -119,6 +146,7 @@
 
         try {
             const citas = await CitasService.listByCliente(user.uid);
+            notificarConfirmacionesNuevas(user, citas);
             const proxima = elegirProxima(citas);
             container.innerHTML = proxima ? renderProxima(proxima) : renderSinCita();
         } catch (error) {
