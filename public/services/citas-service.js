@@ -58,6 +58,7 @@
                 clienteId: data.clienteId,
                 clienteNombre: data.clienteNombre || '',
                 clientePhotoURL: data.clientePhotoURL || null,
+                clientePhone: data.clientePhone || null,
 
                 barberoId: data.barberoId,
                 barberoNombre: data.barberoNombre || '',

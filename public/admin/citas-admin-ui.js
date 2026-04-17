@@ -18,9 +18,32 @@
         return `${DIAS_SEMANA[fecha.getDay()]} ${fecha.getDate()} ${MESES[fecha.getMonth()]}`;
     }
 
+    /**
+     * Genera el href de WhatsApp con mensaje preformateado.
+     * Limpia cualquier caracter no numérico del teléfono (espacios, +, guiones).
+     */
+    function whatsappHref(cita) {
+        if (!cita.clientePhone) return null;
+        const numero = String(cita.clientePhone).replace(/\D/g, '');
+        if (numero.length < 7) return null;
+        const texto = `Hola ${cita.clienteNombre || ''}! Te confirmamos tu cita con ${cita.barberoNombre || 'tu barbero'} para ${formatearFecha(cita.fecha)} a las ${cita.hora}. ¿Todo bien? — Legends Barbería`;
+        return `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`;
+    }
+
     function renderCitaCard(cita) {
         const foto = cita.clientePhotoURL
             || `https://ui-avatars.com/api/?name=${encodeURIComponent(cita.clienteNombre || 'Cliente')}&background=c9a74a&color=000`;
+        const waHref = whatsappHref(cita);
+
+        const whatsappBtn = waHref
+            ? `<a href="${waHref}" target="_blank" rel="noopener"
+                class="flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-lg bg-green-600/15 border border-green-600/30 text-green-400 text-[11px] font-black uppercase tracking-wide hover:bg-green-600/25 transition-all active:scale-95">
+                <span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1">chat</span>
+                WhatsApp
+            </a>`
+            : `<div class="flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-lg bg-white/[0.02] border border-white/[0.05] text-white/30 text-[10px] font-bold italic">
+                sin teléfono
+            </div>`;
 
         return `
             <div class="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
@@ -39,7 +62,12 @@
                         </div>
                     </div>
                 </div>
-                <div class="flex gap-2 mt-3">
+                <!-- Fila 1: contactar por WhatsApp (acción primaria) -->
+                <div class="mt-3">
+                    ${whatsappBtn}
+                </div>
+                <!-- Fila 2: confirmar o rechazar -->
+                <div class="flex gap-2 mt-2">
                     <button onclick="adminConfirmarCita('${cita.id}')"
                         class="flex-1 px-3 py-2 rounded-lg bg-green-500/15 border border-green-500/30 text-green-400 text-[11px] font-black uppercase tracking-wide hover:bg-green-500/25 transition-all active:scale-95">
                         <span class="material-symbols-outlined text-xs align-middle mr-1" style="font-variation-settings: 'FILL' 1">check</span>

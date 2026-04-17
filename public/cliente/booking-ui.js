@@ -250,6 +250,74 @@
     // CONFIRMAR RESERVA
     // =====================================================
 
+    /**
+     * Modal para capturar el teléfono del cliente la primera vez que reserva.
+     * Devuelve el teléfono (string) o null si el usuario cierra sin guardar.
+     */
+    function pedirTelefono() {
+        return new Promise((resolve) => {
+            const existing = document.getElementById('phone-capture-overlay');
+            if (existing) existing.remove();
+
+            const overlay = document.createElement('div');
+            overlay.id = 'phone-capture-overlay';
+            overlay.className = 'fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-end md:items-center justify-center p-4 animate-[fadeIn_0.2s_ease-out]';
+            overlay.innerHTML = `
+                <div class="w-full max-w-md bg-gradient-to-br from-surface-dark to-card-dark border border-primary/30 rounded-3xl p-6 shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/30 flex items-center justify-center text-primary">
+                            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1">phone_iphone</span>
+                        </div>
+                        <div>
+                            <h3 class="text-white font-black text-lg">Tu WhatsApp</h3>
+                            <p class="text-white/50 text-xs">Para confirmarte tu cita</p>
+                        </div>
+                    </div>
+
+                    <p class="text-white/70 text-sm mb-4 leading-relaxed">
+                        Déjanos tu número para poder confirmarte tu reserva vía WhatsApp. Solo lo pediremos esta vez.
+                    </p>
+
+                    <input id="phone-input" type="tel" inputmode="tel" placeholder="+57 300 123 4567"
+                        class="w-full px-4 py-3 rounded-xl bg-black/40 border-2 border-white/10 text-white placeholder-white/30 focus:border-primary/50 focus:outline-none text-base font-semibold" />
+
+                    <div class="flex gap-2 mt-5">
+                        <button id="phone-cancel"
+                            class="flex-1 py-3 rounded-xl bg-white/5 border border-white/10 text-white/60 text-sm font-bold hover:bg-white/10 transition-all active:scale-95">
+                            Cancelar
+                        </button>
+                        <button id="phone-save"
+                            class="flex-[2] py-3 rounded-xl bg-gradient-to-r from-primary to-primary-light text-black text-sm font-black uppercase tracking-wide shadow-[0_4px_15px_rgba(201,167,74,0.3)] active:scale-95 transition-all">
+                            Guardar y reservar
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            const input = overlay.querySelector('#phone-input');
+            setTimeout(() => input && input.focus(), 100);
+
+            overlay.querySelector('#phone-cancel').addEventListener('click', () => {
+                overlay.remove();
+                resolve(null);
+            });
+            overlay.querySelector('#phone-save').addEventListener('click', () => {
+                const phone = input.value.trim();
+                if (!phone || phone.replace(/\D/g, '').length < 7) {
+                    input.classList.add('border-red-500/60');
+                    input.focus();
+                    return;
+                }
+                overlay.remove();
+                resolve(phone);
+            });
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') overlay.querySelector('#phone-save').click();
+            });
+        });
+    }
+
     async function confirmarReserva() {
         if (!state.servicio || !state.barbero || !state.fecha || !state.hora) return;
 
@@ -257,6 +325,15 @@
         if (!user) {
             alert('Necesitas iniciar sesión para reservar.');
             return;
+        }
+
+        // Asegurar que tenemos teléfono — lo pedimos la primera vez y lo guardamos en su perfil
+        let phone = user.phone || null;
+        if (!phone) {
+            phone = await pedirTelefono();
+            if (!phone) return; // canceló
+            const ok = await firebaseAdapter.updateUserPhone(user.uid, phone);
+            if (ok) user.phone = phone; // actualiza cache local del roleManager
         }
 
         const btn = document.getElementById('booking-confirm-btn');
@@ -269,6 +346,7 @@
             clienteId: user.uid,
             clienteNombre: user.displayName || 'Cliente',
             clientePhotoURL: user.photoURL || null,
+            clientePhone: phone,
 
             barberoId: state.barbero.id,
             barberoNombre: state.barbero.nombre,

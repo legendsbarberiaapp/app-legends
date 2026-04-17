@@ -128,6 +128,22 @@ class FirebaseAuthAdapter {
         return await userRef.update({ role: newRole });
     }
 
+    /**
+     * Guardar el teléfono del usuario (usado para WhatsApp del admin).
+     * Se pide una sola vez en la primera reserva y queda en su perfil.
+     */
+    async updateUserPhone(uid, phone) {
+        if (!this.initialized) return false;
+        try {
+            await this.db.collection('users').doc(uid).update({ phone });
+            console.log(`✓ Teléfono guardado para ${uid}`);
+            return true;
+        } catch (error) {
+            console.error('❌ Error guardando teléfono:', error);
+            return false;
+        }
+    }
+
     async getUserData(uid) {
         if (!this.initialized) return null;
         const doc = await this.db.collection('users').doc(uid).get();
