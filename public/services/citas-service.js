@@ -184,6 +184,50 @@
     }
 
     /**
+     * Devuelve las horas ("HH:mm") ya ocupadas por otro cliente para un
+     * barbero en una fecha dada. Solo cuentan las citas activas
+     * (pendiente o confirmada). Las canceladas/completadas liberan el slot.
+     */
+    async function getOccupiedSlots(barberoId, fecha) {
+        const database = db();
+        if (!database) return [];
+        try {
+            const snapshot = await database.collection(COLLECTION)
+                .where('barberoId', '==', barberoId)
+                .where('fecha', '==', fecha)
+                .get();
+            return snapshot.docs
+                .map(doc => doc.data())
+                .filter(c => c.estado === ESTADOS.PENDIENTE || c.estado === ESTADOS.CONFIRMADA)
+                .map(c => c.hora);
+        } catch (error) {
+            console.error('❌ Error obteniendo slots ocupados:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Indica si el cliente ya tiene una cita activa (pendiente o confirmada).
+     * Usado para aplicar la regla "una cita por cliente".
+     */
+    async function hasActiveBooking(clienteId) {
+        const database = db();
+        if (!database) return false;
+        try {
+            const snapshot = await database.collection(COLLECTION)
+                .where('clienteId', '==', clienteId)
+                .get();
+            return snapshot.docs.some(doc => {
+                const d = doc.data();
+                return d.estado === ESTADOS.PENDIENTE || d.estado === ESTADOS.CONFIRMADA;
+            });
+        } catch (error) {
+            console.error('❌ Error comprobando cita activa:', error);
+            return false;
+        }
+    }
+
+    /**
      * Marcar cita como completada (barbero al terminar el servicio).
      */
     async function completar(citaId) {
@@ -210,6 +254,8 @@
         confirmar,
         cancelar,
         completar,
+        getOccupiedSlots,
+        hasActiveBooking,
         ESTADOS
     };
     console.log('✓ CitasService loaded');

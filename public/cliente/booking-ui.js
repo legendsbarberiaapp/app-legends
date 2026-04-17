@@ -36,6 +36,48 @@
         barbero: null
     };
 
+    // Cache de slots ocupados para el par {barbero, fecha} actual.
+    // Se refresca cuando cambia barbero o fecha.
+    let occupiedSlots = [];
+
+    // Mínimo 6 horas de anticipación para reservar
+    const MIN_HORAS_ANTICIPACION = 6;
+
+    // =====================================================
+    // VALIDACIÓN DE SLOTS
+    // =====================================================
+
+    /**
+     * Si la fecha+hora del slot está dentro de las próximas 6 horas,
+     * NO se permite reservar (regla del negocio).
+     */
+    function slotCumpleAnticipacion(fecha, hora) {
+        if (!fecha || !hora) return true;
+        const [y, m, d] = fecha.split('-').map(Number);
+        const [hh, mm] = hora.split(':').map(Number);
+        const slotDate = new Date(y, m - 1, d, hh, mm);
+        const minAllowed = new Date();
+        minAllowed.setHours(minAllowed.getHours() + MIN_HORAS_ANTICIPACION);
+        return slotDate >= minAllowed;
+    }
+
+    function slotEstaOcupado(hora) {
+        return occupiedSlots.includes(hora);
+    }
+
+    async function refreshOccupiedSlots() {
+        if (!state.barbero || !state.fecha) {
+            occupiedSlots = [];
+            return;
+        }
+        try {
+            occupiedSlots = await CitasService.getOccupiedSlots(state.barbero.id, state.fecha);
+        } catch (error) {
+            console.error('❌ Error refrescando ocupados:', error);
+            occupiedSlots = [];
+        }
+    }
+
     // =====================================================
     // RENDERERS
     // =====================================================
@@ -157,15 +199,35 @@
         const container = document.getElementById('booking-horarios');
         if (!container) return;
 
+        const necesitaSeleccion = !state.barbero || !state.fecha;
+
         container.innerHTML = HORARIOS.map(h => {
             const isSelected = state.hora === h;
-            const classes = isSelected
-                ? 'relative py-3 rounded-xl bg-gradient-to-br from-primary to-primary-light text-black text-sm font-black border-2 border-primary shadow-[0_4px_20px_rgba(201,167,74,0.4)] transition-all active:scale-95'
-                : 'py-3 rounded-xl bg-background-dark/80 text-white text-sm font-semibold border-2 border-white/10 hover:border-primary/40 hover:bg-surface-dark transition-all active:scale-95';
-            return `<button data-hora="${h}" class="${classes}">${h}</button>`;
+            const ocupado = slotEstaOcupado(h);
+            const muyPronto = state.fecha && !slotCumpleAnticipacion(state.fecha, h);
+            const disabled = ocupado || muyPronto || necesitaSeleccion;
+
+            let label = h;
+            let classes;
+
+            if (isSelected) {
+                classes = 'relative py-3 rounded-xl bg-gradient-to-br from-primary to-primary-light text-black text-sm font-black border-2 border-primary shadow-[0_4px_20px_rgba(201,167,74,0.4)] transition-all active:scale-95';
+            } else if (ocupado) {
+                classes = 'relative py-3 rounded-xl bg-red-500/5 text-red-400/50 text-sm font-medium border-2 border-red-500/15 cursor-not-allowed';
+                label = `<span class="line-through">${h}</span><br><span class="text-[9px] font-black uppercase tracking-wider">Ocupado</span>`;
+            } else if (muyPronto) {
+                classes = 'relative py-3 rounded-xl bg-white/[0.02] text-white/25 text-sm font-medium border-2 border-white/5 cursor-not-allowed';
+                label = `<span>${h}</span><br><span class="text-[9px] font-bold uppercase tracking-wider">Muy pronto</span>`;
+            } else if (necesitaSeleccion) {
+                classes = 'relative py-3 rounded-xl bg-white/[0.02] text-white/40 text-sm font-semibold border-2 border-white/5 cursor-not-allowed';
+            } else {
+                classes = 'py-3 rounded-xl bg-background-dark/80 text-white text-sm font-semibold border-2 border-white/10 hover:border-primary/40 hover:bg-surface-dark transition-all active:scale-95';
+            }
+
+            return `<button data-hora="${h}" class="${classes}" ${disabled ? 'disabled' : ''}>${label}</button>`;
         }).join('');
 
-        container.querySelectorAll('[data-hora]').forEach(btn => {
+        container.querySelectorAll('[data-hora]:not([disabled])').forEach(btn => {
             btn.addEventListener('click', () => selectHora(btn.dataset.hora));
         });
     }
@@ -219,7 +281,7 @@
         renderResumen();
     }
 
-    function selectBarbero(id, barberos) {
+    async function selectBarbero(id, barberos) {
         const b = barberos.find(x => x.id === id);
         if (!b) return;
         state.barbero = {
@@ -230,13 +292,19 @@
             nombre: b.nombre || b.displayName || 'Barbero',
             photoURL: b.photoURL || b.foto || null
         };
+        state.hora = null; // la hora anterior puede estar ocupada por el nuevo barbero
         renderBarberos();
+        await refreshOccupiedSlots();
+        renderHorarios();
         renderResumen();
     }
 
-    function selectFecha(iso) {
+    async function selectFecha(iso) {
         state.fecha = iso;
+        state.hora = null; // la hora anterior puede no cumplir 6h o estar ocupada
         renderFechas();
+        await refreshOccupiedSlots();
+        renderHorarios();
         renderResumen();
     }
 
@@ -386,8 +454,70 @@
     // INICIALIZACIÓN (la llama switchTab cuando abres 'booking')
     // =====================================================
 
+    /**
+     * Reemplaza el formulario con un mensaje cuando el cliente ya tiene
+     * una cita activa. Solo se permite una reserva viva a la vez.
+     */
+    function renderBloqueoCitaActiva() {
+        // Buscamos los contenedores principales del partial y vaciamos
+        const main = document.querySelector('#booking-tab');
+        if (!main) return;
+
+        const mainContent = main.querySelector('.flex-1');
+        const footer = main.querySelector('.fixed.bottom-\\[85px\\]');
+
+        // Marcar el partial como NO cargado para que screen-loader re-inyecte
+        // el formulario original la próxima vez que el cliente abra booking
+        // (tras cancelar o completar la cita activa).
+        if (main.dataset) main.dataset.loaded = 'false';
+
+        if (mainContent) {
+            mainContent.innerHTML = `
+                <div class="px-6 pt-12 pb-32">
+                    <div class="flex items-center gap-4 mb-8">
+                        <button onclick="switchTab('home')"
+                            class="p-3 rounded-2xl border border-white/10 bg-surface-dark/80 backdrop-blur-sm flex items-center justify-center text-white hover:text-primary hover:border-primary/30 transition-all active:scale-95">
+                            <span class="material-symbols-outlined">arrow_back</span>
+                        </button>
+                        <h2 class="text-2xl font-black text-white tracking-tight">Agendar Cita</h2>
+                    </div>
+
+                    <div class="flex flex-col items-center gap-4 p-8 rounded-3xl bg-gradient-to-br from-primary/15 via-primary/8 to-transparent border border-primary/30">
+                        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/40 flex items-center justify-center text-primary shadow-lg">
+                            <span class="material-symbols-outlined text-[32px]" style="font-variation-settings: 'FILL' 1">event_available</span>
+                        </div>
+                        <div class="text-center">
+                            <h3 class="text-white font-black text-xl mb-2">Ya tienes una cita activa</h3>
+                            <p class="text-white/60 text-sm leading-relaxed max-w-xs mx-auto">
+                                Completa o cancela tu reserva actual antes de agendar otra. Solo permitimos una cita a la vez por cliente.
+                            </p>
+                        </div>
+                        <button onclick="switchTab('profile')"
+                            class="mt-2 flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-primary to-primary-light text-black font-black text-sm uppercase tracking-wide shadow-[0_4px_15px_rgba(201,167,74,0.3)] active:scale-95 transition-all">
+                            <span>Ver mi cita</span>
+                            <span class="material-symbols-outlined text-base" style="font-variation-settings: 'FILL' 1">arrow_forward</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        // Ocultamos el footer sticky porque no hay formulario
+        if (footer) footer.style.display = 'none';
+    }
+
     async function initBooking() {
         resetState();
+        occupiedSlots = [];
+
+        // Regla: solo una cita activa por cliente
+        const user = roleManager && roleManager.currentUser;
+        if (user && user.uid) {
+            const tieneActiva = await CitasService.hasActiveBooking(user.uid);
+            if (tieneActiva) {
+                renderBloqueoCitaActiva();
+                return;
+            }
+        }
 
         // Aplicar preselecciones si otro tab envió algo
         if (pendingPreselection.servicio) {
@@ -404,6 +534,12 @@
         renderHorarios();
         renderResumen();
         await renderBarberos();
+
+        // Si la preselección trajo barbero, ya podemos cargar ocupados al renderizar horarios
+        if (state.barbero) {
+            await refreshOccupiedSlots();
+            renderHorarios();
+        }
     }
 
     /**
