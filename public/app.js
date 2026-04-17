@@ -70,6 +70,9 @@ function autoLoadDataForTab(tabName) {
             barberManager.loadBarbers();
         }
     }
+    if (tabName === 'home' && typeof initHome === 'function') {
+        initHome();
+    }
     if (tabName === 'booking' && typeof initBooking === 'function') {
         initBooking();
     }
