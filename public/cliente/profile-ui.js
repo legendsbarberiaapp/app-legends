@@ -166,9 +166,29 @@
         container.innerHTML = html;
     }
 
+    /**
+     * Muestra el botón "Activar notificaciones" solo si el permiso del
+     * navegador está en 'default' (el usuario aún no decidió).
+     */
+    function toggleNotificationsButton() {
+        const btn = document.getElementById('profile-enable-notifications');
+        if (!btn) return;
+        if (!window.Notifications) { btn.classList.add('hidden'); return; }
+        const permission = window.Notifications.getPermission();
+        if (permission === 'default') {
+            btn.classList.remove('hidden');
+            btn.classList.add('flex');
+        } else {
+            btn.classList.add('hidden');
+            btn.classList.remove('flex');
+        }
+    }
+
     async function initProfile() {
         const user = roleManager && roleManager.currentUser;
         if (!user || !user.uid) return;
+
+        toggleNotificationsButton();
 
         try {
             const citas = await CitasService.listByCliente(user.uid);
@@ -204,7 +224,19 @@
         }
     }
 
+    async function activarNotificaciones() {
+        if (!window.Notifications) return;
+        const result = await window.Notifications.request();
+        if (result === 'granted') {
+            window.showToast && window.showToast('Notificaciones activadas ✓', 'success');
+        } else if (result === 'denied') {
+            window.showToast && window.showToast('Las notificaciones quedaron bloqueadas. Actívalas desde la configuración del navegador.', 'info');
+        }
+        toggleNotificationsButton();
+    }
+
     window.initProfile = initProfile;
     window.cancelarMiReserva = cancelarMiReserva;
+    window.activarNotificaciones = activarNotificaciones;
     console.log('✓ ProfileUI loaded');
 })();

@@ -214,6 +214,14 @@ class FirebaseAuthAdapter {
                 roleManager.initialized = true;
                 roleManager.renderForRole();
 
+                // Arrancar listeners real-time según rol
+                if (userData.role === 'cliente' && typeof window.startClienteCitasListener === 'function') {
+                    window.startClienteCitasListener(userData.uid);
+                }
+                if (userData.role === 'admin' && typeof window.startAdminPendingListener === 'function') {
+                    window.startAdminPendingListener();
+                }
+
                 // Mostrar app directamente (sin mostrar botones de login)
                 const splash = document.getElementById('splash-screen');
                 const app = document.getElementById('main-app');
@@ -231,6 +239,14 @@ class FirebaseAuthAdapter {
                 }
             } else {
                 console.log('✓ Usuario desconectado de Firebase');
+
+                // Detener listeners real-time (si estaban activos)
+                if (typeof window.stopClienteCitasListener === 'function') {
+                    window.stopClienteCitasListener();
+                }
+                if (typeof window.stopAdminPendingListener === 'function') {
+                    window.stopAdminPendingListener();
+                }
 
                 // Ocultar spinner y mostrar botones de login
                 if (loadingState) loadingState.style.display = 'none';
