@@ -16,8 +16,6 @@ const ROLE_CONFIGS = {
     cliente: {
         tabs: [
             { id: 'home', icon: 'home', label: 'Inicio', fill: true },
-            { id: 'services', icon: 'content_cut', label: 'Servicios', fill: false },
-            { id: 'barbers', icon: 'group', label: 'Barberos', fill: false },
             { id: 'booking', icon: 'calendar_month', label: 'Reservar', fill: false },
             { id: 'profile', icon: 'account_circle', label: 'Perfil', fill: false }
         ],

@@ -4,9 +4,25 @@
  */
 
 // =============================================
-// EMAIL ADMIN HARDCODEADO - ÚNICO ADMINISTRADOR
+// EMAILS ADMIN HARDCODEADOS
+// Los usuarios con estos emails reciben rol 'admin' automáticamente
+// al iniciar sesión y no pueden ser degradados desde la UI.
+// Para agregar/quitar admins: editar este array y desplegar.
 // =============================================
-const ADMIN_EMAIL = 'legends.barberia.app@gmail.com';
+const ADMIN_EMAILS = [
+    'legends.barberia.app@gmail.com',
+    'sinfiniity@gmail.com'
+];
+
+// Retrocompat: algunos archivos todavía referencian ADMIN_EMAIL singular.
+// Mantenemos como alias del primer admin (el principal del negocio).
+const ADMIN_EMAIL = ADMIN_EMAILS[0];
+
+function isAdminEmail(email) {
+    if (!email) return false;
+    const lower = String(email).toLowerCase();
+    return ADMIN_EMAILS.some(e => e.toLowerCase() === lower);
+}
 
 class FirebaseAuthAdapter {
     constructor() {
@@ -76,14 +92,14 @@ class FirebaseAuthAdapter {
 
     /**
      * Crear o recuperar documento de usuario en Firestore.
-     * Si el email es ADMIN_EMAIL, forzar rol 'admin'.
+     * Si el email está en ADMIN_EMAILS, forzar rol 'admin'.
      */
     async ensureUserDocument(firebaseUser) {
         const userRef = this.db.collection('users').doc(firebaseUser.uid);
         const doc = await userRef.get();
 
-        // Determinar el rol: admin si es el email hardcodeado
-        const isAdmin = firebaseUser.email && firebaseUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+        // Determinar el rol: admin si está en la lista de emails admin
+        const isAdmin = isAdminEmail(firebaseUser.email);
 
         if (!doc.exists) {
             const newUserData = {
@@ -177,12 +193,12 @@ class FirebaseAuthAdapter {
         if (!this.initialized) return false;
 
         try {
-            // Verificar que no se esté cambiando al admin
+            // Verificar que no se esté cambiando el rol de un admin hardcodeado
             const userDoc = await this.db.collection('users').doc(uid).get();
             if (userDoc.exists) {
                 const userData = userDoc.data();
-                if (userData.email && userData.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-                    console.warn('⚠ No se puede cambiar el rol del administrador');
+                if (isAdminEmail(userData.email)) {
+                    console.warn('⚠ No se puede cambiar el rol de un administrador hardcodeado');
                     return false;
                 }
             }

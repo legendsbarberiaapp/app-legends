@@ -226,24 +226,30 @@ class RoleManager {
         const nameDisplay = document.getElementById('profile-name-display');
         const emailDisplay = document.getElementById('profile-email-display');
 
-        if (avatarImg && this.currentUser.photoURL) {
-            avatarImg.src = this.currentUser.photoURL;
-        } else if (avatarImg) {
-            // Placeholder si no tiene foto de Google
-            const fallbackName = this.currentUser.displayName || 'User';
-            avatarImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(fallbackName)}&background=c9a74a&color=000`;
+        if (avatarImg) {
+            // Fallback con iniciales del usuario (siempre disponible)
+            const fallbackName = this.currentUser.displayName || 'Usuario';
+            const fallbackSrc = `https://ui-avatars.com/api/?name=${encodeURIComponent(fallbackName)}&background=c9a74a&color=000&size=400&bold=true`;
+
+            // Foto de Google: Google sirve =s96-c por defecto, la subimos a s=400
+            // para que no se pixele en el avatar grande.
+            let src = this.currentUser.photoURL || fallbackSrc;
+            if (typeof src === 'string' && /googleusercontent\.com/.test(src)) {
+                src = src.replace(/=s\d+(-c)?/g, '=s400-c').replace(/\/s\d+-c\//g, '/s400-c/');
+            }
+
+            // Google pide no-referrer para permitir hotlink desde otro origen
+            avatarImg.setAttribute('referrerpolicy', 'no-referrer');
+            // Fallback automático si la foto de Google falla (expired, 403, etc.)
+            avatarImg.onerror = function () {
+                avatarImg.onerror = null;
+                avatarImg.src = fallbackSrc;
+            };
+            avatarImg.src = src;
         }
 
         if (nameDisplay) {
-            // Dividir nombre y apellido por estética si es posible
-            const nameParts = (this.currentUser.displayName || 'Usuario').split(' ');
-            if (nameParts.length >= 2) {
-                const fName = nameParts.shift();
-                const lName = nameParts.join(' ');
-                nameDisplay.innerHTML = `${fName}<br><span class="text-primary drop-shadow-[0_0_15px_rgba(201,167,74,0.6)]"></span> ${lName}`;
-            } else {
-                nameDisplay.textContent = this.currentUser.displayName;
-            }
+            nameDisplay.textContent = this.currentUser.displayName || 'Usuario';
         }
 
         if (emailDisplay) {

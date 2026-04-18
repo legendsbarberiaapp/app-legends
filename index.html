@@ -101,12 +101,10 @@
     <script src="admin/pending-listener.js"></script>
     <!-- Catálogo de servicios (fuente única, leído por booking y services) -->
     <script src="cliente/servicios-catalog.js"></script>
-    <!-- UI del cliente (home, reserva, perfil, barberos, servicios) -->
+    <!-- UI del cliente (home con servicios+barberos integrados, reserva, perfil) -->
     <script src="cliente/home-ui.js"></script>
     <script src="cliente/booking-ui.js"></script>
     <script src="cliente/profile-ui.js"></script>
-    <script src="cliente/barbers-ui.js"></script>
-    <script src="cliente/services-ui.js"></script>
     <script src="cliente/cita-listener.js"></script>
     <!-- UI del barbero (citas) -->
     <script src="barbero/citas-ui.js"></script>
@@ -237,17 +235,9 @@
     <!-- MAIN APP -->
     <div id="main-app" class="screen hidden">
 
-        <!-- HOME TAB (partial) -->
+        <!-- HOME TAB (partial) — integra servicios y barberos como secciones -->
         <div id="home-tab" class="tab-content active h-[100dvh] w-full flex flex-col relative"
             data-partial="screens/cliente/home.html"></div>
-
-        <!-- SERVICES TAB (partial) -->
-        <div id="services-tab" class="tab-content hidden h-[100dvh] w-full overflow-y-auto no-scrollbar relative"
-            data-partial="screens/cliente/services.html"></div>
-
-        <!-- BARBERS TAB (partial) -->
-        <div id="barbers-tab" class="tab-content hidden h-[100dvh] w-full overflow-y-auto no-scrollbar relative"
-            data-partial="screens/cliente/barbers.html"></div>
 
         <!-- BOOKING TAB (partial) -->
         <div id="booking-tab" class="tab-content hidden h-[100dvh] w-full flex flex-col relative"

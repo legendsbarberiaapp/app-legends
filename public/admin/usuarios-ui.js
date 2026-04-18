@@ -79,7 +79,7 @@ function renderUserSection(title, users, icon, color, showActions = false) {
     } else {
         html += `<div class="space-y-2">`;
         users.forEach(user => {
-            const isAdmin = user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+            const isAdmin = typeof isAdminEmail === 'function' ? isAdminEmail(user.email) : (user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase());
 
             html += `
                 <div class="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/8 transition-colors">

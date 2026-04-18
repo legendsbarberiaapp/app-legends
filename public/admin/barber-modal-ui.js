@@ -65,6 +65,26 @@
 
         const horarioHTML = Object.entries(DIAS_NOMBRES).map(([key, label]) => {
             const config = barberData?.horario?.[key] || { activo: false, desde: '09:00', hasta: '18:00' };
+
+            // Domingo: bloqueado siempre (solo cortes walk-in en la barbería)
+            if (key === 'domingo') {
+                return `
+                <div class="barber-schedule-day" data-day="${key}" style="opacity:0.55;">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3 flex-1">
+                            <div class="barber-day-toggle" style="opacity:0.4; cursor:not-allowed;" title="Domingo no se puede activar">
+                                <div class="barber-day-toggle-dot"></div>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-sm font-bold text-white/55">${label}</span>
+                                <span class="text-[10px] font-semibold text-amber-400/80">Solo cortes en barbería</span>
+                            </div>
+                        </div>
+                        <span class="material-symbols-outlined text-amber-400/70 text-base" style="font-variation-settings: 'FILL' 1" title="Solo atención presencial este día">store</span>
+                    </div>
+                </div>`;
+            }
+
             return `
             <div class="barber-schedule-day" data-day="${key}">
                 <div class="flex items-center justify-between">
@@ -343,6 +363,11 @@
 
         const horario = {};
         DIAS.forEach(dia => {
+            // Domingo siempre bloqueado (solo cortes presenciales en barbería)
+            if (dia === 'domingo') {
+                horario[dia] = { activo: false, desde: '09:00', hasta: '18:00' };
+                return;
+            }
             const toggle = document.getElementById(`day-toggle-${dia}`);
             const from = document.getElementById(`time-from-${dia}`);
             const to = document.getElementById(`time-to-${dia}`);

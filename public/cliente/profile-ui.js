@@ -34,7 +34,7 @@
         const badge = document.getElementById('profile-tier-badge');
         if (!badge) return;
         badge.innerHTML = `
-            <span class="material-symbols-outlined text-primary text-base mr-2" style="font-variation-settings: 'FILL' 1">${tier.icon}</span>
+            <span class="material-symbols-outlined text-primary text-base mr-2" style="font-variation-settings: 'FILL' 1" aria-hidden="true">${tier.icon}</span>
             <span class="text-sm font-black text-primary tracking-wider uppercase">${tier.nombre}</span>
         `;
     }
@@ -50,46 +50,46 @@
 
         if (vEl) vEl.textContent = completadas.length;
         if (pEl) pEl.textContent = proximas.length;
-        if (gEl) gEl.textContent = `$${gasto}`;
+        if (gEl) gEl.textContent = window.formatCOP(gasto);
 
         return completadas.length;
     }
 
     function renderReservaCard(cita, opts = {}) {
-        const { showCancelBtn = false, muted = false, labelEstado = '', colorEstado = 'primary' } = opts;
+        const { showCancelBtn = false, muted = false, labelEstado = '', colorEstado = 'primary', staggerIndex = 0 } = opts;
 
         const colorMap = {
             primary: { bg: 'bg-primary/20', border: 'border-primary/30', text: 'text-primary' },
             green: { bg: 'bg-green-500/20', border: 'border-green-500/30', text: 'text-green-400' },
             red: { bg: 'bg-red-500/15', border: 'border-red-500/25', text: 'text-red-400' },
-            white: { bg: 'bg-white/10', border: 'border-white/15', text: 'text-white/70' }
+            white: { bg: 'bg-white/10', border: 'border-white/15', text: 'text-white/75' }
         };
         const c = colorMap[colorEstado] || colorMap.primary;
 
-        const opacity = muted ? 'opacity-70' : '';
+        const opacity = muted ? 'opacity-75' : '';
 
         const cancelBtn = showCancelBtn ? `
-            <button onclick="cancelarMiReserva('${cita.id}')"
-                class="mt-3 w-full px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400/80 text-[11px] font-black uppercase tracking-wide hover:bg-red-500/20 transition-all active:scale-95">
-                <span class="material-symbols-outlined text-xs align-middle mr-1">close</span>
+            <button onclick="cancelarMiReserva('${cita.id}')" aria-label="Cancelar reserva del ${formatearFecha(cita.fecha)} a las ${cita.hora || ''}"
+                class="mt-3 w-full px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400/85 text-[11px] font-black uppercase tracking-wide hover:bg-red-500/20 transition-all active:scale-95">
+                <span class="material-symbols-outlined text-xs align-middle mr-1" aria-hidden="true">close</span>
                 Cancelar reserva
             </button>
         ` : '';
 
         return `
-            <div class="p-4 rounded-2xl bg-gradient-to-br from-surface-dark to-card-dark border border-white/10 ${opacity}">
+            <div class="stagger-item p-4 rounded-2xl bg-gradient-to-br from-surface-dark to-card-dark border border-white/10 ${opacity}" style="--stagger-index: ${staggerIndex};">
                 <div class="flex items-start gap-4">
                     <div class="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/30 flex items-center justify-center text-primary shadow-lg shrink-0">
-                        <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 0, 'wght' 300">content_cut</span>
+                        <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 0, 'wght' 300" aria-hidden="true">content_cut</span>
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="flex items-start justify-between gap-2">
                             <p class="text-sm font-bold text-white leading-tight truncate">${cita.servicioNombre || 'Servicio'}</p>
-                            <span class="text-primary font-black text-sm shrink-0">$${cita.servicioPrecio || 0}</span>
+                            <span class="text-primary font-black text-sm shrink-0 tabular-nums">${window.formatCOP(cita.servicioPrecio || 0)}</span>
                         </div>
-                        <div class="flex items-center gap-2 text-xs text-white/50 mt-1">
-                            <span class="font-semibold text-primary/80">${cita.barberoNombre || 'Barbero'}</span>
-                            <span class="w-1 h-1 rounded-full bg-white/30"></span>
+                        <div class="flex items-center gap-2 text-xs text-white/65 mt-1 flex-wrap">
+                            <span class="font-semibold text-primary/85">${cita.barberoNombre || 'Barbero'}</span>
+                            <span class="w-1 h-1 rounded-full bg-white/35"></span>
                             <span class="font-medium">${formatearFecha(cita.fecha)} · ${cita.hora || ''}</span>
                         </div>
                         ${labelEstado ? `
@@ -104,17 +104,17 @@
         `;
     }
 
-    function renderSeccion(titulo, icon, colorClass, citas, opts = {}) {
+    function renderSeccion(titulo, icon, colorClass, citas, opts = {}, startIndex = 0) {
         if (citas.length === 0) return '';
         return `
             <div class="mb-6">
                 <div class="flex items-center gap-2 mb-3">
-                    <span class="material-symbols-outlined ${colorClass} text-base" style="font-variation-settings: 'FILL' 1">${icon}</span>
+                    <span class="material-symbols-outlined ${colorClass} text-base" style="font-variation-settings: 'FILL' 1" aria-hidden="true">${icon}</span>
                     <h4 class="text-white font-black text-xs uppercase tracking-wider">${titulo}</h4>
-                    <span class="px-2 py-0.5 rounded-full bg-white/10 text-white/70 text-[10px] font-black border border-white/10">${citas.length}</span>
+                    <span class="px-2 py-0.5 rounded-full bg-white/10 text-white/75 text-[10px] font-black border border-white/10 tabular-nums">${citas.length}</span>
                 </div>
                 <div class="space-y-2">
-                    ${citas.map(cita => renderReservaCard(cita, opts)).join('')}
+                    ${citas.map((cita, i) => renderReservaCard(cita, { ...opts, staggerIndex: startIndex + i })).join('')}
                 </div>
             </div>
         `;
@@ -126,10 +126,17 @@
 
         if (citas.length === 0) {
             container.innerHTML = `
-                <div class="flex flex-col items-center gap-3 py-10 rounded-2xl bg-white/[0.02] border border-white/[0.05]">
-                    <span class="material-symbols-outlined text-white/20 text-5xl" style="font-variation-settings: 'FILL' 1">event_available</span>
-                    <p class="text-white/50 text-sm font-medium text-center">Aún no has reservado ninguna cita</p>
-                    <p class="text-white/30 text-xs text-center">Tu próxima cita aparecerá aquí</p>
+                <div class="empty-state-premium fade-in-soft">
+                    <div class="relative">
+                        <div class="absolute inset-0 bg-primary/10 rounded-full blur-xl"></div>
+                        <div class="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-primary/60 text-4xl" style="font-variation-settings: 'FILL' 1" aria-hidden="true">event_available</span>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-white/85 text-sm font-bold mb-1">Aún no has reservado ninguna cita</p>
+                        <p class="text-white/50 text-xs">Tu próxima cita aparecerá aquí</p>
+                    </div>
                 </div>
             `;
             return;
@@ -142,26 +149,30 @@
         const canceladas = citas.filter(c => c.estado === 'cancelada');
 
         let html = '';
+        let idx = 0;
         html += renderSeccion('Próximas', 'event_available', 'text-green-400', proximas, {
             showCancelBtn: true,
             labelEstado: 'Confirmada',
             colorEstado: 'green'
-        });
+        }, idx);
+        idx += proximas.length;
         html += renderSeccion('Esperando Confirmación', 'schedule', 'text-primary', pendientes, {
             showCancelBtn: true,
             labelEstado: 'Pendiente',
             colorEstado: 'primary'
-        });
-        html += renderSeccion('Historial', 'task_alt', 'text-white/40', completadas, {
+        }, idx);
+        idx += pendientes.length;
+        html += renderSeccion('Historial', 'task_alt', 'text-white/50', completadas, {
             muted: true,
             labelEstado: 'Completada',
             colorEstado: 'white'
-        });
-        html += renderSeccion('Canceladas', 'cancel', 'text-red-400/60', canceladas, {
+        }, idx);
+        idx += completadas.length;
+        html += renderSeccion('Canceladas', 'cancel', 'text-red-400/70', canceladas, {
             muted: true,
             labelEstado: 'Cancelada',
             colorEstado: 'red'
-        });
+        }, idx);
 
         container.innerHTML = html;
     }
@@ -188,6 +199,14 @@
         const user = roleManager && roleManager.currentUser;
         if (!user || !user.uid) return;
 
+        // El partial de profile acaba de inyectarse en el DOM, así que
+        // ahora sí podemos sincronizar foto/nombre/email con los datos
+        // del usuario. roleManager lo intentó antes del partial pero los
+        // elementos no existían todavía.
+        if (typeof roleManager.updateProfileUI === 'function') {
+            roleManager.updateProfileUI();
+        }
+
         toggleNotificationsButton();
 
         try {
@@ -200,10 +219,15 @@
             const container = document.getElementById('profile-reservas-container');
             if (container) {
                 container.innerHTML = `
-                    <div class="text-center py-8">
-                        <p class="text-red-400 text-xs">Error al cargar tus reservas</p>
-                        <button onclick="initProfile()" class="mt-3 px-4 py-2 bg-primary/20 text-primary text-xs font-bold rounded-lg border border-primary/30">
-                            Reintentar
+                    <div class="empty-state-premium fade-in-soft" style="border-color: rgba(239,68,68,0.2);">
+                        <div class="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/25 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-red-400 text-3xl" aria-hidden="true">error</span>
+                        </div>
+                        <p class="text-red-400 text-sm font-bold">Error al cargar tus reservas</p>
+                        <button onclick="initProfile()" aria-label="Reintentar carga de reservas"
+                            class="flex items-center gap-2 px-5 py-2.5 bg-primary/15 text-primary text-xs font-black uppercase tracking-wider rounded-xl border border-primary/30 hover:bg-primary/25 transition-all active:scale-95">
+                            <span class="material-symbols-outlined text-base" aria-hidden="true">refresh</span>
+                            <span>Reintentar</span>
                         </button>
                     </div>
                 `;

@@ -68,12 +68,18 @@ service cloud.firestore {
       // LEER:
       // - el cliente dueño de la cita
       // - el barbero asignado a esa cita
-      // - cualquier admin
+      // - cualquier admin o barbero (para panels internos)
+      // - cualquier usuario autenticado SI la cita está activa (pendiente o
+      //   confirmada). Necesario para que el flujo de reserva del cliente
+      //   pueda saber qué slots están ocupados por otros. Las citas canceladas
+      //   o completadas siguen siendo privadas.
       allow read: if isSignedIn() && (
         resource.data.clienteId == request.auth.uid ||
         resource.data.barberoId == request.auth.uid ||
         isAdmin() ||
-        isBarbero()
+        isBarbero() ||
+        resource.data.estado == 'pendiente' ||
+        resource.data.estado == 'confirmada'
       );
 
       // CREAR: solo el propio cliente puede agendar para sí mismo, y nace pendiente.

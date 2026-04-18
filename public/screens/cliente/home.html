@@ -2,7 +2,7 @@
 <main class="flex-1 overflow-y-auto no-scrollbar relative z-0 pb-32">
 
     <!-- Hero minimalista: logo + saludo -->
-    <div class="relative w-full h-[52vh] min-h-[380px] overflow-hidden">
+    <div class="relative w-full h-[40vh] min-h-[300px] overflow-hidden">
         <!-- Fondo con gradientes + textura -->
         <div class="absolute inset-0 bg-gradient-to-br from-background-dark via-black to-background-dark"></div>
         <div class="absolute inset-0 smoke-overlay opacity-40"></div>
@@ -11,42 +11,86 @@
         <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-background-dark"></div>
 
         <!-- Top brand -->
-        <div class="absolute top-0 left-0 w-full px-6 pt-14 z-10">
+        <div class="absolute top-0 left-0 w-full px-6 pt-14 z-10 fade-in-soft">
             <div class="flex items-center gap-2">
-                <img src="logo.png" alt="Logo" class="h-6 w-auto object-contain">
+                <img src="logo.png" alt="Logo Legends Barbería" class="h-6 w-auto object-contain">
                 <p class="text-primary/90 font-extrabold text-xs tracking-[0.2em] uppercase">Legends Barbería</p>
             </div>
         </div>
 
         <!-- Saludo centrado -->
-        <div class="absolute inset-0 flex flex-col items-center justify-center px-6 z-10 text-center">
-            <p class="text-white/40 text-xs font-bold uppercase tracking-[0.3em] mb-3">Bienvenido de nuevo</p>
-            <h1 class="text-white text-[42px] font-black leading-[1.05] tracking-tight drop-shadow-2xl">
+        <div class="absolute inset-0 flex flex-col items-center justify-center px-6 z-10 text-center fade-in-soft" style="animation-delay: 80ms;">
+            <p class="text-white/50 text-[11px] font-bold uppercase tracking-[0.3em] mb-3">Bienvenido de nuevo</p>
+            <h1 class="text-white text-[38px] sm:text-[42px] font-black leading-[1.05] tracking-tight drop-shadow-2xl">
                 Hola,<br>
-                <span id="home-greeting-name" class="text-primary drop-shadow-[0_0_30px_rgba(201,167,74,0.6)]">Usuario</span>
+                <span id="home-greeting-name" class="text-primary drop-shadow-[0_0_24px_rgba(201,167,74,0.45)]">Usuario</span>
             </h1>
         </div>
     </div>
 
     <!-- Próxima cita (dinámico, llenado por home-ui.js) -->
-    <div class="relative px-6 pt-8">
+    <div class="relative px-6 pt-6 fade-in-soft" style="animation-delay: 160ms;">
         <div id="home-proxima-container">
-            <div class="flex items-center gap-3 p-4 rounded-2xl bg-white/[0.02] border border-white/[0.05]">
-                <div class="auth-checking-spinner"></div>
-                <p class="text-white/40 text-sm">Cargando...</p>
+            <!-- Skeleton mientras carga (reemplazado por home-ui.js) -->
+            <div class="space-y-3">
+                <div class="skeleton-shimmer h-4 w-32 rounded"></div>
+                <div class="skeleton-shimmer h-28 w-full rounded-2xl"></div>
             </div>
+        </div>
+    </div>
+
+    <!-- Servicios populares (dinámico, llenado por home-ui.js) -->
+    <div class="relative pt-8 fade-in-soft" style="animation-delay: 220ms;">
+        <div class="px-6 flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-lg" style="font-variation-settings: 'FILL' 1" aria-hidden="true">content_cut</span>
+                <h3 class="text-white text-sm font-black uppercase tracking-wider">Servicios Populares</h3>
+            </div>
+            <button onclick="switchTab('booking')" aria-label="Ver todos los servicios al reservar"
+                class="flex items-center gap-1 text-primary/85 hover:text-primary text-xs font-bold transition-colors active:scale-95">
+                <span>Ver todos</span>
+                <span class="material-symbols-outlined text-sm" aria-hidden="true">arrow_forward</span>
+            </button>
+        </div>
+        <div id="home-servicios-preview" class="flex gap-3 overflow-x-auto no-scrollbar pb-2 px-6">
+            <!-- Cards inyectadas por home-ui.js -->
+            <div class="skeleton-shimmer h-40 w-40 rounded-2xl flex-shrink-0"></div>
+            <div class="skeleton-shimmer h-40 w-40 rounded-2xl flex-shrink-0 opacity-80"></div>
+            <div class="skeleton-shimmer h-40 w-40 rounded-2xl flex-shrink-0 opacity-60"></div>
+        </div>
+    </div>
+
+    <!-- Nuestros Barberos (dinámico, llenado por home-ui.js) -->
+    <div class="relative pt-6 fade-in-soft" style="animation-delay: 280ms;">
+        <div class="px-6 flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-lg" style="font-variation-settings: 'FILL' 1" aria-hidden="true">group</span>
+                <h3 class="text-white text-sm font-black uppercase tracking-wider">Nuestros Barberos</h3>
+            </div>
+            <button onclick="switchTab('booking')" aria-label="Ver todos los barberos al reservar"
+                class="flex items-center gap-1 text-primary/85 hover:text-primary text-xs font-bold transition-colors active:scale-95">
+                <span>Ver todos</span>
+                <span class="material-symbols-outlined text-sm" aria-hidden="true">arrow_forward</span>
+            </button>
+        </div>
+        <div id="home-barberos-preview" class="flex gap-3 overflow-x-auto no-scrollbar pb-2 px-6">
+            <!-- Cards inyectadas por home-ui.js -->
+            <div class="skeleton-shimmer h-28 w-24 rounded-2xl flex-shrink-0"></div>
+            <div class="skeleton-shimmer h-28 w-24 rounded-2xl flex-shrink-0 opacity-80"></div>
+            <div class="skeleton-shimmer h-28 w-24 rounded-2xl flex-shrink-0 opacity-60"></div>
+            <div class="skeleton-shimmer h-28 w-24 rounded-2xl flex-shrink-0 opacity-40"></div>
         </div>
     </div>
 </main>
 
 <!-- FAB de reserva -->
 <div class="floating-action-button fixed bottom-28 right-6 z-20">
-    <div class="absolute -inset-2 bg-primary/30 rounded-full blur-xl animate-pulse"></div>
-    <button onclick="switchTab('booking')"
-        class="relative overflow-hidden group flex items-center justify-center bg-gradient-to-br from-primary via-primary-light to-primary text-matte-black h-[64px] w-[64px] rounded-full shadow-[0_10px_40px_rgba(201,167,74,0.5)] hover:shadow-[0_15px_50px_rgba(201,167,74,0.7)] transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 active:scale-95">
+    <div class="absolute -inset-2 bg-primary/30 rounded-full blur-xl gold-pulse-soft"></div>
+    <button onclick="switchTab('booking')" aria-label="Reservar nueva cita"
+        class="relative overflow-hidden group flex items-center justify-center bg-gradient-to-br from-primary via-primary-light to-primary text-matte-black h-[64px] w-[64px] rounded-full shadow-[0_10px_40px_rgba(201,167,74,0.45)] hover:shadow-[0_15px_50px_rgba(201,167,74,0.65)] transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 active:scale-95">
         <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000 rounded-full"></div>
         <div class="relative flex items-center justify-center">
-            <span class="material-symbols-outlined text-[32px] font-bold" style="font-variation-settings: 'FILL' 1">calendar_month</span>
+            <span class="material-symbols-outlined text-[32px] font-bold" style="font-variation-settings: 'FILL' 1" aria-hidden="true">calendar_month</span>
         </div>
     </button>
 </div>

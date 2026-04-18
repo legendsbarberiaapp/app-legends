@@ -30,6 +30,53 @@
         return `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`;
     }
 
+    /**
+     * Para citas legacy creadas antes del flujo de captura de teléfono,
+     * intenta recuperar el `phone` desde el doc del usuario en Firestore.
+     * Hace las lecturas en paralelo (una por cliente único). Si el usuario
+     * tampoco tiene teléfono guardado, la cita queda como "sin teléfono".
+     *
+     * Este enriquecimiento es SOLO en memoria — no modifica los docs de
+     * citas en Firestore. La próxima reserva del cliente ya guardará el
+     * teléfono directamente en la cita.
+     */
+    async function enrichPhonesFromUsers(citas) {
+        const faltantes = citas.filter(c => !c.clientePhone && c.clienteId);
+        if (faltantes.length === 0) return citas;
+
+        const idsUnicos = [...new Set(faltantes.map(c => c.clienteId))];
+        const db = (typeof firebaseAdapter !== 'undefined' && firebaseAdapter.db) ? firebaseAdapter.db : null;
+        if (!db) return citas;
+
+        const phoneByUid = {};
+        await Promise.all(idsUnicos.map(async (uid) => {
+            try {
+                const doc = await db.collection('users').doc(uid).get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    if (data && data.phone) phoneByUid[uid] = data.phone;
+                }
+            } catch (error) {
+                // Silencioso — si no podemos leer, la cita queda sin teléfono
+                console.warn(`No se pudo leer phone del usuario ${uid}:`, error?.message || error);
+            }
+        }));
+
+        citas.forEach(c => {
+            if (!c.clientePhone && phoneByUid[c.clienteId]) {
+                c.clientePhone = phoneByUid[c.clienteId];
+                c._phoneFromUser = true; // flag para indicar que vino del doc de usuario (opcional)
+            }
+        });
+
+        const recuperadas = faltantes.filter(c => c.clientePhone).length;
+        if (recuperadas > 0) {
+            console.log(`✓ Teléfono recuperado desde users para ${recuperadas}/${faltantes.length} citas legacy`);
+        }
+
+        return citas;
+    }
+
     function renderCitaCard(cita) {
         const foto = cita.clientePhotoURL
             || `https://ui-avatars.com/api/?name=${encodeURIComponent(cita.clienteNombre || 'Cliente')}&background=c9a74a&color=000`;
@@ -53,7 +100,7 @@
                     <div class="flex-1 min-w-0">
                         <div class="flex items-start justify-between gap-2 mb-1">
                             <p class="text-white text-xs font-black truncate">${cita.clienteNombre || 'Cliente'}</p>
-                            <span class="text-primary text-xs font-black shrink-0">$${cita.servicioPrecio || 0}</span>
+                            <span class="text-primary text-xs font-black shrink-0">${typeof window.formatCOP === 'function' ? window.formatCOP(cita.servicioPrecio || 0) : '$' + (cita.servicioPrecio || 0)}</span>
                         </div>
                         <p class="text-white/50 text-[11px] truncate">${cita.servicioNombre || 'Servicio'} con ${cita.barberoNombre || 'Barbero'}</p>
                         <div class="flex items-center gap-1.5 mt-1.5">
@@ -121,6 +168,9 @@
                 `;
                 return;
             }
+
+            // Enriquecer citas sin teléfono con el phone del doc del usuario (para citas legacy)
+            await enrichPhonesFromUsers(pendientes);
 
             container.innerHTML = pendientes.map(renderCitaCard).join('');
             console.log(`✓ ${pendientes.length} citas pendientes renderizadas`);

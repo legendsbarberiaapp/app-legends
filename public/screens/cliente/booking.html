@@ -1,67 +1,98 @@
 <div class="flex-1 overflow-y-auto no-scrollbar relative">
-    <div class="px-6 pt-8 pb-48">
+    <div class="px-6 pt-8 pb-[360px]">
 
         <!-- Header -->
-        <div class="flex items-center gap-4 mb-8">
-            <button onclick="switchTab('home')"
+        <div class="flex items-center gap-4 mb-6 fade-in-soft">
+            <button onclick="switchTab('home')" aria-label="Volver al inicio"
                 class="p-3 rounded-2xl border border-white/10 bg-surface-dark/80 backdrop-blur-sm flex items-center justify-center text-white hover:text-primary hover:border-primary/30 transition-all active:scale-95 group">
-                <span class="material-symbols-outlined group-hover:-translate-x-0.5 transition-transform">arrow_back</span>
+                <span class="material-symbols-outlined group-hover:-translate-x-0.5 transition-transform" aria-hidden="true">arrow_back</span>
             </button>
             <div>
                 <div class="flex items-center gap-2 mb-1">
-                    <span class="material-symbols-outlined text-primary text-lg" style="font-variation-settings: 'FILL' 1">event_available</span>
+                    <span class="material-symbols-outlined text-primary text-lg" style="font-variation-settings: 'FILL' 1" aria-hidden="true">event_available</span>
                     <h2 class="text-2xl font-black text-white tracking-tight">Agendar Cita</h2>
                 </div>
-                <p class="text-white/50 text-xs font-medium">Completa tu reserva en 3 pasos</p>
+                <p id="booking-step-subtitle" class="text-white/60 text-xs font-medium">Paso 1 de 4 · Elegí tu barbero</p>
             </div>
         </div>
 
-        <!-- PASO 1: Servicio -->
-        <div class="mb-8">
+        <!-- Progress stepper 1-2-3-4 -->
+        <div class="progress-track mb-8 fade-in-soft" role="progressbar" aria-label="Progreso de la reserva" style="animation-delay: 80ms;">
+            <div class="progress-step current" id="booking-step-1">1</div>
+            <div class="progress-line" id="booking-line-1"></div>
+            <div class="progress-step" id="booking-step-2">2</div>
+            <div class="progress-line" id="booking-line-2"></div>
+            <div class="progress-step" id="booking-step-3">3</div>
+            <div class="progress-line" id="booking-line-3"></div>
+            <div class="progress-step" id="booking-step-4">4</div>
+        </div>
+
+        <!-- PASO 1: Barbero -->
+        <div id="booking-step-1-content" class="booking-step-content fade-in-soft">
             <div class="flex items-center gap-2 mb-4">
-                <div class="flex items-center justify-center w-7 h-7 rounded-full bg-primary/20 border border-primary/40">
-                    <span class="text-primary text-xs font-black">1</span>
-                </div>
-                <h3 class="text-sm font-black text-white uppercase tracking-wider">Selecciona tu Servicio</h3>
+                <span class="material-symbols-outlined text-primary text-base" style="font-variation-settings: 'FILL' 1" aria-hidden="true">person</span>
+                <h3 class="text-sm font-black text-white uppercase tracking-wider">Elegí tu Barbero</h3>
             </div>
-            <div id="booking-servicios" class="flex gap-3 overflow-x-auto no-scrollbar pb-2 -mx-6 px-6">
-                <!-- Botones inyectados por booking-ui.js -->
+            <div id="booking-barberos" class="flex flex-col gap-4">
+                <!-- Cards inyectadas por booking-ui.js -->
+                <div class="skeleton-shimmer aspect-[4/5] rounded-3xl"></div>
             </div>
         </div>
 
-        <!-- PASO 2: Barbero -->
-        <div class="mb-8">
+        <!-- PASO 2: ¿Querés el corte? -->
+        <div id="booking-step-2-content" class="booking-step-content hidden">
             <div class="flex items-center gap-2 mb-4">
-                <div class="flex items-center justify-center w-7 h-7 rounded-full bg-primary/20 border border-primary/40">
-                    <span class="text-primary text-xs font-black">2</span>
-                </div>
-                <h3 class="text-sm font-black text-white uppercase tracking-wider">Elige tu Barbero</h3>
+                <span class="material-symbols-outlined text-primary text-base" style="font-variation-settings: 'FILL' 1" aria-hidden="true">content_cut</span>
+                <h3 class="text-sm font-black text-white uppercase tracking-wider">¿Querés tomar el corte?</h3>
             </div>
-            <div id="booking-barberos" class="flex gap-4 overflow-x-auto no-scrollbar pb-2 -mx-6 px-6">
-                <!-- Botones inyectados por booking-ui.js -->
+            <div id="booking-corte-opciones" class="flex flex-col gap-3">
+                <!-- Opciones inyectadas por booking-ui.js -->
             </div>
         </div>
 
-        <!-- PASO 3: Fecha y Hora -->
-        <div class="mb-8">
+        <!-- PASO 3: Adicionales -->
+        <div id="booking-step-3-content" class="booking-step-content hidden">
             <div class="flex items-center gap-2 mb-4">
-                <div class="flex items-center justify-center w-7 h-7 rounded-full bg-primary/20 border border-primary/40">
-                    <span class="text-primary text-xs font-black">3</span>
-                </div>
+                <span class="material-symbols-outlined text-primary text-base" style="font-variation-settings: 'FILL' 1" aria-hidden="true">add_circle</span>
+                <h3 class="text-sm font-black text-white uppercase tracking-wider">Agregá adicionales</h3>
+            </div>
+            <p class="text-white/55 text-xs mb-4">Son opcionales. Podés seguir sin agregar ninguno.</p>
+            <div id="booking-adicionales">
+                <!-- Lista inyectada por booking-ui.js -->
+            </div>
+        </div>
+
+        <!-- PASO 4: Fecha y Hora -->
+        <div id="booking-step-4-content" class="booking-step-content hidden">
+            <div class="flex items-center gap-2 mb-4">
+                <span class="material-symbols-outlined text-primary text-base" style="font-variation-settings: 'FILL' 1" aria-hidden="true">calendar_today</span>
                 <h3 class="text-sm font-black text-white uppercase tracking-wider">Fecha y Hora</h3>
             </div>
-            <div class="bg-gradient-to-br from-surface-card to-card-dark p-6 rounded-2xl border border-white/10 shadow-xl">
 
-                <!-- Selector de fechas (próximos 14 días) -->
-                <div id="booking-fechas" class="flex gap-2 overflow-x-auto no-scrollbar pb-3 -mx-2 px-2 mb-6">
-                    <!-- Días inyectados por booking-ui.js -->
+            <div class="bg-gradient-to-br from-surface-card to-card-dark p-6 rounded-2xl border border-white/10 shadow-xl">
+                <p class="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-3">Elegí el día</p>
+                <div class="relative mb-6">
+                    <!-- Flecha izquierda (solo desktop) -->
+                    <button id="booking-fechas-prev" type="button" aria-label="Días anteriores"
+                        class="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 z-20 w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary-dark text-black items-center justify-center shadow-[0_4px_20px_rgba(201,167,74,0.5)] hover:scale-110 active:scale-95 transition-all disabled:opacity-30 disabled:hover:scale-100">
+                        <span class="material-symbols-outlined text-xl font-black" style="font-variation-settings: 'FILL' 1" aria-hidden="true">chevron_left</span>
+                    </button>
+                    <!-- Scroll de fechas -->
+                    <div id="booking-fechas" class="flex gap-2 overflow-x-auto no-scrollbar pb-3 -mx-2 px-2 scroll-smooth">
+                        <!-- Días inyectados por booking-ui.js -->
+                    </div>
+                    <!-- Flecha derecha (solo desktop) -->
+                    <button id="booking-fechas-next" type="button" aria-label="Días siguientes"
+                        class="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-3 z-20 w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary-dark text-black items-center justify-center shadow-[0_4px_20px_rgba(201,167,74,0.5)] hover:scale-110 active:scale-95 transition-all disabled:opacity-30 disabled:hover:scale-100">
+                        <span class="material-symbols-outlined text-xl font-black" style="font-variation-settings: 'FILL' 1" aria-hidden="true">chevron_right</span>
+                    </button>
                 </div>
 
-                <h4 class="text-xs font-black text-white/80 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-primary text-sm">schedule</span>
+                <h4 class="text-xs font-black text-white/85 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-sm" aria-hidden="true">schedule</span>
                     Horarios Disponibles
                 </h4>
-                <div id="booking-horarios" class="grid grid-cols-3 gap-3">
+                <div id="booking-horarios" class="grid grid-cols-3 sm:grid-cols-4 gap-3">
                     <!-- Horarios inyectados por booking-ui.js -->
                 </div>
             </div>
@@ -69,28 +100,36 @@
     </div>
 </div>
 
-<!-- Footer sticky con resumen + botón confirmar -->
-<div class="fixed bottom-[85px] left-0 w-full z-40 bg-gradient-to-t from-black via-surface-dark to-surface-dark/95 border-t border-white/10 px-6 py-5 flex flex-col gap-5 rounded-t-3xl backdrop-blur-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+<!-- Footer sticky con total + navegación -->
+<div class="fixed bottom-[85px] left-0 w-full z-40 bg-gradient-to-t from-black via-surface-dark to-surface-dark/95 border-t border-white/10 px-6 py-5 flex flex-col gap-4 rounded-t-3xl backdrop-blur-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
 
-    <div class="flex items-start justify-between p-4 bg-gradient-to-br from-card-dark/80 to-surface-dark/80 rounded-2xl border border-white/5">
-        <div class="flex flex-col gap-1">
-            <span class="text-primary/70 text-[10px] font-black uppercase tracking-widest">Total a Pagar</span>
-            <span id="booking-total" class="text-white text-3xl font-black tracking-tight">$0</span>
+    <!-- Resumen (total + tags) -->
+    <div id="booking-resumen" class="flex items-start justify-between p-4 bg-gradient-to-br from-card-dark/80 to-surface-dark/80 rounded-2xl border border-white/5">
+        <div class="flex flex-col gap-1 min-w-0">
+            <span class="text-primary/85 text-[10px] font-black uppercase tracking-widest">Total</span>
+            <span id="booking-total" class="text-white text-3xl font-black tracking-tight tabular-nums">$0</span>
         </div>
-        <div class="flex flex-col items-end gap-1">
-            <div id="booking-fecha-resumen" class="flex items-center gap-1.5 text-white/60">
-                <span class="material-symbols-outlined text-xs">event</span>
-                <span class="text-xs font-semibold">— —</span>
+        <div class="flex flex-col items-end gap-1 min-w-0 max-w-[55%]">
+            <div id="booking-tags-resumen" class="flex items-center gap-1.5 flex-wrap justify-end">
+                <!-- Tags inyectados por booking-ui.js -->
             </div>
-            <div id="booking-tags-resumen" class="flex items-center gap-1.5 mt-1">
-                <!-- tags inyectados por booking-ui.js -->
+            <div id="booking-fecha-resumen" class="flex items-center gap-1.5 text-white/70 mt-1">
+                <!-- Fecha+hora inyectada por booking-ui.js -->
             </div>
         </div>
     </div>
 
-    <button id="booking-confirm-btn" onclick="confirmarReserva()" disabled
-        class="relative group w-full bg-gradient-to-r from-primary via-primary-light to-primary text-black font-black text-base py-5 rounded-2xl shadow-[0_6px_25px_rgba(201,167,74,0.4)] active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 overflow-hidden disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100">
-        <span class="relative z-10 uppercase tracking-wide">Confirmar Reserva</span>
-        <span class="relative z-10 material-symbols-outlined font-bold text-xl" style="font-variation-settings: 'FILL' 1">arrow_forward</span>
-    </button>
+    <!-- Botones Atrás / Siguiente -->
+    <div class="flex items-center gap-2">
+        <button id="booking-back-btn" type="button" aria-label="Paso anterior"
+            class="flex items-center justify-center gap-1.5 px-5 py-4 rounded-2xl bg-white/5 border border-white/10 text-white text-sm font-bold hover:bg-white/10 transition-all active:scale-[0.98] hidden">
+            <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_back</span>
+            <span>Atrás</span>
+        </button>
+        <button id="booking-next-btn" type="button" disabled aria-label="Siguiente paso"
+            class="relative group flex-1 bg-gradient-to-r from-primary via-primary-light to-primary text-black font-black text-base py-4 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 overflow-hidden disabled:cursor-not-allowed disabled:active:scale-100">
+            <span class="btn-label relative z-10 uppercase tracking-wide">Siguiente</span>
+            <span class="btn-icon relative z-10 material-symbols-outlined font-bold text-xl transition-transform duration-300 group-hover:translate-x-1" style="font-variation-settings: 'FILL' 1" aria-hidden="true">arrow_forward</span>
+        </button>
+    </div>
 </div>

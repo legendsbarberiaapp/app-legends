@@ -85,6 +85,17 @@
     }
 
     /**
+     * Helpers de ordenamiento en cliente (evitan requerir índices compuestos
+     * en Firestore). Como las listas son chicas (decenas de items por cliente
+     * o barbero) no hay impacto de performance.
+     */
+    function tsSeconds(cita) {
+        return (cita.fechaHora && cita.fechaHora.seconds) ? cita.fechaHora.seconds : 0;
+    }
+    function sortDesc(arr) { return arr.sort((a, b) => tsSeconds(b) - tsSeconds(a)); }
+    function sortAsc(arr) { return arr.sort((a, b) => tsSeconds(a) - tsSeconds(b)); }
+
+    /**
      * Listar citas de un cliente (las suyas, ordenadas por fecha descendente).
      */
     async function listByCliente(clienteId) {
@@ -93,11 +104,10 @@
         try {
             const snapshot = await database.collection(COLLECTION)
                 .where('clienteId', '==', clienteId)
-                .orderBy('fechaHora', 'desc')
                 .get();
             const result = [];
             snapshot.forEach(doc => result.push({ id: doc.id, ...doc.data() }));
-            return result;
+            return sortDesc(result);
         } catch (error) {
             console.error('❌ Error listando citas del cliente:', error);
             return [];
@@ -113,10 +123,10 @@
         try {
             let query = database.collection(COLLECTION).where('barberoId', '==', barberoId);
             if (estado) query = query.where('estado', '==', estado);
-            const snapshot = await query.orderBy('fechaHora', 'asc').get();
+            const snapshot = await query.get();
             const result = [];
             snapshot.forEach(doc => result.push({ id: doc.id, ...doc.data() }));
-            return result;
+            return sortAsc(result);
         } catch (error) {
             console.error('❌ Error listando citas del barbero:', error);
             return [];
@@ -132,11 +142,10 @@
         try {
             const snapshot = await database.collection(COLLECTION)
                 .where('estado', '==', ESTADOS.PENDIENTE)
-                .orderBy('fechaHora', 'asc')
                 .get();
             const result = [];
             snapshot.forEach(doc => result.push({ id: doc.id, ...doc.data() }));
-            return result;
+            return sortAsc(result);
         } catch (error) {
             console.error('❌ Error listando citas pendientes:', error);
             return [];

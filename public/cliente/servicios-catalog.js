@@ -1,7 +1,7 @@
 /**
  * LEGENDS BARBERIA - CATÁLOGO DE SERVICIOS (FUENTE ÚNICA)
  * Los servicios principales que puede reservar el cliente.
- * Usado por booking-ui y services-ui — si lo cambias aquí, cambia en ambos.
+ * Usado por booking-ui y home-ui (preview) — fuente única del catálogo.
  *
  * TODO: cuando el admin tenga UI de catálogo, migrar este array a Firestore
  * y cargar desde ahí. Mientras tanto, edita este archivo para agregar/quitar
@@ -45,3 +45,14 @@ window.SERVICIOS_CATALOG = [
 ];
 
 console.log('✓ ServiciosCatalog loaded');
+
+/**
+ * Formato de precio en pesos colombianos: $20.000 (punto como separador de miles).
+ * Disponible global (window) para ser usado por todos los UI del cliente.
+ */
+if (!window.formatCOP) {
+    window.formatCOP = function (valor) {
+        const n = Number(valor) || 0;
+        return '$' + n.toLocaleString('es-CO');
+    };
+}
