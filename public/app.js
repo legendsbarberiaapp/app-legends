@@ -70,6 +70,9 @@ function autoLoadDataForTab(tabName) {
             barberManager.loadBarbers();
         }
     }
+    if (tabName === 'admin-agenda' && typeof initAgenda === 'function') {
+        initAgenda();
+    }
     if (tabName === 'home' && typeof initHome === 'function') {
         initHome();
     }

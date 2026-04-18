@@ -76,8 +76,10 @@
             </button>
         ` : '';
 
+        const theme = (typeof window.nivelTheme === 'function') ? window.nivelTheme(cita.barberoNivel) : { textCls: 'text-primary/85', borderLeft: '' };
+
         return `
-            <div class="stagger-item p-4 rounded-2xl bg-gradient-to-br from-surface-dark to-card-dark border border-white/10 ${opacity}" style="--stagger-index: ${staggerIndex};">
+            <div class="stagger-item p-4 rounded-2xl bg-gradient-to-br from-surface-dark to-card-dark border border-white/10 ${opacity}" style="--stagger-index: ${staggerIndex}; ${theme.borderLeft}">
                 <div class="flex items-start gap-4">
                     <div class="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/30 flex items-center justify-center text-primary shadow-lg shrink-0">
                         <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 0, 'wght' 300" aria-hidden="true">content_cut</span>
@@ -88,7 +90,7 @@
                             <span class="text-primary font-black text-sm shrink-0 tabular-nums">${window.formatCOP(cita.servicioPrecio || 0)}</span>
                         </div>
                         <div class="flex items-center gap-2 text-xs text-white/65 mt-1 flex-wrap">
-                            <span class="font-semibold text-primary/85">${cita.barberoNombre || 'Barbero'}</span>
+                            <span class="font-semibold ${theme.textCls}">${cita.barberoNombre || 'Barbero'}</span>
                             <span class="w-1 h-1 rounded-full bg-white/35"></span>
                             <span class="font-medium">${formatearFecha(cita.fecha)} · ${cita.hora || ''}</span>
                         </div>

@@ -24,6 +24,21 @@
         Leyenda: 'active-gold',
     };
 
+    // Quita el 57 inicial para mostrar solo los 10 dígitos locales en el input.
+    function displayLocalPhone(raw) {
+        const digits = String(raw || '').replace(/\D/g, '');
+        if (digits.startsWith('57') && digits.length === 12) return digits.slice(2);
+        return digits;
+    }
+
+    // Colombia: siempre guardamos el número con 57 al frente.
+    function normalizeCoPhone(raw) {
+        const digits = String(raw || '').replace(/\D/g, '');
+        if (digits.length === 10) return '57' + digits;
+        if (digits.startsWith('57') && digits.length === 12) return digits;
+        return null; // inválido
+    }
+
     BarberManager.prototype.openAddBarberModal = async function () {
         this.editingBarberId = null;
         await Promise.all([this.loadUsers(), this.loadServiciosCorte(), this.loadAdicionales()]);
@@ -134,6 +149,18 @@
                             <option value="">Seleccionar usuario...</option>
                             ${usersOptions}
                         </select>
+                    </div>
+
+                    <div class="barber-form-section">
+                        <div class="barber-form-label">
+                            <span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1">call</span>
+                            <span>Teléfono (WhatsApp)</span>
+                        </div>
+                        <div class="relative">
+                            <div class="absolute left-3 top-1/2 -translate-y-1/2 text-primary font-black text-sm select-none">+57</div>
+                            <input type="tel" id="barber-phone" inputmode="tel" maxlength="14" placeholder="300 123 4567" value="${displayLocalPhone(barberData?.phone)}" class="barber-form-input pl-12">
+                        </div>
+                        <p class="text-white/30 text-[10px] mt-1.5 pl-1">10 dígitos (sin +57). Se usa para enviarle las reservas por WhatsApp.</p>
                     </div>
 
                     <div class="barber-form-section">
@@ -361,6 +388,14 @@
             return;
         }
 
+        const phoneInput = document.getElementById('barber-phone');
+        const phoneNormalized = normalizeCoPhone(phoneInput?.value || '');
+        if (!phoneNormalized) {
+            this.showToast('Teléfono del barbero: 10 dígitos (Colombia)', 'error');
+            phoneInput?.focus();
+            return;
+        }
+
         const horario = {};
         DIAS.forEach(dia => {
             // Domingo siempre bloqueado (solo cortes presenciales en barbería)
@@ -393,6 +428,7 @@
             userName: userName || currentBarber?.userName || '',
             userPhoto: userPhoto || currentBarber?.userPhoto || '',
             userEmail: userEmail || currentBarber?.userEmail || '',
+            phone: phoneNormalized,
             nivel,
             corte: { servicios: serviciosSeleccionados, precio },
             adicionales: adicionalesSeleccionados,
@@ -411,14 +447,79 @@
             : await this.saveBarber(barberData);
 
         if (success) {
+            const wasCreating = !this.editingBarberId;
             this.showToast(this.editingBarberId ? 'Barbero actualizado ✓' : 'Barbero agregado ✓', 'success');
             this.forceCloseModal();
+
+            // Tras crear un barbero nuevo: abrir popup de bienvenida por WhatsApp
+            if (wasCreating) {
+                setTimeout(() => this.showWelcomeWhatsappDialog(barberData), 400);
+            }
         } else {
             this.showToast('Error al guardar', 'error');
             if (submitBtn) {
                 submitBtn.innerHTML = originalHTML;
                 submitBtn.disabled = false;
             }
+        }
+    };
+
+    /**
+     * Diálogo para enviar al barbero recién creado un mensaje de bienvenida
+     * por WhatsApp con un texto profesional preformateado.
+     */
+    BarberManager.prototype.showWelcomeWhatsappDialog = function (barberData) {
+        const existing = document.getElementById('barber-welcome-overlay');
+        if (existing) existing.remove();
+
+        const firstName = (barberData.userName || '').split(' ')[0] || 'compañero';
+        const phone = String(barberData.phone || '').replace(/\D/g, '');
+        const mensaje =
+            `¡Bienvenido al equipo de Legends Barbería, ${firstName}! 👑\n\n` +
+            `Tu cuenta ya fue creada como barbero profesional en la app.\n\n` +
+            `Ingresá con tu cuenta de Google y vas a poder ver tus citas asignadas, tus horarios y tu dashboard diario.\n\n` +
+            `¡Bienvenido al trono, leyenda!\n— Legends Barbería`;
+
+        const waHref = phone.length >= 10
+            ? `https://wa.me/${phone}?text=${encodeURIComponent(mensaje)}`
+            : null;
+
+        const html = `
+        <div id="barber-welcome-overlay" class="barber-modal-overlay" style="z-index:160">
+            <div class="barber-confirm-dialog">
+                <div class="w-16 h-16 rounded-2xl bg-green-500/10 border border-green-500/20 flex items-center justify-center mx-auto mb-4">
+                    <span class="material-symbols-outlined text-green-400 text-3xl" style="font-variation-settings: 'FILL' 1">waving_hand</span>
+                </div>
+                <h3 class="text-white font-black text-lg text-center mb-2">Barbero creado ✓</h3>
+                <p class="text-white/50 text-sm text-center mb-5">Envialé un mensaje de bienvenida por WhatsApp para que sepa que su cuenta ya está lista.</p>
+                <div class="flex flex-col gap-2.5">
+                    ${waHref
+                        ? `<a href="${waHref}" target="_blank" rel="noopener" onclick="barberManager.closeWelcomeDialog()"
+                            class="flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-green-600 hover:bg-green-500 text-white text-sm font-black uppercase tracking-wide shadow-[0_4px_20px_rgba(34,197,94,0.3)] transition-all active:scale-[0.97]">
+                            <span class="material-symbols-outlined text-base" style="font-variation-settings: 'FILL' 1">chat</span>
+                            Enviar bienvenida por WhatsApp
+                        </a>`
+                        : `<div class="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs text-center font-bold">Teléfono inválido — no se puede enviar</div>`
+                    }
+                    <button onclick="barberManager.closeWelcomeDialog()"
+                        class="px-5 py-3 rounded-xl bg-white/5 border border-white/10 text-white/70 text-xs font-bold hover:bg-white/10 transition-all active:scale-[0.97]">
+                        Omitir por ahora
+                    </button>
+                </div>
+            </div>
+        </div>`;
+
+        document.body.insertAdjacentHTML('beforeend', html);
+        requestAnimationFrame(() => {
+            document.getElementById('barber-welcome-overlay')?.classList.add('visible');
+        });
+    };
+
+    BarberManager.prototype.closeWelcomeDialog = function () {
+        const overlay = document.getElementById('barber-welcome-overlay');
+        if (overlay) {
+            overlay.classList.remove('visible');
+            setTimeout(() => overlay.remove(), 300);
         }
     };
 

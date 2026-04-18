@@ -83,9 +83,13 @@ service cloud.firestore {
       );
 
       // CREAR: solo el propio cliente puede agendar para sí mismo, y nace pendiente.
+      // Flags del stepper admin empiezan en false.
       allow create: if isSignedIn()
                     && request.resource.data.clienteId == request.auth.uid
                     && request.resource.data.estado == 'pendiente';
+
+      // NOTA: el estado 'no_show' lo marca el admin desde la Agenda cuando el
+      // cliente no se presenta; se trata igual que 'completada' para lecturas.
 
       // ACTUALIZAR:
       // - admin puede confirmar/cancelar

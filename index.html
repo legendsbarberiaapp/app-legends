@@ -79,6 +79,7 @@
     <!-- Componentes reutilizables -->
     <script src="components/toast.js"></script>
     <script src="components/notifications.js"></script>
+    <script src="components/nivel-theme.js"></script>
     <!-- Capa de datos (services) -->
     <script src="services/barbers-service.js"></script>
     <script src="services/servicios-service.js"></script>
@@ -98,6 +99,7 @@
     <script src="admin/usuarios-ui.js"></script>
     <script src="admin/dashboard-ui.js"></script>
     <script src="admin/citas-admin-ui.js"></script>
+    <script src="admin/agenda-ui.js"></script>
     <script src="admin/pending-listener.js"></script>
     <!-- Catálogo de servicios (fuente única, leído por booking y services) -->
     <script src="cliente/servicios-catalog.js"></script>
@@ -266,6 +268,10 @@
         <!-- ADMIN DASHBOARD TAB (partial) -->
         <div id="admin-dashboard-tab" class="tab-content hidden h-[100dvh] w-full overflow-y-auto bg-background-dark"
             data-partial="screens/admin/dashboard.html"></div>
+
+        <!-- ADMIN AGENDA TAB (partial) -->
+        <div id="admin-agenda-tab" class="tab-content hidden h-[100dvh] w-full overflow-y-auto bg-background-dark"
+            data-partial="screens/admin/agenda.html"></div>
 
         <!-- ADMIN USUARIOS TAB (partial) -->
         <div id="admin-usuarios-tab" class="tab-content hidden h-[100dvh] w-full overflow-y-auto bg-background-dark"

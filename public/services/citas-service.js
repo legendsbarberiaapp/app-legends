@@ -16,7 +16,8 @@
         PENDIENTE: 'pendiente',
         CONFIRMADA: 'confirmada',
         COMPLETADA: 'completada',
-        CANCELADA: 'cancelada'
+        CANCELADA: 'cancelada',
+        NO_SHOW: 'no_show'
     };
 
     function db() {
@@ -62,6 +63,7 @@
 
                 barberoId: data.barberoId,
                 barberoNombre: data.barberoNombre || '',
+                barberoNivel: data.barberoNivel || null,
 
                 servicioNombre: data.servicioNombre || '',
                 servicioPrecio: Number(data.servicioPrecio) || 0,
@@ -74,7 +76,13 @@
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
                 confirmedAt: null,
-                confirmedBy: null
+                confirmedBy: null,
+
+                // Stepper de confirmación (admin)
+                adminContactoCliente: false,
+                adminContactoBarbero: false,
+                completedAt: null,
+                noShowAt: null
             });
             console.log(`✓ Cita creada: ${docRef.id}`);
             return docRef.id;
@@ -237,7 +245,8 @@
     }
 
     /**
-     * Marcar cita como completada (barbero al terminar el servicio).
+     * Marcar cita como completada (barbero al terminar el servicio, o admin
+     * al verificar desde la Agenda que el cliente sí llegó).
      */
     async function completar(citaId) {
         const database = db();
@@ -245,6 +254,7 @@
         try {
             await database.collection(COLLECTION).doc(citaId).update({
                 estado: ESTADOS.COMPLETADA,
+                completedAt: serverTimestamp(),
                 updatedAt: serverTimestamp()
             });
             console.log(`✓ Cita ${citaId} completada`);
@@ -255,14 +265,108 @@
         }
     }
 
+    /**
+     * Marcar que admin ya contactó al cliente por WhatsApp (paso 1 del stepper).
+     */
+    async function markContactoCliente(citaId) {
+        const database = db();
+        if (!database) return false;
+        try {
+            await database.collection(COLLECTION).doc(citaId).update({
+                adminContactoCliente: true,
+                updatedAt: serverTimestamp()
+            });
+            return true;
+        } catch (error) {
+            console.error('❌ Error marcando contacto cliente:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Marcar que admin ya envió info al barbero por WhatsApp (paso 2 del stepper).
+     */
+    async function markContactoBarbero(citaId) {
+        const database = db();
+        if (!database) return false;
+        try {
+            await database.collection(COLLECTION).doc(citaId).update({
+                adminContactoBarbero: true,
+                updatedAt: serverTimestamp()
+            });
+            return true;
+        } catch (error) {
+            console.error('❌ Error marcando contacto barbero:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Marcar cita como "no show" (el cliente no llegó).
+     */
+    async function markNoShow(citaId) {
+        const database = db();
+        if (!database) return false;
+        try {
+            await database.collection(COLLECTION).doc(citaId).update({
+                estado: ESTADOS.NO_SHOW,
+                noShowAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
+            console.log(`✓ Cita ${citaId} marcada como no-show`);
+            return true;
+        } catch (error) {
+            console.error('❌ Error marcando no-show:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Lista TODAS las citas en un rango de fechas (YYYY-MM-DD inclusivo).
+     * Usada por la Agenda del admin — 1 sola lectura cubre varios días,
+     * el filtrado por día después es en memoria. Incluye todos los estados.
+     *
+     * Si no se pasa rango, trae desde hoy-90d hasta hoy+90d.
+     */
+    async function listByRange(fechaDesde, fechaHasta) {
+        const database = db();
+        if (!database) return [];
+
+        if (!fechaDesde || !fechaHasta) {
+            const today = new Date();
+            const d90Back = new Date(today); d90Back.setDate(today.getDate() - 90);
+            const d90Fwd = new Date(today); d90Fwd.setDate(today.getDate() + 90);
+            const toISO = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            fechaDesde = toISO(d90Back);
+            fechaHasta = toISO(d90Fwd);
+        }
+
+        try {
+            const snapshot = await database.collection(COLLECTION)
+                .where('fecha', '>=', fechaDesde)
+                .where('fecha', '<=', fechaHasta)
+                .get();
+            const result = [];
+            snapshot.forEach(doc => result.push({ id: doc.id, ...doc.data() }));
+            return sortAsc(result);
+        } catch (error) {
+            console.error('❌ Error listando citas por rango:', error);
+            return [];
+        }
+    }
+
     window.CitasService = {
         create,
         listByCliente,
         listByBarbero,
         listPendientes,
+        listByRange,
         confirmar,
         cancelar,
         completar,
+        markContactoCliente,
+        markContactoBarbero,
+        markNoShow,
         getOccupiedSlots,
         hasActiveBooking,
         ESTADOS

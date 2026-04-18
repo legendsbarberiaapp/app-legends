@@ -1,0 +1,49 @@
+<div class="px-6 py-8 pb-28">
+    <!-- Header -->
+    <div class="mb-6">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/25 flex items-center justify-center shadow-[0_0_20px_rgba(201,167,74,0.15)]">
+                <span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings: 'FILL' 1">event_note</span>
+            </div>
+            <div class="flex-1">
+                <h1 class="text-2xl font-black text-white leading-tight">Agenda</h1>
+                <p class="text-white/40 text-xs font-semibold uppercase tracking-wider">Cortes del día</p>
+            </div>
+            <button onclick="if(typeof reloadAgenda==='function')reloadAgenda()"
+                class="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/[0.06] text-white/50 hover:text-primary hover:border-primary/20 transition-all active:scale-95 flex items-center justify-center"
+                title="Recargar desde Firebase">
+                <span class="material-symbols-outlined text-lg">refresh</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Navegador de día -->
+    <div class="mb-6 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06]">
+        <div class="flex items-center gap-3">
+            <button id="agenda-prev-btn" onclick="if(typeof agendaGoPrev==='function')agendaGoPrev()"
+                class="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 hover:bg-primary/10 hover:text-primary hover:border-primary/25 transition-all active:scale-95 flex items-center justify-center disabled:opacity-25 disabled:cursor-not-allowed">
+                <span class="material-symbols-outlined">chevron_left</span>
+            </button>
+            <div class="flex-1 text-center">
+                <p id="agenda-date-label" class="text-white text-sm font-black leading-tight">—</p>
+                <p id="agenda-date-sub" class="text-white/40 text-[10px] font-bold uppercase tracking-widest mt-0.5">Cargando</p>
+            </div>
+            <button id="agenda-next-btn" onclick="if(typeof agendaGoNext==='function')agendaGoNext()"
+                class="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 hover:bg-primary/10 hover:text-primary hover:border-primary/25 transition-all active:scale-95 flex items-center justify-center disabled:opacity-25 disabled:cursor-not-allowed">
+                <span class="material-symbols-outlined">chevron_right</span>
+            </button>
+        </div>
+        <button id="agenda-today-btn" onclick="if(typeof agendaGoToday==='function')agendaGoToday()"
+            class="mt-3 w-full py-2 rounded-lg bg-primary/10 border border-primary/25 text-primary text-[10px] font-black uppercase tracking-widest hover:bg-primary/20 transition-all active:scale-95 hidden">
+            Volver a hoy
+        </button>
+    </div>
+
+    <!-- Contenido de la agenda (dinámico) -->
+    <div id="agenda-content" class="space-y-5">
+        <div class="flex flex-col items-center gap-3 py-12">
+            <div class="auth-checking-spinner"></div>
+            <p class="text-white/50 text-xs">Cargando agenda...</p>
+        </div>
+    </div>
+</div>

@@ -980,8 +980,11 @@
                         Déjanos tu número para poder confirmarte tu reserva vía WhatsApp. Solo lo pediremos esta vez.
                     </p>
 
-                    <input id="phone-input" type="tel" inputmode="tel" placeholder="+57 300 123 4567" aria-label="Tu número de WhatsApp"
-                        class="w-full px-4 py-3 rounded-xl bg-black/40 border-2 border-white/10 text-white placeholder-white/30 focus:border-primary/50 focus:outline-none text-base font-semibold" />
+                    <div class="relative">
+                        <div class="absolute left-4 top-1/2 -translate-y-1/2 text-primary font-black text-base select-none pointer-events-none">+57</div>
+                        <input id="phone-input" type="tel" inputmode="tel" maxlength="14" placeholder="300 123 4567" aria-label="Tu número de WhatsApp"
+                            class="w-full pl-14 pr-4 py-3 rounded-xl bg-black/40 border-2 border-white/10 text-white placeholder-white/30 focus:border-primary/50 focus:outline-none text-base font-semibold" />
+                    </div>
 
                     <div class="flex gap-2 mt-5">
                         <button id="phone-cancel" aria-label="Cancelar"
@@ -1005,14 +1008,18 @@
                 resolve(null);
             });
             overlay.querySelector('#phone-save').addEventListener('click', () => {
-                const phone = input.value.trim();
-                if (!phone || phone.replace(/\D/g, '').length < 7) {
+                const digits = input.value.replace(/\D/g, '');
+                // Aceptamos: 10 dígitos (locales CO) o 12 con 57 al frente
+                let normalized = null;
+                if (digits.length === 10) normalized = '57' + digits;
+                else if (digits.length === 12 && digits.startsWith('57')) normalized = digits;
+                if (!normalized) {
                     input.classList.add('border-red-500/60');
                     input.focus();
                     return;
                 }
                 overlay.remove();
-                resolve(phone);
+                resolve(normalized);
             });
             input.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') overlay.querySelector('#phone-save').click();
@@ -1063,6 +1070,7 @@
 
             barberoId: state.barbero.id,
             barberoNombre: state.barbero.nombre,
+            barberoNivel: state.barbero.nivel || null,
 
             // Schema nuevo (datos ricos)
             conCorte: state.conCorte === true,

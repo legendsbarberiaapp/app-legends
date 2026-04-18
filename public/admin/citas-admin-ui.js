@@ -1,7 +1,13 @@
 /**
- * LEGENDS BARBERIA - ADMIN: CITAS PENDIENTES
- * Lista las citas con estado 'pendiente' y permite al admin confirmarlas
- * (pasan a 'confirmada') o rechazarlas (pasan a 'cancelada').
+ * LEGENDS BARBERIA - ADMIN: CITAS PENDIENTES (STEPPER)
+ *
+ * Lista las citas con estado 'pendiente' y obliga al admin a completar un
+ * flujo de 3 pasos antes de poder confirmarlas:
+ *   1) Contactar al cliente por WhatsApp
+ *   2) Enviar la info de la cita al barbero por WhatsApp
+ *   3) Confirmar la cita (sólo se habilita tras 1 y 2)
+ *
+ * También puede rechazarla (pasa a 'cancelada').
  * Se muestra en el dashboard del admin.
  */
 
@@ -11,6 +17,15 @@
     const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     const DIAS_SEMANA = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
+    // Cache de barberos. Nota: en una cita `barberoId` es el userId (Firebase
+    // Auth UID), NO el docId de Firestore — así lo guarda booking-ui.js.
+    // Por eso el lookup es por `userId`, no por el id del documento.
+    let barberosCache = [];
+
+    function findBarberoByCitaId(citaBarberoId) {
+        return barberosCache.find(b => b.userId === citaBarberoId) || null;
+    }
+
     function formatearFecha(isoDate) {
         if (!isoDate) return '';
         const [y, m, d] = isoDate.split('-').map(Number);
@@ -18,27 +33,73 @@
         return `${DIAS_SEMANA[fecha.getDay()]} ${fecha.getDate()} ${MESES[fecha.getMonth()]}`;
     }
 
+    // Limpia el número y si son 10 dígitos locales (Colombia) le antepone 57.
+    function clean(phone) {
+        const d = String(phone || '').replace(/\D/g, '');
+        if (d.length === 10) return '57' + d;
+        return d;
+    }
+
     /**
-     * Genera el href de WhatsApp con mensaje preformateado.
-     * Limpia cualquier caracter no numérico del teléfono (espacios, +, guiones).
+     * Avatar con placeholder instantáneo (inicial + gradiente dorado).
+     * La foto se hace fade-in cuando termina de cargar; si falla se elimina y
+     * queda el placeholder. Para fotos de Google bajamos la resolución a s96
+     * (más liviano para un círculo de 40px).
      */
-    function whatsappHref(cita) {
-        if (!cita.clientePhone) return null;
-        const numero = String(cita.clientePhone).replace(/\D/g, '');
+    function avatarHTML(name, photoURL) {
+        const initial = ((name || 'C').trim().charAt(0) || 'C').toUpperCase();
+        let src = photoURL || '';
+        if (src && /googleusercontent\.com/.test(src)) {
+            src = src.replace(/=s\d+(-c)?/g, '=s96-c').replace(/\/s\d+-c\//g, '/s96-c/');
+        }
+        const imgTag = src
+            ? `<img src="${src}" alt="" referrerpolicy="no-referrer" loading="eager" decoding="async"
+                 class="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300"
+                 onload="this.style.opacity=1" onerror="this.remove()">`
+            : '';
+        return `<div class="relative w-10 h-10 rounded-full border-2 border-primary/30 shrink-0 overflow-hidden bg-gradient-to-br from-primary/60 to-primary/20 flex items-center justify-center">
+            <span class="text-black text-sm font-black">${initial}</span>
+            ${imgTag}
+        </div>`;
+    }
+
+    /**
+     * WhatsApp para cliente: mensaje de confirmación amable.
+     */
+    function whatsappClienteHref(cita) {
+        const numero = clean(cita.clientePhone);
         if (numero.length < 7) return null;
-        const texto = `Hola ${cita.clienteNombre || ''}! Te confirmamos tu cita con ${cita.barberoNombre || 'tu barbero'} para ${formatearFecha(cita.fecha)} a las ${cita.hora}. ¿Todo bien? — Legends Barbería`;
+        const texto =
+            `Hola ${cita.clienteNombre || ''}! 👋\n` +
+            `Te confirmamos tu cita con ${cita.barberoNombre || 'tu barbero'} ` +
+            `para ${formatearFecha(cita.fecha)} a las ${cita.hora}.\n` +
+            `¿Todo bien por tu lado? — Legends Barbería 👑`;
+        return `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`;
+    }
+
+    /**
+     * WhatsApp para barbero: le envía la información completa de la reserva.
+     */
+    function whatsappBarberoHref(cita) {
+        const barbero = findBarberoByCitaId(cita.barberoId);
+        const numero = clean(barbero?.phone);
+        if (numero.length < 7) return null;
+        const tel = clean(cita.clientePhone);
+        const telStr = tel ? `+${tel}` : 'sin teléfono';
+        const texto =
+            `Nueva cita confirmada 📅\n\n` +
+            `Cliente: ${cita.clienteNombre || '—'}\n` +
+            `Servicio: ${cita.servicioNombre || '—'}\n` +
+            `Fecha: ${formatearFecha(cita.fecha)}\n` +
+            `Hora: ${cita.hora}\n` +
+            `Tel cliente: ${telStr}\n\n` +
+            `— Legends Barbería`;
         return `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`;
     }
 
     /**
      * Para citas legacy creadas antes del flujo de captura de teléfono,
      * intenta recuperar el `phone` desde el doc del usuario en Firestore.
-     * Hace las lecturas en paralelo (una por cliente único). Si el usuario
-     * tampoco tiene teléfono guardado, la cita queda como "sin teléfono".
-     *
-     * Este enriquecimiento es SOLO en memoria — no modifica los docs de
-     * citas en Firestore. La próxima reserva del cliente ya guardará el
-     * teléfono directamente en la cita.
      */
     async function enrichPhonesFromUsers(citas) {
         const faltantes = citas.filter(c => !c.clientePhone && c.clienteId);
@@ -57,7 +118,6 @@
                     if (data && data.phone) phoneByUid[uid] = data.phone;
                 }
             } catch (error) {
-                // Silencioso — si no podemos leer, la cita queda sin teléfono
                 console.warn(`No se pudo leer phone del usuario ${uid}:`, error?.message || error);
             }
         }));
@@ -65,65 +125,153 @@
         citas.forEach(c => {
             if (!c.clientePhone && phoneByUid[c.clienteId]) {
                 c.clientePhone = phoneByUid[c.clienteId];
-                c._phoneFromUser = true; // flag para indicar que vino del doc de usuario (opcional)
             }
         });
-
-        const recuperadas = faltantes.filter(c => c.clientePhone).length;
-        if (recuperadas > 0) {
-            console.log(`✓ Teléfono recuperado desde users para ${recuperadas}/${faltantes.length} citas legacy`);
-        }
-
         return citas;
     }
 
-    function renderCitaCard(cita) {
-        const foto = cita.clientePhotoURL
-            || `https://ui-avatars.com/api/?name=${encodeURIComponent(cita.clienteNombre || 'Cliente')}&background=c9a74a&color=000`;
-        const waHref = whatsappHref(cita);
+    /**
+     * Precarga los barberos una sola vez en caché para tener sus teléfonos.
+     */
+    async function loadBarberosCache() {
+        try {
+            barberosCache = await BarbersService.list() || [];
+        } catch (error) {
+            console.warn('No se pudo precargar barberos:', error);
+            barberosCache = [];
+        }
+    }
 
-        const whatsappBtn = waHref
-            ? `<a href="${waHref}" target="_blank" rel="noopener"
-                class="flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-lg bg-green-600/15 border border-green-600/30 text-green-400 text-[11px] font-black uppercase tracking-wide hover:bg-green-600/25 transition-all active:scale-95">
+    /**
+     * Un paso del stepper: bullet numerado con tick verde si está hecho.
+     */
+    function stepBullet(num, done) {
+        if (done) {
+            return `<div class="w-6 h-6 rounded-full bg-green-500/20 border border-green-500/40 flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-green-400 text-[14px]" style="font-variation-settings: 'FILL' 1">check</span>
+            </div>`;
+        }
+        return `<div class="w-6 h-6 rounded-full bg-white/[0.05] border border-white/10 flex items-center justify-center shrink-0">
+            <span class="text-white/50 text-[11px] font-black">${num}</span>
+        </div>`;
+    }
+
+    function renderCitaCard(cita) {
+        const avatar = avatarHTML(cita.clienteNombre, cita.clientePhotoURL);
+
+        // El nivel del barbero puede venir denormalizado en la cita (schema nuevo)
+        // o recuperarse del cache de barberos (fallback para citas legacy).
+        const barbero = findBarberoByCitaId(cita.barberoId);
+        const nivel = cita.barberoNivel || (barbero && barbero.nivel) || null;
+        const theme = (typeof window.nivelTheme === 'function') ? window.nivelTheme(nivel) : { textCls: 'text-white/70', borderLeft: '' };
+
+        const waClienteHref = whatsappClienteHref(cita);
+        const waBarberoHref = whatsappBarberoHref(cita);
+        const barberoTienePhone = !!(barbero && clean(barbero.phone).length >= 7);
+
+        const paso1Done = !!cita.adminContactoCliente;
+        const paso2Done = !!cita.adminContactoBarbero;
+        const paso2Disabled = !paso1Done;
+        const confirmDisabled = !(paso1Done && paso2Done);
+
+        // Paso 1: WhatsApp cliente
+        const paso1Btn = waClienteHref
+            ? `<a href="${waClienteHref}" target="_blank" rel="noopener"
+                onclick="adminMarkContactoCliente('${cita.id}')"
+                class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg ${paso1Done ? 'bg-green-600/10 border-green-600/20 text-green-400/70' : 'bg-green-600/20 border-green-600/35 text-green-400'} border text-[11px] font-black uppercase tracking-wide hover:brightness-110 transition-all active:scale-95">
                 <span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1">chat</span>
-                WhatsApp
+                ${paso1Done ? 'Reabrir WA cliente' : 'Contactar cliente'}
             </a>`
-            : `<div class="flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-lg bg-white/[0.02] border border-white/[0.05] text-white/30 text-[10px] font-bold italic">
-                sin teléfono
+            : `<div class="flex items-center justify-center gap-1 px-3 py-2 rounded-lg bg-white/[0.02] border border-white/[0.05] text-white/30 text-[10px] font-bold italic">
+                sin teléfono del cliente
             </div>`;
 
+        // Paso 2: WhatsApp barbero
+        let paso2Btn;
+        if (!barberoTienePhone) {
+            paso2Btn = `<button onclick="adminEditBarberoPhone('${cita.barberoId}')"
+                class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-orange-500/15 border border-orange-500/30 text-orange-400 text-[11px] font-black uppercase tracking-wide hover:bg-orange-500/25 transition-all active:scale-95">
+                <span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1">edit</span>
+                Cargar tel del barbero
+            </button>`;
+        } else if (paso2Disabled) {
+            paso2Btn = `<div class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-white/[0.02] border border-white/[0.05] text-white/25 text-[11px] font-black uppercase tracking-wide cursor-not-allowed">
+                <span class="material-symbols-outlined text-xs">lock</span>
+                Enviar al barbero
+            </div>`;
+        } else {
+            paso2Btn = `<a href="${waBarberoHref}" target="_blank" rel="noopener"
+                onclick="adminMarkContactoBarbero('${cita.id}')"
+                class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg ${paso2Done ? 'bg-green-600/10 border-green-600/20 text-green-400/70' : 'bg-green-600/20 border-green-600/35 text-green-400'} border text-[11px] font-black uppercase tracking-wide hover:brightness-110 transition-all active:scale-95">
+                <span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1">content_cut</span>
+                ${paso2Done ? 'Reabrir WA barbero' : 'Enviar al barbero'}
+            </a>`;
+        }
+
+        // Paso 3: confirmar
+        const confirmBtn = confirmDisabled
+            ? `<button onclick="adminAvisoConfirmacionBloqueada()" disabled
+                class="w-full px-3 py-2.5 rounded-lg bg-white/[0.02] border border-white/[0.05] text-white/25 text-[11px] font-black uppercase tracking-wide cursor-not-allowed flex items-center justify-center gap-1.5">
+                <span class="material-symbols-outlined text-xs">lock</span>
+                Completa pasos 1 y 2 para confirmar
+            </button>`
+            : `<button onclick="adminConfirmarCita('${cita.id}')"
+                class="w-full px-3 py-2.5 rounded-lg bg-primary text-black text-[11px] font-black uppercase tracking-wide shadow-[0_4px_20px_rgba(201,167,74,0.3)] hover:bg-yellow-500 transition-all active:scale-95 flex items-center justify-center gap-1.5">
+                <span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1">check_circle</span>
+                Confirmar cita
+            </button>`;
+
         return `
-            <div class="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+            <div class="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]" style="${theme.borderLeft}">
                 <div class="flex items-start gap-3">
-                    <img src="${foto}" alt=""
-                        class="w-10 h-10 rounded-full object-cover border-2 border-primary/30 shrink-0">
+                    ${avatar}
                     <div class="flex-1 min-w-0">
                         <div class="flex items-start justify-between gap-2 mb-1">
                             <p class="text-white text-xs font-black truncate">${cita.clienteNombre || 'Cliente'}</p>
                             <span class="text-primary text-xs font-black shrink-0">${typeof window.formatCOP === 'function' ? window.formatCOP(cita.servicioPrecio || 0) : '$' + (cita.servicioPrecio || 0)}</span>
                         </div>
-                        <p class="text-white/50 text-[11px] truncate">${cita.servicioNombre || 'Servicio'} con ${cita.barberoNombre || 'Barbero'}</p>
+                        <p class="text-white/50 text-[11px] truncate">${cita.servicioNombre || 'Servicio'} con <span class="${theme.textCls} font-bold">${cita.barberoNombre || 'Barbero'}</span></p>
                         <div class="flex items-center gap-1.5 mt-1.5">
                             <span class="material-symbols-outlined text-white/30 text-xs">event</span>
                             <span class="text-white/60 text-[10px] font-semibold">${formatearFecha(cita.fecha)} • ${cita.hora || ''}</span>
                         </div>
                     </div>
                 </div>
-                <!-- Fila 1: contactar por WhatsApp (acción primaria) -->
-                <div class="mt-3">
-                    ${whatsappBtn}
+
+                <!-- Stepper de 3 pasos -->
+                <div class="mt-3 space-y-2 pt-3 border-t border-white/[0.05]">
+                    <!-- Paso 1 -->
+                    <div class="flex items-center gap-2.5">
+                        ${stepBullet(1, paso1Done)}
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white/70 text-[10px] font-black uppercase tracking-wider leading-tight">Confirmar con cliente</p>
+                        </div>
+                        <div class="shrink-0">${paso1Btn}</div>
+                    </div>
+                    <!-- Paso 2 -->
+                    <div class="flex items-center gap-2.5 ${paso2Disabled && barberoTienePhone ? 'opacity-60' : ''}">
+                        ${stepBullet(2, paso2Done)}
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white/70 text-[10px] font-black uppercase tracking-wider leading-tight">Avisar al barbero</p>
+                        </div>
+                        <div class="shrink-0">${paso2Btn}</div>
+                    </div>
+                    <!-- Paso 3 -->
+                    <div class="flex items-start gap-2.5 ${confirmDisabled ? 'opacity-80' : ''}">
+                        ${stepBullet(3, false)}
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white/70 text-[10px] font-black uppercase tracking-wider leading-tight mb-1.5">Confirmar cita</p>
+                            ${confirmBtn}
+                        </div>
+                    </div>
                 </div>
-                <!-- Fila 2: confirmar o rechazar -->
-                <div class="flex gap-2 mt-2">
-                    <button onclick="adminConfirmarCita('${cita.id}')"
-                        class="flex-1 px-3 py-2 rounded-lg bg-green-500/15 border border-green-500/30 text-green-400 text-[11px] font-black uppercase tracking-wide hover:bg-green-500/25 transition-all active:scale-95">
-                        <span class="material-symbols-outlined text-xs align-middle mr-1" style="font-variation-settings: 'FILL' 1">check</span>
-                        Confirmar
-                    </button>
+
+                <!-- Rechazar (separado abajo) -->
+                <div class="mt-2.5 pt-2.5 border-t border-white/[0.03]">
                     <button onclick="adminRechazarCita('${cita.id}')"
-                        class="flex-1 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/25 text-red-400/80 text-[11px] font-black uppercase tracking-wide hover:bg-red-500/20 transition-all active:scale-95">
-                        <span class="material-symbols-outlined text-xs align-middle mr-1" style="font-variation-settings: 'FILL' 1">close</span>
-                        Rechazar
+                        class="w-full px-3 py-1.5 rounded-lg bg-red-500/5 border border-red-500/15 text-red-400/70 text-[10px] font-bold uppercase tracking-wide hover:bg-red-500/15 transition-all active:scale-95">
+                        <span class="material-symbols-outlined text-[13px] align-middle mr-1">close</span>
+                        Rechazar cita
                     </button>
                 </div>
             </div>
@@ -155,7 +303,11 @@
         `;
 
         try {
-            const pendientes = await CitasService.listPendientes();
+            // Precargamos barberos (para tener el phone) y las citas pendientes en paralelo
+            const [pendientes] = await Promise.all([
+                CitasService.listPendientes(),
+                loadBarberosCache()
+            ]);
             updateCountBadge(pendientes.length);
 
             if (pendientes.length === 0) {
@@ -169,9 +321,7 @@
                 return;
             }
 
-            // Enriquecer citas sin teléfono con el phone del doc del usuario (para citas legacy)
             await enrichPhonesFromUsers(pendientes);
-
             container.innerHTML = pendientes.map(renderCitaCard).join('');
             console.log(`✓ ${pendientes.length} citas pendientes renderizadas`);
 
@@ -186,6 +336,64 @@
                     </button>
                 </div>
             `;
+        }
+    }
+
+    // Handlers de los pasos — marcan el flag en Firestore y refrescan la card.
+
+    async function adminMarkContactoCliente(citaId) {
+        // El link ya abre WhatsApp (target=_blank). En paralelo marcamos el flag.
+        await CitasService.markContactoCliente(citaId);
+        setTimeout(initCitasPendientes, 400);
+    }
+
+    async function adminMarkContactoBarbero(citaId) {
+        await CitasService.markContactoBarbero(citaId);
+        setTimeout(initCitasPendientes, 400);
+    }
+
+    function adminAvisoConfirmacionBloqueada() {
+        if (typeof window.showToast === 'function') {
+            window.showToast('Primero contactá al cliente y al barbero', 'error');
+        }
+    }
+
+    /**
+     * Si el barbero no tiene phone, lleva al admin directo al modal de edición
+     * de ESE barbero específico. En la cita guardamos el userId del barbero,
+     * pero `openEditBarberModal` espera el docId de Firestore — hay que
+     * traducir uno en el otro buscando en el cache de barberManager.
+     */
+    async function adminEditBarberoPhone(barberoUserId) {
+        if (typeof barberManager === 'undefined') return;
+
+        if (typeof window.showToast === 'function') {
+            window.showToast('Cargá el teléfono del barbero', 'info');
+        }
+
+        // Cambiar a la pestaña de barberos (carga el partial si hace falta)
+        if (typeof switchTab === 'function') {
+            await switchTab('admin-barberos');
+        }
+
+        // Garantizar que los barberos estén cargados en memoria
+        if (!barberManager.initialized) {
+            await barberManager.init();
+        } else if (!barberManager.barbers || barberManager.barbers.length === 0) {
+            await barberManager.loadBarbers();
+        }
+
+        // userId (Auth UID) → docId (Firestore)
+        const barbero = barberManager.barbers.find(b => b.userId === barberoUserId);
+        if (!barbero) {
+            if (typeof window.showToast === 'function') {
+                window.showToast('No se encontró el barbero en el catálogo', 'error');
+            }
+            return;
+        }
+
+        if (typeof barberManager.openEditBarberModal === 'function') {
+            barberManager.openEditBarberModal(barbero.id);
         }
     }
 
@@ -224,7 +432,11 @@
     }
 
     window.initCitasPendientes = initCitasPendientes;
+    window.adminMarkContactoCliente = adminMarkContactoCliente;
+    window.adminMarkContactoBarbero = adminMarkContactoBarbero;
+    window.adminAvisoConfirmacionBloqueada = adminAvisoConfirmacionBloqueada;
+    window.adminEditBarberoPhone = adminEditBarberoPhone;
     window.adminConfirmarCita = adminConfirmarCita;
     window.adminRechazarCita = adminRechazarCita;
-    console.log('✓ AdminCitasUI loaded');
+    console.log('✓ AdminCitasUI (stepper) loaded');
 })();

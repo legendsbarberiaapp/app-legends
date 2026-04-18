@@ -35,6 +35,7 @@ const ROLE_CONFIGS = {
     admin: {
         tabs: [
             { id: 'admin-dashboard', icon: 'admin_panel_settings', label: 'Admin', fill: true },
+            { id: 'admin-agenda', icon: 'event_note', label: 'Agenda', fill: false },
             { id: 'admin-usuarios', icon: 'group', label: 'Usuarios', fill: false },
             { id: 'admin-barberos', icon: 'content_cut', label: 'Barberos', fill: false }
         ],

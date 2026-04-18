@@ -35,6 +35,7 @@
 
     function renderProxima(cita) {
         const esConfirmada = cita.estado === 'confirmada';
+        const theme = (typeof window.nivelTheme === 'function') ? window.nivelTheme(cita.barberoNivel) : { textCls: 'text-primary', borderLeft: '' };
 
         const badge = esConfirmada
             ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-green-500/15 border border-green-500/30">
@@ -56,13 +57,13 @@
                 <div class="relative group cursor-pointer tap-card" onclick="switchTab('profile')" role="button" tabindex="0" aria-label="Ver detalles de tu próxima cita">
                     <div class="absolute -inset-[1px] bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20 rounded-2xl blur-lg opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
 
-                    <div class="relative p-6 rounded-2xl bg-gradient-to-br from-surface-dark via-card-dark to-surface-dark border border-white/10 shadow-2xl transition-all duration-300 group-hover:border-primary/30">
+                    <div class="relative p-6 rounded-2xl bg-gradient-to-br from-surface-dark via-card-dark to-surface-dark border border-white/10 shadow-2xl transition-all duration-300 group-hover:border-primary/30" style="${theme.borderLeft}">
                         ${badge}
 
                         <div class="flex items-start justify-between gap-4 mt-4">
                             <div class="flex-1 min-w-0">
                                 <h3 class="text-white text-xl font-black leading-tight tracking-tight">${cita.servicioNombre || 'Servicio'}</h3>
-                                <p class="text-white/60 text-sm mt-1">con <span class="text-primary font-bold">${cita.barberoNombre || 'Barbero'}</span></p>
+                                <p class="text-white/60 text-sm mt-1">con <span class="${theme.textCls} font-bold">${cita.barberoNombre || 'Barbero'}</span></p>
                             </div>
                             <div class="text-right shrink-0">
                                 <p class="text-primary text-2xl font-black tabular-nums">${window.formatCOP(cita.servicioPrecio || 0)}</p>
