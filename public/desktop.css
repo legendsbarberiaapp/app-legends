@@ -1,0 +1,411 @@
+/* ==============================================================
+   LEGENDS BARBERIA - DESKTOP LAYOUT (>=1024px)
+   Reescribe el layout móvil para PC sin tocar partials.
+   - Sidebar fijo 280px
+   - Bottom-nav y FAB ocultos
+   - Contenedores anchos con padding horizontal
+   - Grids multi-columna para listados
+   ============================================================== */
+
+/* En móvil el sidebar nunca se muestra */
+.desktop-sidebar { display: none; }
+
+/* ============================================================
+   SPLASH / LOGIN en desktop: centrar y mantener ancho controlado
+   ============================================================ */
+@media (min-width: 1024px) {
+    #splash-screen .flex-grow {
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+    #splash-screen > div:last-child {
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+    /* Botón de login: mantener ancho controlado y centrado */
+    #auth-login-buttons { max-width: 420px; margin: 0 auto; }
+}
+
+/* ============================================================
+   DESKTOP BREAKPOINT
+   ============================================================ */
+@media (min-width: 1024px) {
+
+    /* ---------- SIDEBAR ---------- */
+    .desktop-sidebar {
+        display: flex;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 260px;
+        z-index: 40;
+        flex-direction: column;
+        background: linear-gradient(180deg, #171717 0%, #121212 100%);
+        border-right: 1px solid rgba(255, 255, 255, 0.06);
+        box-shadow: 4px 0 30px rgba(0, 0, 0, 0.3);
+        padding: 24px 16px;
+    }
+
+    .desktop-sidebar-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 12px 24px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        margin-bottom: 16px;
+    }
+
+    .desktop-sidebar-logo {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        border: 2px solid rgba(201, 167, 74, 0.4);
+        overflow: hidden;
+        flex-shrink: 0;
+        box-shadow: 0 0 20px rgba(201, 167, 74, 0.2);
+    }
+
+    .desktop-sidebar-brand-text { min-width: 0; }
+
+    .desktop-sidebar-brand-name {
+        color: #fff;
+        font-weight: 900;
+        font-size: 16px;
+        letter-spacing: 0.05em;
+        line-height: 1.1;
+    }
+
+    .desktop-sidebar-brand-sub {
+        color: rgba(201, 167, 74, 0.75);
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
+        margin-top: 2px;
+    }
+
+    /* Nav items */
+    .desktop-sidebar-nav {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        overflow-y: auto;
+        padding: 0 4px;
+    }
+
+    .desktop-nav-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        cursor: pointer;
+        color: rgba(255, 255, 255, 0.55);
+        transition: background 0.2s, color 0.2s, transform 0.15s;
+        position: relative;
+        font-weight: 600;
+    }
+
+    .desktop-nav-item:hover {
+        background: rgba(255, 255, 255, 0.04);
+        color: rgba(255, 255, 255, 0.85);
+    }
+
+    .desktop-nav-item.active {
+        background: linear-gradient(90deg, rgba(201, 167, 74, 0.18) 0%, rgba(201, 167, 74, 0.05) 100%);
+        color: #eecf72;
+        box-shadow: inset 3px 0 0 #c9a74a, 0 4px 16px rgba(201, 167, 74, 0.08);
+    }
+
+    .desktop-nav-item-icon {
+        font-size: 22px !important;
+        flex-shrink: 0;
+    }
+
+    .desktop-nav-item-label {
+        font-size: 13px;
+        letter-spacing: 0.02em;
+    }
+
+    /* User card abajo */
+    .desktop-sidebar-user {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        margin-top: 12px;
+    }
+
+    .desktop-sidebar-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid rgba(201, 167, 74, 0.45);
+        flex-shrink: 0;
+    }
+
+    .desktop-sidebar-user-info { min-width: 0; flex: 1; }
+
+    .desktop-sidebar-user-name {
+        color: #fff;
+        font-weight: 800;
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .desktop-sidebar-user-role {
+        color: rgba(201, 167, 74, 0.8);
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+    }
+
+    .desktop-sidebar-logout {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        background: rgba(239, 68, 68, 0.08);
+        color: rgba(239, 68, 68, 0.85);
+        border: 1px solid rgba(239, 68, 68, 0.18);
+        transition: background 0.2s, transform 0.15s;
+        flex-shrink: 0;
+    }
+    .desktop-sidebar-logout:hover {
+        background: rgba(239, 68, 68, 0.2);
+        transform: scale(1.05);
+    }
+
+    /* ---------- CONTENIDO ---------- */
+    .desktop-content {
+        padding-left: 260px;
+        min-height: 100vh;
+    }
+
+    /* Ocultar bottom-nav en desktop */
+    #bottom-nav-shell { display: none !important; }
+
+    /* FAB oculto (reservar está en sidebar/home) */
+    .floating-action-button { display: none !important; }
+
+    /* Admin switch button: reposicionar encima del contenido, no tapando sidebar */
+    .admin-view-switch-btn {
+        left: calc(260px + (100% - 260px) / 2) !important;
+    }
+
+    /* ---------- TAB CONTENT ---------- */
+    /* Quitar alto fijo de 100dvh para que el scroll sea natural */
+    .tab-content {
+        height: auto !important;
+        min-height: 100vh;
+    }
+
+    /* Ancho máximo del contenido centrado */
+    .tab-content > div:first-child,
+    .tab-content > main:first-child {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    /* Padding responsive uniforme */
+    .tab-content .px-6 { padding-left: 48px !important; padding-right: 48px !important; }
+
+    /* Reset de padding-bottom (no hay bottom-nav) */
+    .tab-content .pb-32,
+    .tab-content .pb-28 { padding-bottom: 48px !important; }
+
+    /* ---------- HOME (cliente) ---------- */
+    #home-tab main { padding-bottom: 48px !important; }
+
+    /* Hero: reducir altura y alinear a la izquierda */
+    #home-tab .h-\[40vh\] {
+        height: 280px !important;
+        min-height: 280px !important;
+    }
+
+    #home-tab .h-\[40vh\] .inset-0.flex.flex-col.items-center {
+        align-items: flex-start !important;
+        padding-left: 48px !important;
+        padding-right: 48px !important;
+        text-align: left !important;
+    }
+    #home-tab .h-\[40vh\] .text-center { text-align: left !important; }
+
+    /* Servicios populares: grid en lugar de scroll horizontal */
+    #home-servicios-preview {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 20px !important;
+        overflow: visible !important;
+        padding: 0 48px !important;
+    }
+    #home-servicios-preview > * {
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        flex-shrink: 1 !important;
+    }
+
+    /* Barberos populares: grid */
+    #home-barberos-preview {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 20px !important;
+        overflow: visible !important;
+        padding: 0 48px !important;
+    }
+    #home-barberos-preview > * {
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        height: auto !important;
+        aspect-ratio: 3 / 4;
+        flex-shrink: 1 !important;
+    }
+
+    /* ---------- BOOKING (cliente) ---------- */
+    /* En 1024-1279 el footer se queda abajo pero ancho, como en mobile ampliado */
+    #booking-tab > .flex-1 > .px-6 {
+        padding: 40px 48px 48px 48px !important;
+        max-width: 100%;
+    }
+    #booking-tab .booking-step-content { max-width: 880px; margin: 0 auto; }
+
+    #booking-tab .fixed.bottom-\[85px\] {
+        bottom: 32px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: min(900px, calc(100% - 64px)) !important;
+        border-radius: 24px !important;
+        border: 1px solid rgba(255,255,255,0.08) !important;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5) !important;
+    }
+
+    /* Adicionales y horarios: más columnas */
+    #booking-horarios { grid-template-columns: repeat(6, minmax(0, 1fr)) !important; }
+
+    /* Booking barberos: grid en vez de columna única */
+    #booking-barberos {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 20px !important;
+        flex-direction: initial !important;
+    }
+
+    /* ---------- PROFILE (cliente) ---------- */
+    #profile-tab {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    #profile-tab .pb-32 { padding-bottom: 48px !important; }
+    #profile-tab > .relative {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding-top: 16px;
+    }
+
+    #profile-stats-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    }
+
+    /* ---------- ADMIN DASHBOARD ---------- */
+    #admin-dashboard-tab #dash-stats-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    }
+    #admin-dashboard-tab .grid-cols-3 {
+        grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    }
+
+    /* ---------- ADMIN AGENDA ---------- */
+    #admin-agenda-tab #agenda-content {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 20px;
+    }
+
+    /* ---------- ADMIN USUARIOS ----------
+       Lista vertical con ancho uniforme (no grid).
+       Cada card ocupa toda la fila con max-width acotado. */
+    #admin-usuarios-tab #admin-users-list .usuarios-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    #admin-usuarios-tab #admin-users-list .usuarios-grid > * {
+        width: 100%;
+    }
+
+    /* ---------- ADMIN BARBEROS ---------- */
+    #admin-barberos-tab #admin-barbers-list {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 20px;
+    }
+    #admin-barberos-tab #admin-barbers-list > * { margin: 0 !important; }
+
+    /* Header de barberos: una sola fila con título a la izquierda,
+       refresh + "Agregar nuevo barbero" a la derecha */
+    #admin-barberos-tab .mb-8 {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 24px;
+        margin-bottom: 32px !important;
+    }
+    /* Fila interna (título + refresh): compacta a la izquierda */
+    #admin-barberos-tab .mb-8 > .flex.items-center.justify-between {
+        flex: 0 1 auto !important;
+        margin-bottom: 0 !important;
+        gap: 16px;
+    }
+    /* El bloque (h1 + subtítulo) no crece al infinito */
+    #admin-barberos-tab .mb-8 > .flex.items-center.justify-between > div:first-child {
+        flex: 0 0 auto;
+    }
+    /* Botón "Agregar Nuevo Barbero": ya no w-full, se alinea a la derecha */
+    #admin-barberos-tab .mb-8 > button.w-full {
+        width: auto !important;
+        flex: 0 0 auto !important;
+        margin-top: 0 !important;
+        padding: 14px 28px !important;
+    }
+
+    /* ---------- BARBERO ---------- */
+    #barbero-dashboard-tab .grid-cols-2 {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    }
+    #barbero-citas-tab #barbero-citas-container.space-y-3 > *,
+    #barbero-citas-tab #barbero-citas-container > .space-y-3 > * { margin-top: 0 !important; }
+    #barbero-citas-tab #barbero-citas-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+        gap: 16px;
+    }
+
+    /* ---------- TIPOGRAFÍA ESCALADA ---------- */
+    .tab-content h1.text-2xl { font-size: 32px !important; }
+    .tab-content h1.text-3xl { font-size: 36px !important; }
+    #home-tab h1.text-\[38px\],
+    #home-tab h1.text-\[42px\] { font-size: 56px !important; }
+}
+
+/* ============================================================
+   EXTRA WIDE (>=1440px): aún más aire
+   ============================================================ */
+@media (min-width: 1440px) {
+    .tab-content .px-6 { padding-left: 64px !important; padding-right: 64px !important; }
+    #home-servicios-preview,
+    #home-barberos-preview { padding: 0 64px !important; }
+    #booking-tab > .flex-1 > .px-6 { padding: 48px 64px !important; }
+}

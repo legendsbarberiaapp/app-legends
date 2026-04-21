@@ -112,7 +112,7 @@ class RoleManager {
         });
     }
 
-    // Renderizar navegación dinámica
+    // Renderizar navegación dinámica (bottom-nav móvil + sidebar desktop)
     renderNavigation(tabs) {
         const navContainer = document.querySelector('.bottom-nav-container');
 
@@ -121,7 +121,7 @@ class RoleManager {
             return;
         }
 
-        // Generar HTML de navegación
+        // Generar HTML de navegación (móvil / bottom-nav)
         const navHTML = tabs.map((tab, index) => `
             <a onclick="switchTab('${tab.id}')"
                class="nav-item relative flex flex-1 flex-col items-center justify-center gap-1.5 p-2 rounded-2xl ${index === 0 ? 'text-primary' : 'text-gray-500'} hover:text-gray-300 transition-all duration-300 cursor-pointer active:scale-95"
@@ -137,7 +137,23 @@ class RoleManager {
         `).join('');
 
         navContainer.innerHTML = navHTML;
-        console.log(`✓ Navegación renderizada con ${tabs.length} items`);
+
+        // Generar HTML de sidebar (desktop)
+        const sidebarNav = document.querySelector('.desktop-sidebar-nav');
+        if (sidebarNav) {
+            const sidebarHTML = tabs.map((tab, index) => `
+                <a onclick="switchTab('${tab.id}')"
+                   class="desktop-nav-item ${index === 0 ? 'active' : ''}"
+                   data-tab="${tab.id}">
+                    <span class="desktop-nav-item-icon material-symbols-outlined"
+                          style="font-variation-settings: 'FILL' ${tab.fill || index === 0 ? 1 : 0}, 'wght' 500">${tab.icon}</span>
+                    <span class="desktop-nav-item-label">${tab.label}</span>
+                </a>
+            `).join('');
+            sidebarNav.innerHTML = sidebarHTML;
+        }
+
+        console.log(`✓ Navegación renderizada con ${tabs.length} items (bottom + sidebar)`);
     }
 
     // Toggle FAB (Floating Action Button)
@@ -260,6 +276,27 @@ class RoleManager {
         if (greetingDisplay) {
             const firstName = (this.currentUser.displayName || 'Usuario').split(' ')[0];
             greetingDisplay.textContent = firstName;
+        }
+
+        // Sincronizar también con el sidebar desktop
+        const sidebarAvatar = document.getElementById('desktop-sidebar-avatar');
+        const sidebarName = document.getElementById('desktop-sidebar-name');
+        const sidebarRole = document.getElementById('desktop-sidebar-role');
+        if (sidebarAvatar) {
+            const fallbackName = this.currentUser.displayName || 'Usuario';
+            const fallbackSrc = `https://ui-avatars.com/api/?name=${encodeURIComponent(fallbackName)}&background=c9a74a&color=000&size=200&bold=true`;
+            let src = this.currentUser.photoURL || fallbackSrc;
+            if (typeof src === 'string' && /googleusercontent\.com/.test(src)) {
+                src = src.replace(/=s\d+(-c)?/g, '=s200-c').replace(/\/s\d+-c\//g, '/s200-c/');
+            }
+            sidebarAvatar.onerror = function () { sidebarAvatar.onerror = null; sidebarAvatar.src = fallbackSrc; };
+            sidebarAvatar.src = src;
+        }
+        if (sidebarName) sidebarName.textContent = this.currentUser.displayName || 'Usuario';
+        if (sidebarRole) {
+            const activeRole = this.viewingAsRole || this.currentRole || 'cliente';
+            const roleLabels = { admin: 'Administrador', barbero: 'Barbero', cliente: 'Cliente' };
+            sidebarRole.textContent = roleLabels[activeRole] || activeRole;
         }
 
         console.log('✓ UI de Perfil Sincronizada con Google');

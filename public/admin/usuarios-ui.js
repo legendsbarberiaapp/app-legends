@@ -1,142 +1,342 @@
 /**
  * ADMIN - Gestión de usuarios
- * Renderizado de la lista de usuarios en el panel de administración
- * y cambio de roles (cliente <-> barbero).
+ *
+ * Secciones colapsables con lazy-load:
+ *   - Al entrar a la pantalla NO se lee nada de Firestore.
+ *   - Cada sección (Admin / Barberos / Clientes) se abre on-demand y
+ *     dispara un query filtrado `where('role','==',...)`.
+ *   - Los resultados se cachean en memoria por la sesión. Refresh por sección.
+ *   - Desde cada card se puede cambiar el rol del usuario
+ *     (salvo admins hardcodeados → badge "Protegido").
  */
 
-async function loadUsersForAdmin() {
-    const container = document.getElementById('admin-users-list');
-    if (!container) return;
+(function () {
+    'use strict';
 
-    container.innerHTML = `
-        <div class="flex flex-col items-center gap-3 py-8">
-            <div class="auth-checking-spinner"></div>
-            <p class="text-white/50 text-sm">Cargando usuarios...</p>
-        </div>
-    `;
+    const ROLE_ORDER = ['admin', 'barbero', 'cliente'];
 
-    try {
-        const users = await firebaseAdapter.getAllUsers();
+    const ROLE_META = {
+        admin: {
+            titulo: 'Administradores',
+            icon: 'admin_panel_settings',
+            colorKey: 'red',
+            badgeLabel: 'Admin',
+            badgeIcon: 'admin_panel_settings'
+        },
+        barbero: {
+            titulo: 'Barberos',
+            icon: 'content_cut',
+            colorKey: 'primary',
+            badgeLabel: 'Barbero',
+            badgeIcon: 'content_cut'
+        },
+        cliente: {
+            titulo: 'Clientes',
+            icon: 'person',
+            colorKey: 'blue',
+            badgeLabel: 'Cliente',
+            badgeIcon: 'person'
+        }
+    };
 
-        if (users.length === 0) {
-            container.innerHTML = `
-                <div class="text-center py-8">
-                    <span class="material-symbols-outlined text-white/20 text-5xl mb-2">group_off</span>
-                    <p class="text-white/40 text-sm">No hay usuarios registrados</p>
+    const COLOR_MAP = {
+        red:     { chip: 'bg-red-500/10 text-red-400 border-red-500/30',     soft: 'bg-red-500/5 border-red-500/15',     ring: 'border-red-500/35' },
+        primary: { chip: 'bg-primary/15 text-primary border-primary/30',     soft: 'bg-primary/5 border-primary/15',     ring: 'border-primary/35' },
+        blue:    { chip: 'bg-blue-500/10 text-blue-400 border-blue-500/30', soft: 'bg-blue-500/5 border-blue-500/15',   ring: 'border-blue-500/35' }
+    };
+
+    // Estado en memoria: por rol, { loaded, loading, users }
+    const sectionState = {
+        admin:   { loaded: false, loading: false, users: [] },
+        barbero: { loaded: false, loading: false, users: [] },
+        cliente: { loaded: false, loading: false, users: [] }
+    };
+
+    // --------- Render del shell (secciones colapsadas) ---------
+
+    async function loadUsersForAdmin() {
+        const container = document.getElementById('admin-users-list');
+        if (!container) return;
+
+        container.innerHTML = ROLE_ORDER.map(role => renderSectionShell(role)).join('');
+        console.log('✓ Secciones de usuarios renderizadas (colapsadas, sin carga)');
+    }
+
+    function renderSectionShell(role) {
+        const meta = ROLE_META[role];
+        const c = COLOR_MAP[meta.colorKey];
+        const state = sectionState[role];
+
+        const chevron = state.loaded && state.expanded ? 'expand_less' : 'expand_more';
+        const countBadge = state.loaded
+            ? `<span class="px-2 py-0.5 rounded-full ${c.chip} text-[10px] font-black border" data-count-badge>${state.users.length}</span>`
+            : `<span class="px-2 py-0.5 rounded-full bg-white/5 text-white/35 text-[10px] font-black border border-white/10" data-count-badge>—</span>`;
+
+        return `
+            <section class="mb-4 rounded-2xl border ${c.soft}" data-usuarios-section="${role}">
+                <div class="flex items-center gap-3 p-4 rounded-2xl hover:bg-white/[0.03] transition-colors">
+                    <button type="button" onclick="toggleUserSection('${role}')"
+                        class="flex-1 flex items-center gap-3 text-left min-w-0 cursor-pointer">
+                        <span class="material-symbols-outlined text-xl text-white/80 flex-shrink-0" style="font-variation-settings: 'FILL' 1">${meta.icon}</span>
+                        <h3 class="flex-1 text-white font-black text-sm uppercase tracking-wider truncate">${meta.titulo}</h3>
+                        ${countBadge}
+                        <span class="material-symbols-outlined text-2xl text-white/60 transition-transform flex-shrink-0" data-chevron>${chevron}</span>
+                    </button>
+                    <button type="button" onclick="refreshUserSection('${role}')"
+                        class="w-9 h-9 rounded-lg bg-white/5 border border-white/10 text-white/50 hover:text-primary hover:border-primary/30 transition-all active:scale-95 flex items-center justify-center flex-shrink-0"
+                        title="Recargar esta sección">
+                        <span class="material-symbols-outlined text-sm">refresh</span>
+                    </button>
                 </div>
+                <div class="hidden px-3 pb-3" data-usuarios-body></div>
+            </section>
+        `;
+    }
+
+    // --------- Toggle + Lazy load ---------
+
+    async function toggleUserSection(role) {
+        const section = document.querySelector(`[data-usuarios-section="${role}"]`);
+        if (!section) return;
+
+        const body = section.querySelector('[data-usuarios-body]');
+        const chevron = section.querySelector('[data-chevron]');
+        const isOpen = !body.classList.contains('hidden');
+
+        if (isOpen) {
+            body.classList.add('hidden');
+            if (chevron) chevron.textContent = 'expand_more';
+            sectionState[role].expanded = false;
+            return;
+        }
+
+        // Abrir
+        body.classList.remove('hidden');
+        if (chevron) chevron.textContent = 'expand_less';
+        sectionState[role].expanded = true;
+
+        // Si ya está cargado, solo render desde caché
+        if (sectionState[role].loaded) {
+            renderSectionBody(role);
+            return;
+        }
+
+        await fetchAndRenderSection(role);
+    }
+
+    async function refreshUserSection(role) {
+        sectionState[role].loaded = false;
+        const section = document.querySelector(`[data-usuarios-section="${role}"]`);
+        if (!section) return;
+        const body = section.querySelector('[data-usuarios-body]');
+        const chevron = section.querySelector('[data-chevron]');
+
+        // Asegurarse de que quede abierta
+        body.classList.remove('hidden');
+        if (chevron) chevron.textContent = 'expand_less';
+        sectionState[role].expanded = true;
+
+        await fetchAndRenderSection(role);
+        rerenderCountBadge(role);
+    }
+
+    async function fetchAndRenderSection(role) {
+        const section = document.querySelector(`[data-usuarios-section="${role}"]`);
+        if (!section) return;
+        const body = section.querySelector('[data-usuarios-body]');
+
+        body.innerHTML = `
+            <div class="flex flex-col items-center gap-2 py-6">
+                <div class="auth-checking-spinner"></div>
+                <p class="text-white/50 text-xs">Cargando ${ROLE_META[role].titulo.toLowerCase()}...</p>
+            </div>
+        `;
+
+        sectionState[role].loading = true;
+        try {
+            const users = await firebaseAdapter.getUsersByRole(role);
+            sectionState[role].users = users;
+            sectionState[role].loaded = true;
+            sectionState[role].loading = false;
+            renderSectionBody(role);
+            rerenderCountBadge(role);
+        } catch (error) {
+            sectionState[role].loading = false;
+            console.error(`❌ Error cargando ${role}:`, error);
+            body.innerHTML = `
+                <div class="flex flex-col items-center gap-2 py-6">
+                    <span class="material-symbols-outlined text-red-400 text-3xl">error</span>
+                    <p class="text-red-400 text-xs">Error al cargar</p>
+                    <button onclick="refreshUserSection('${role}')"
+                        class="mt-1 px-3 py-1.5 bg-primary/15 text-primary text-[10px] font-black uppercase tracking-wider rounded-lg border border-primary/30 hover:bg-primary/25 transition-all">
+                        Reintentar
+                    </button>
+                </div>
+            `;
+        }
+    }
+
+    function rerenderCountBadge(role) {
+        const section = document.querySelector(`[data-usuarios-section="${role}"]`);
+        if (!section) return;
+        const meta = ROLE_META[role];
+        const c = COLOR_MAP[meta.colorKey];
+        const state = sectionState[role];
+        const badge = section.querySelector('[data-count-badge]');
+        if (!badge) return;
+        badge.className = `px-2 py-0.5 rounded-full ${c.chip} text-[10px] font-black border`;
+        badge.textContent = state.users.length;
+    }
+
+    function renderSectionBody(role) {
+        const section = document.querySelector(`[data-usuarios-section="${role}"]`);
+        if (!section) return;
+        const body = section.querySelector('[data-usuarios-body]');
+        const users = sectionState[role].users;
+
+        if (!users.length) {
+            body.innerHTML = `
+                <p class="text-white/30 text-xs text-center py-5">Sin usuarios en este grupo</p>
             `;
             return;
         }
 
-        const admins = users.filter(u => u.role === 'admin');
-        const barberos = users.filter(u => u.role === 'barbero');
-        const clientes = users.filter(u => u.role === 'cliente');
-
-        let html = '';
-
-        if (admins.length > 0) {
-            html += renderUserSection('Administrador', admins, 'admin_panel_settings', 'red');
-        }
-        html += renderUserSection('Barberos', barberos, 'content_cut', 'primary', true);
-        html += renderUserSection('Usuarios', clientes, 'person', 'blue', true);
-
-        container.innerHTML = html;
-        console.log(`✓ Lista de usuarios renderizada: ${users.length} total`);
-
-    } catch (error) {
-        console.error('❌ Error cargando usuarios para admin:', error);
-        container.innerHTML = `
-            <div class="text-center py-8">
-                <span class="material-symbols-outlined text-red-400 text-5xl mb-2">error</span>
-                <p class="text-red-400 text-sm">Error al cargar usuarios</p>
-                <button onclick="loadUsersForAdmin()" class="mt-3 px-4 py-2 bg-primary/20 text-primary text-xs font-bold rounded-lg border border-primary/30">
-                    Reintentar
-                </button>
+        body.innerHTML = `
+            <div class="space-y-2 usuarios-grid">
+                ${users.map(u => renderUserCard(u, role)).join('')}
             </div>
         `;
     }
-}
 
-function renderUserSection(title, users, icon, color, showActions = false) {
-    const colorMap = {
-        red: { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-400', badge: 'bg-red-500/20 text-red-400 border-red-500/30' },
-        primary: { bg: 'bg-primary/10', border: 'border-primary/30', text: 'text-primary', badge: 'bg-primary/20 text-primary border-primary/30' },
-        blue: { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-400', badge: 'bg-blue-500/20 text-blue-400 border-blue-500/30' }
-    };
-    const c = colorMap[color] || colorMap.blue;
+    // --------- Card de usuario ---------
 
-    let html = `
-        <div class="mb-6">
-            <div class="flex items-center gap-2 mb-3">
-                <span class="material-symbols-outlined ${c.text} text-lg" style="font-variation-settings: 'FILL' 1">${icon}</span>
-                <h3 class="text-white font-bold text-sm uppercase tracking-wider">${title}</h3>
-                <span class="px-2 py-0.5 rounded-full ${c.badge} text-[10px] font-black border">${users.length}</span>
+    function renderUserCard(user, currentRole) {
+        const meta = ROLE_META[currentRole];
+        const c = COLOR_MAP[meta.colorKey];
+        const uid = user.uid;
+        const nombre = user.displayName || 'Sin nombre';
+        const email = user.email || 'Sin email';
+        const foto = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(nombre)}&background=c9a74a&color=000&size=80`;
+        const isProtected = typeof isAdminEmail === 'function' && isAdminEmail(email);
+
+        const actions = isProtected
+            ? `<span class="px-2.5 py-1 rounded-lg bg-red-500/20 text-red-400 text-[10px] font-black uppercase border border-red-500/30 flex items-center gap-1">
+                <span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1">lock</span>
+                Protegido
+               </span>`
+            : renderRoleActions(uid, currentRole);
+
+        return `
+            <div class="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-colors border border-white/[0.05]" data-uid="${uid}">
+                <img src="${foto}" alt="" loading="lazy" referrerpolicy="no-referrer"
+                    onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(nombre)}&background=c9a74a&color=000&size=80';"
+                    class="w-10 h-10 rounded-full object-cover border-2 ${c.ring} flex-shrink-0">
+                <div class="min-w-0 flex-1">
+                    <p class="text-white font-bold text-sm truncate">${nombre}</p>
+                    <p class="text-white/40 text-[11px] truncate">${email}</p>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap justify-end">
+                    ${actions}
+                </div>
             </div>
-    `;
+        `;
+    }
 
-    if (users.length === 0) {
-        html += `<p class="text-white/30 text-xs ml-7">Sin usuarios en este grupo</p>`;
-    } else {
-        html += `<div class="space-y-2">`;
-        users.forEach(user => {
-            const isAdmin = typeof isAdminEmail === 'function' ? isAdminEmail(user.email) : (user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase());
-
-            html += `
-                <div class="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/8 transition-colors">
-                    <div class="flex items-center gap-3 flex-1 min-w-0">
-                        <img src="${user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'U')}&background=c9a74a&color=000&size=40`}"
-                             alt="" class="w-10 h-10 rounded-full object-cover border-2 ${c.border}">
-                        <div class="min-w-0">
-                            <p class="text-white font-bold text-sm truncate">${user.displayName || 'Sin nombre'}</p>
-                            <p class="text-white/40 text-[11px] truncate">${user.email || 'Sin email'}</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2 shrink-0">
+    function renderRoleActions(uid, currentRole) {
+        // Botones para los roles a los que PUEDE cambiar
+        const btns = ROLE_ORDER.filter(r => r !== currentRole).map(r => {
+            const meta = ROLE_META[r];
+            const c = COLOR_MAP[meta.colorKey];
+            return `
+                <button type="button" onclick="changeUserRole('${uid}', '${r}', '${currentRole}')"
+                    class="px-2.5 py-1.5 rounded-lg ${c.chip} text-[10px] font-black uppercase tracking-wider border hover:brightness-125 active:scale-95 transition-all flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1">${meta.badgeIcon}</span>
+                    Hacer ${meta.badgeLabel}
+                </button>
             `;
+        }).join('');
+        return btns;
+    }
 
-            if (isAdmin) {
-                html += `
-                    <span class="px-2 py-1 rounded-lg bg-red-500/20 text-red-400 text-[10px] font-black uppercase border border-red-500/30">
-                        Protegido
-                    </span>
-                `;
-            } else if (user.role === 'barbero') {
-                html += `
-                    <span class="px-2 py-1 rounded-lg bg-primary/20 text-primary text-[10px] font-black uppercase border border-primary/30">
-                        <span class="material-symbols-outlined text-[10px] align-middle mr-0.5" style="font-variation-settings: 'FILL' 1">content_cut</span>
-                        Barbero
-                    </span>
-                `;
-            } else {
-                html += `
-                    <span class="px-2 py-1 rounded-lg bg-blue-500/10 text-blue-400/60 text-[10px] font-bold uppercase border border-blue-500/20">
-                        Usuario
-                    </span>
-                `;
+    // --------- Cambio de rol ---------
+
+    async function changeUserRole(uid, newRole, fromRole) {
+        const metaNew = ROLE_META[newRole];
+        if (!metaNew) return;
+
+        const confirmed = window.confirm(
+            `¿Cambiar este usuario a ${metaNew.titulo.toUpperCase().replace('ES','').trim()}?\n` +
+            `El cambio es inmediato.`
+        );
+        if (!confirmed) return;
+
+        // Feedback visual en la card
+        const card = document.querySelector(`[data-uid="${uid}"]`);
+        if (card) {
+            card.style.opacity = '0.6';
+            card.style.pointerEvents = 'none';
+        }
+
+        try {
+            const ok = await firebaseAdapter.setUserRole(uid, newRole);
+            if (!ok) {
+                if (typeof window.showToast === 'function') {
+                    window.showToast('No se pudo cambiar el rol', 'error');
+                } else {
+                    alert('No se pudo cambiar el rol (¿es admin protegido?).');
+                }
+                if (card) { card.style.opacity = '1'; card.style.pointerEvents = 'auto'; }
+                return;
             }
 
-            html += `
-                    </div>
-                </div>
-            `;
-        });
-        html += `</div>`;
+            // Mover usuario de una sección a otra SIN tocar Firestore
+            const fromList = sectionState[fromRole].users;
+            const idx = fromList.findIndex(u => u.uid === uid);
+            let moved = null;
+            if (idx >= 0) {
+                moved = { ...fromList[idx], role: newRole };
+                fromList.splice(idx, 1);
+            }
+            if (sectionState[newRole].loaded && moved) {
+                sectionState[newRole].users.unshift(moved);
+            }
+
+            // Re-render de ambas secciones afectadas (solo si están cargadas/abiertas)
+            if (sectionState[fromRole].loaded) {
+                renderSectionBody(fromRole);
+                rerenderCountBadge(fromRole);
+            }
+            if (sectionState[newRole].loaded) {
+                renderSectionBody(newRole);
+                rerenderCountBadge(newRole);
+            }
+
+            if (typeof window.showToast === 'function') {
+                window.showToast(`Rol actualizado → ${metaNew.titulo}`, 'success');
+            }
+        } catch (error) {
+            console.error('❌ Error cambiando rol:', error);
+            alert('Error al cambiar el rol: ' + error.message);
+            if (card) { card.style.opacity = '1'; card.style.pointerEvents = 'auto'; }
+        }
     }
 
-    html += `</div>`;
-    return html;
-}
+    // Exponer API global
+    window.loadUsersForAdmin   = loadUsersForAdmin;
+    window.toggleUserSection   = toggleUserSection;
+    window.refreshUserSection  = refreshUserSection;
+    window.changeUserRole      = changeUserRole;
 
-async function toggleUserRole(uid, newRole) {
-    if (!confirm(`¿Cambiar usuario a ${newRole.toUpperCase()}?`)) return;
+    // Compat con la firma vieja (algunas llamadas usaban toggleUserRole)
+    window.toggleUserRole = async (uid, newRole) => {
+        // Buscamos el rol actual en caché para mantener coherencia; si no, reload completo.
+        for (const r of ROLE_ORDER) {
+            const found = sectionState[r].users.find(u => u.uid === uid);
+            if (found) return changeUserRole(uid, newRole, r);
+        }
+        const ok = await firebaseAdapter.setUserRole(uid, newRole);
+        if (ok) loadUsersForAdmin();
+    };
 
-    const success = await firebaseAdapter.setUserRole(uid, newRole);
-    if (success) {
-        await loadUsersForAdmin();
-    } else {
-        alert('Error al cambiar el rol');
-    }
-}
-
-window.loadUsersForAdmin = loadUsersForAdmin;
-window.toggleUserRole = toggleUserRole;
+    console.log('✓ admin/usuarios-ui (lazy sections) loaded');
+})();

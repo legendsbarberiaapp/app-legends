@@ -18,11 +18,32 @@
         return `${DIAS_SEMANA[fecha.getDay()]} ${fecha.getDate()} ${MESES[fecha.getMonth()]}`;
     }
 
+    /**
+     * Avatar robusto para fotos de Google:
+     *   - Inicial como fallback siempre visible por debajo
+     *   - <img> con referrerpolicy="no-referrer" (requerido para googleusercontent)
+     *   - Si la imagen carga, fade-in encima de la inicial
+     *   - Si falla, se remueve y queda la inicial
+     */
+    function avatarHTML(name, photoURL, sizeCls = 'w-12 h-12', textCls = 'text-base') {
+        const initial = ((name || 'C').trim().charAt(0) || 'C').toUpperCase();
+        let src = photoURL || '';
+        if (src && /googleusercontent\.com/.test(src)) {
+            src = src.replace(/=s\d+(-c)?/g, '=s96-c').replace(/\/s\d+-c\//g, '/s96-c/');
+        }
+        const imgTag = src
+            ? `<img src="${src}" alt="" referrerpolicy="no-referrer" loading="eager" decoding="async"
+                 class="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300"
+                 onload="this.style.opacity=1" onerror="this.remove()">`
+            : '';
+        return `<div class="relative ${sizeCls} rounded-full border-2 border-primary/30 shrink-0 overflow-hidden bg-gradient-to-br from-primary/60 to-primary/20 flex items-center justify-center">
+            <span class="text-black ${textCls} font-black">${initial}</span>
+            ${imgTag}
+        </div>`;
+    }
+
     function renderCardCita(cita, opts = {}) {
         const { showCompletarBtn = false, muted = false } = opts;
-        const fotoCliente = cita.clientePhotoURL
-            || `https://ui-avatars.com/api/?name=${encodeURIComponent(cita.clienteNombre || 'Cliente')}&background=c9a74a&color=000`;
-
         const opacity = muted ? 'opacity-60' : '';
 
         const accionesHtml = showCompletarBtn ? `
@@ -35,13 +56,17 @@
             </div>
         ` : '';
 
+        const precioStr = typeof window.formatCOP === 'function'
+            ? window.formatCOP(cita.servicioPrecio || 0)
+            : `$${cita.servicioPrecio || 0}`;
+
         return `
             <div class="p-4 rounded-2xl bg-gradient-to-br from-surface-dark to-card-dark border border-white/10 ${opacity}">
                 <div class="flex items-start gap-3">
-                    <img src="${fotoCliente}" alt="" class="w-12 h-12 rounded-full object-cover border-2 border-primary/30 shrink-0">
+                    ${avatarHTML(cita.clienteNombre, cita.clientePhotoURL)}
                     <div class="flex-1 min-w-0">
                         <p class="text-white font-bold text-sm truncate">${cita.clienteNombre || 'Cliente'}</p>
-                        <p class="text-white/50 text-xs mt-0.5">${cita.servicioNombre || 'Servicio'} • $${cita.servicioPrecio || 0}</p>
+                        <p class="text-white/50 text-xs mt-0.5">${cita.servicioNombre || 'Servicio'} • ${precioStr}</p>
                         <div class="flex items-center gap-2 mt-2">
                             <span class="material-symbols-outlined text-primary text-sm">event</span>
                             <span class="text-white/80 text-xs font-semibold">${formatearFecha(cita.fecha)} • ${cita.hora || ''}</span>

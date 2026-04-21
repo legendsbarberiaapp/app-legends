@@ -44,16 +44,16 @@
                     <div class="adic-price-field">
                         <span class="text-[9px] font-black uppercase text-white/35 tracking-wider">Con corte</span>
                         <div class="relative">
-                            <span class="absolute left-2 top-1/2 -translate-y-1/2 text-primary text-xs font-black">$</span>
-                            <input type="number" step="0.01" min="0" placeholder="0" value="${precioConCorte}" id="adic-precio-corte-${adic.id}" class="adic-price-input" onclick="event.stopPropagation()">
+                            <span class="absolute left-2 top-1/2 -translate-y-1/2 text-primary text-xs font-black pointer-events-none">$</span>
+                            <input type="text" inputmode="numeric" autocomplete="off" placeholder="0" value="${precioConCorte}" id="adic-precio-corte-${adic.id}" class="adic-price-input price-input" onclick="event.stopPropagation()">
                         </div>
                     </div>
                     ${!adic.soloConCorte ? `
                     <div class="adic-price-field">
                         <span class="text-[9px] font-black uppercase text-white/35 tracking-wider">Solo</span>
                         <div class="relative">
-                            <span class="absolute left-2 top-1/2 -translate-y-1/2 text-primary text-xs font-black">$</span>
-                            <input type="number" step="0.01" min="0" placeholder="0" value="${precioSolo}" id="adic-precio-solo-${adic.id}" class="adic-price-input" onclick="event.stopPropagation()">
+                            <span class="absolute left-2 top-1/2 -translate-y-1/2 text-primary text-xs font-black pointer-events-none">$</span>
+                            <input type="text" inputmode="numeric" autocomplete="off" placeholder="0" value="${precioSolo}" id="adic-precio-solo-${adic.id}" class="adic-price-input price-input" onclick="event.stopPropagation()">
                         </div>
                     </div>` : ''}
                 </div>
@@ -61,6 +61,11 @@
         }).join('');
 
         setTimeout(() => this.updateAdicCountBadge(), 50);
+
+        // Formato COP para los inputs de precio recién renderizados
+        if (typeof window.attachPriceInput === 'function') {
+            container.querySelectorAll('.price-input').forEach(el => window.attachPriceInput(el));
+        }
 
         if (barberAdicionales.length > 0) {
             setTimeout(() => {
@@ -127,8 +132,14 @@
             const id = item.id.replace('adic-item-', '');
             const adic = this.adicionalesGlobal.find(a => a.id === id);
             if (!adic) return null;
-            const precioCorte = parseFloat(document.getElementById(`adic-precio-corte-${id}`)?.value) || 0;
-            const precioSolo = parseFloat(document.getElementById(`adic-precio-solo-${id}`)?.value) || 0;
+            const elCorte = document.getElementById(`adic-precio-corte-${id}`);
+            const elSolo  = document.getElementById(`adic-precio-solo-${id}`);
+            const precioCorte = typeof window.parsePriceInput === 'function'
+                ? window.parsePriceInput(elCorte)
+                : (parseFloat(elCorte?.value) || 0);
+            const precioSolo = typeof window.parsePriceInput === 'function'
+                ? window.parsePriceInput(elSolo)
+                : (parseFloat(elSolo?.value) || 0);
             return {
                 id: adic.id,
                 nombre: adic.nombre,

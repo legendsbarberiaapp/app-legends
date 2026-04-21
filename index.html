@@ -114,6 +114,7 @@
     <script src="interactions.js"></script>
 
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="desktop.css">
 </head>
 
 <body class="font-display bg-background-dark text-slate-100 antialiased select-none">
@@ -237,6 +238,41 @@
     <!-- MAIN APP -->
     <div id="main-app" class="screen hidden">
 
+        <!-- DESKTOP SIDEBAR (visible solo en lg+) -->
+        <aside id="desktop-sidebar" class="desktop-sidebar">
+            <!-- Brand -->
+            <div class="desktop-sidebar-brand">
+                <div class="desktop-sidebar-logo">
+                    <img src="logo.png" alt="Legends Barbería" class="w-full h-full object-cover rounded-xl">
+                </div>
+                <div class="desktop-sidebar-brand-text">
+                    <p class="desktop-sidebar-brand-name">LEGENDS</p>
+                    <p class="desktop-sidebar-brand-sub">Barbería Profesional</p>
+                </div>
+            </div>
+
+            <!-- Nav (populated by roleManager.renderNavigation) -->
+            <nav class="desktop-sidebar-nav"></nav>
+
+            <!-- User card (populated by roleManager.updateProfileUI) -->
+            <div class="desktop-sidebar-user">
+                <img id="desktop-sidebar-avatar" src="https://ui-avatars.com/api/?name=Usuario&background=c9a74a&color=000&size=200&bold=true"
+                    alt="Avatar" referrerpolicy="no-referrer"
+                    class="desktop-sidebar-avatar">
+                <div class="desktop-sidebar-user-info">
+                    <p id="desktop-sidebar-name" class="desktop-sidebar-user-name">Usuario</p>
+                    <p id="desktop-sidebar-role" class="desktop-sidebar-user-role">Cliente</p>
+                </div>
+                <button onclick="handleSignOut()" aria-label="Cerrar sesión"
+                    class="desktop-sidebar-logout" title="Cerrar sesión">
+                    <span class="material-symbols-outlined text-lg">logout</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- CONTENT WRAPPER (aplica padding-left en desktop para el sidebar) -->
+        <div class="desktop-content">
+
         <!-- HOME TAB (partial) — integra servicios y barberos como secciones -->
         <div id="home-tab" class="tab-content active h-[100dvh] w-full flex flex-col relative"
             data-partial="screens/cliente/home.html"></div>
@@ -281,8 +317,10 @@
         <div id="admin-barberos-tab" class="tab-content hidden h-[100dvh] w-full overflow-y-auto bg-background-dark"
             data-partial="screens/admin/barberos.html"></div>
 
-        <!-- Enhanced Bottom Navigation Bar - Dynamic Content -->
-        <div
+        </div><!-- /.desktop-content -->
+
+        <!-- Enhanced Bottom Navigation Bar - Dynamic Content (solo móvil) -->
+        <div id="bottom-nav-shell"
             class="fixed bottom-0 left-0 right-0 z-30 w-full border-t border-white/10 bg-gradient-to-t from-matte-black via-matte-black/95 to-matte-black/90 backdrop-blur-2xl px-4 pb-6 pt-3 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
             <div class="bottom-nav-container flex items-center justify-around max-w-md mx-auto gap-2">
                 <!-- Contenido generado dinámicamente por roleManager.renderNavigation() -->

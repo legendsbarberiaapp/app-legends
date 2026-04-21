@@ -13,9 +13,9 @@
     }
 
     const NIVEL_COLORS = {
-        'Experto':      { bg: 'bg-blue-500/15',   text: 'text-blue-400',   border: 'border-blue-500/30',   icon: 'workspace_premium' },
-        'Profesional':  { bg: 'bg-purple-500/15', text: 'text-purple-400', border: 'border-purple-500/30', icon: 'military_tech' },
-        'Leyenda':      { bg: 'bg-primary/15',    text: 'text-primary',    border: 'border-primary/30',    icon: 'emoji_events' },
+        'Experto':      { bg: 'bg-blue-500/15',   text: 'text-blue-400',   border: 'border-blue-500/30',   icon: 'workspace_premium', rgb: '59,130,246' },
+        'Profesional':  { bg: 'bg-purple-500/15', text: 'text-purple-400', border: 'border-purple-500/30', icon: 'military_tech',     rgb: '168,85,247' },
+        'Leyenda':      { bg: 'bg-primary/15',    text: 'text-primary',    border: 'border-primary/30',    icon: 'emoji_events',      rgb: '201,167,74' },
     };
 
     const DIAS_LABELS = { lunes: 'L', martes: 'M', miercoles: 'X', jueves: 'J', viernes: 'V', sabado: 'S', domingo: 'D' };
@@ -70,11 +70,11 @@
         const safeName = (barber.userName || '').replace(/'/g, "\\'");
 
         return `
-        <div class="barber-card" style="animation-delay: ${index * 0.08}s">
+        <div class="barber-card" data-nivel="${barber.nivel || 'Experto'}" style="animation-delay: ${index * 0.08}s; --nivel-rgb: ${nivel.rgb};">
             <div class="barber-card-inner">
                 <div class="flex items-center gap-4 mb-4">
                     <div class="relative">
-                        <div class="w-16 h-16 rounded-2xl overflow-hidden border-2 border-primary/30 shadow-[0_0_15px_rgba(201,167,74,0.2)]">
+                        <div class="w-16 h-16 rounded-2xl overflow-hidden border-2 shadow-[0_0_15px_rgba(var(--nivel-rgb),0.25)]" style="border-color: rgba(var(--nivel-rgb), 0.45);">
                             <img src="${photoSrc}" alt="${barber.userName}" class="w-full h-full object-cover">
                         </div>
                         <div class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full ${nivel.bg} ${nivel.border} border flex items-center justify-center">
@@ -107,7 +107,7 @@
                         <span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1">content_cut</span>
                         <div>
                             <p class="text-[9px] text-white/40 font-bold uppercase tracking-wider">Corte</p>
-                            <p class="text-sm font-black text-primary">$${(barber.corte?.precio || 0).toFixed(2)}</p>
+                            <p class="text-sm font-black text-primary">${typeof window.formatCOP === 'function' ? window.formatCOP(barber.corte?.precio || 0) : '$' + (barber.corte?.precio || 0)}</p>
                         </div>
                     </div>
                     <div class="barber-info-chip">

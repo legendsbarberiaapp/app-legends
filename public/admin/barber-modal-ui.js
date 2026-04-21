@@ -206,9 +206,9 @@
                         </div>
 
                         <div class="relative mt-3">
-                            <div class="absolute left-3 top-1/2 -translate-y-1/2 text-primary font-black text-lg">$</div>
-                            <input type="number" id="barber-corte-precio" placeholder="0.00" step="0.01" min="0" value="${currentPrecio}" class="barber-form-input pl-8">
-                            <div class="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 text-xs font-bold">PRECIO</div>
+                            <div class="absolute left-3 top-1/2 -translate-y-1/2 text-primary font-black text-lg pointer-events-none">$</div>
+                            <input type="text" inputmode="numeric" autocomplete="off" id="barber-corte-precio" placeholder="0" value="${currentPrecio}" class="barber-form-input price-input pl-10">
+                            <div class="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 text-xs font-bold pointer-events-none">PRECIO</div>
                         </div>
                     </div>
 
@@ -266,6 +266,12 @@
 
         const barberAdicionales = barberData?.adicionales || [];
         this.renderAdicionalesInModal(barberAdicionales);
+
+        // Formato COP (puntos miles) para todos los inputs de precio del modal
+        if (typeof window.attachPriceInput === 'function') {
+            document.querySelectorAll('#barber-modal-overlay .price-input')
+                .forEach(el => window.attachPriceInput(el));
+        }
 
         requestAnimationFrame(() => {
             document.getElementById('barber-modal-overlay')?.classList.add('visible');
@@ -381,7 +387,9 @@
             return;
         }
 
-        const precio = parseFloat(precioInput?.value) || 0;
+        const precio = typeof window.parsePriceInput === 'function'
+            ? window.parsePriceInput(precioInput)
+            : (parseFloat(precioInput?.value) || 0);
         if (!precio || precio <= 0) {
             this.showToast('Ingresa el precio del corte', 'error');
             precioInput?.focus();

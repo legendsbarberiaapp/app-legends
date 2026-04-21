@@ -211,23 +211,34 @@
                 return;
             }
 
+            const NIVEL_RGB = {
+                Leyenda: '201,167,74',
+                Profesional: '168,85,247',
+                Experto: '59,130,246'
+            };
             const nivelDot = (nivel) => ({
                 Leyenda: 'bg-primary',
                 Profesional: 'bg-purple-500',
                 Experto: 'bg-blue-500'
             }[nivel] || 'bg-green-500');
+            const nivelTextCls = (nivel) => ({
+                Leyenda: 'text-primary',
+                Profesional: 'text-purple-400',
+                Experto: 'text-blue-400'
+            }[nivel] || 'text-white/70');
 
             container.innerHTML = barberos.slice(0, 10).map((b, i) => {
                 const nombre = b.userName || b.nombre || b.displayName || 'Barbero';
                 const fallbackFoto = `https://ui-avatars.com/api/?name=${encodeURIComponent(nombre)}&background=c9a74a&color=000&size=200&bold=true`;
                 const foto = b.userPhoto || b.photoURL || b.foto || fallbackFoto;
                 const nivel = b.nivel || 'Profesional';
+                const rgb = NIVEL_RGB[nivel] || NIVEL_RGB.Experto;
                 return `
                     <button data-barbero-id="${b.id}" aria-label="Reservar con ${nombre}, ${nivel}"
-                        style="--stagger-index: ${i};"
-                        class="stagger-item tap-card flex-shrink-0 flex flex-col items-center gap-2.5 w-24 p-3 rounded-2xl bg-gradient-to-br from-card-dark to-surface-dark border border-white/10 hover:border-primary/40 transition-all">
+                        style="--stagger-index: ${i}; --nivel-rgb: ${rgb}; border-color: rgba(${rgb}, 0.45); box-shadow: 0 4px 16px rgba(0,0,0,0.25), 0 0 18px rgba(${rgb}, 0.08);"
+                        class="stagger-item tap-card nivel-card flex-shrink-0 flex flex-col items-center gap-2.5 w-24 p-3 rounded-2xl bg-gradient-to-br from-card-dark to-surface-dark border-2 transition-all">
                         <div class="relative">
-                            <div class="w-16 h-16 rounded-full overflow-hidden ring-2 ring-primary/35 shadow-lg bg-gradient-to-br from-primary/20 to-card-dark">
+                            <div class="w-16 h-16 rounded-full overflow-hidden ring-2 shadow-lg bg-gradient-to-br from-primary/20 to-card-dark" style="--tw-ring-color: rgba(${rgb}, 0.45);">
                                 <img src="${foto}" alt="" loading="lazy"
                                     referrerpolicy="no-referrer"
                                     onerror="this.onerror=null;this.src='${fallbackFoto}';"
@@ -237,7 +248,7 @@
                         </div>
                         <div class="text-center w-full">
                             <p class="text-white text-xs font-bold leading-tight truncate">${nombre}</p>
-                            <p class="text-primary/80 text-[9px] font-semibold mt-0.5 truncate uppercase tracking-wider">${nivel}</p>
+                            <p class="${nivelTextCls(nivel)} text-[9px] font-semibold mt-0.5 truncate uppercase tracking-wider">${nivel}</p>
                         </div>
                     </button>
                 `;

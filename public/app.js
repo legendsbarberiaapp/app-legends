@@ -53,6 +53,19 @@ function updateNavIndicator(tabName) {
             text.classList.toggle('font-medium', !isActive);
         }
     });
+
+    // Sidebar desktop
+    document.querySelectorAll('.desktop-nav-item').forEach(item => {
+        const itemTab = item.getAttribute('data-tab');
+        const isActive = itemTab === tabName;
+        item.classList.toggle('active', isActive);
+        const icon = item.querySelector('.material-symbols-outlined');
+        if (icon) {
+            icon.style.fontVariationSettings = isActive
+                ? "'FILL' 1, 'wght' 600"
+                : "'FILL' 0, 'wght' 500";
+        }
+    });
 }
 
 function autoLoadDataForTab(tabName) {

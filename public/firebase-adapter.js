@@ -168,6 +168,7 @@ class FirebaseAuthAdapter {
 
     /**
      * Obtener TODOS los usuarios registrados (para panel de admin).
+     * ⚠ Úsalo con cuidado: trae todos los docs. Preferir getUsersByRole() en UI.
      */
     async getAllUsers() {
         if (!this.initialized) return [];
@@ -181,6 +182,26 @@ class FirebaseAuthAdapter {
             return users;
         } catch (error) {
             console.error('❌ Error cargando usuarios:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Obtener usuarios de UN solo rol (filtrado en servidor).
+     * Mucho más barato que traer todos y filtrar en cliente.
+     */
+    async getUsersByRole(role) {
+        if (!this.initialized) return [];
+        try {
+            const snapshot = await this.db.collection('users').where('role', '==', role).get();
+            const users = [];
+            snapshot.forEach(doc => {
+                users.push({ uid: doc.id, ...doc.data() });
+            });
+            console.log(`✓ ${users.length} usuarios con rol "${role}" cargados`);
+            return users;
+        } catch (error) {
+            console.error(`❌ Error cargando usuarios con rol ${role}:`, error);
             return [];
         }
     }

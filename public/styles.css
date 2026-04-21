@@ -446,8 +446,15 @@ body::before {
 .barber-card-inner {
     padding: 1.25rem;
     border-radius: 1.25rem;
-    background: linear-gradient(135deg, rgba(42, 38, 28, 0.9), rgba(30, 30, 30, 0.9));
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    background:
+        linear-gradient(135deg, rgba(var(--nivel-rgb, 201,167,74), 0.06), rgba(30, 30, 30, 0.92) 40%),
+        linear-gradient(135deg, rgba(42, 38, 28, 0.9), rgba(30, 30, 30, 0.9));
+    /* Marco coloreado según nivel (fallback blanco tenue si no hay --nivel-rgb) */
+    border: 2px solid rgba(var(--nivel-rgb, 255,255,255), 0.55);
+    box-shadow:
+        0 6px 22px rgba(0, 0, 0, 0.35),
+        0 0 28px rgba(var(--nivel-rgb, 201,167,74), 0.15),
+        inset 0 1px 0 rgba(var(--nivel-rgb, 201,167,74), 0.12);
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
@@ -459,15 +466,18 @@ body::before {
     top: 0;
     left: 0;
     right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, rgba(201, 167, 74, 0.4), transparent);
-    opacity: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, rgba(var(--nivel-rgb, 201,167,74), 1), transparent);
+    opacity: 0.9;
     transition: opacity 0.3s ease;
 }
 
 .barber-card-inner:hover {
-    border-color: rgba(201, 167, 74, 0.25);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3), 0 0 20px rgba(201, 167, 74, 0.08);
+    border-color: rgba(var(--nivel-rgb, 201,167,74), 0.85);
+    box-shadow:
+        0 10px 36px rgba(0, 0, 0, 0.45),
+        0 0 36px rgba(var(--nivel-rgb, 201,167,74), 0.3),
+        inset 0 1px 0 rgba(var(--nivel-rgb, 201,167,74), 0.2);
 }
 
 .barber-card-inner:hover::before {
@@ -651,6 +661,18 @@ body::before {
 .barber-form-input:focus {
     border-color: rgba(201, 167, 74, 0.5);
     box-shadow: 0 0 0 3px rgba(201, 167, 74, 0.1);
+}
+
+/* Inputs de precio COP: ocultar spinners nativos y asegurar espacio para el $ */
+.price-input::-webkit-outer-spin-button,
+.price-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.price-input {
+    -moz-appearance: textfield;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
 }
 
 .barber-form-input::placeholder {
@@ -947,9 +969,12 @@ body::before {
     gap: 0.25rem;
 }
 
-.adic-price-input {
+/* Gana al plugin @tailwindcss/forms que reinyecta estilos sobre [type='text'] */
+input.adic-price-input,
+input[type="text"].adic-price-input,
+input[type="number"].adic-price-input {
     width: 100%;
-    padding: 0.375rem 0.375rem 0.375rem 1.5rem;
+    padding: 0.375rem 0.5rem 0.375rem 2.25rem;
     border-radius: 0.5rem;
     background: #1a1a17;
     border: 1px solid rgba(201, 167, 74, 0.2);
@@ -967,9 +992,10 @@ body::before {
     box-shadow: 0 0 8px rgba(201, 167, 74, 0.1);
 }
 
-/* Time Input */
-.barber-time-input {
-    width: 6.5rem;
+/* Time Input — selector específico para ganarle al plugin @tailwindcss/forms */
+input.barber-time-input,
+input[type="time"].barber-time-input {
+    width: 7.5rem;
     padding: 0.5rem 0.375rem;
     border-radius: 0.5rem;
     background: #151512 !important;
@@ -980,6 +1006,19 @@ body::before {
     font-weight: 800;
     text-align: center;
     outline: none;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Ocultar el iconito de reloj que Chrome mete a la derecha (para que quepa el AM/PM) */
+input.barber-time-input::-webkit-calendar-picker-indicator,
+input[type="time"].barber-time-input::-webkit-calendar-picker-indicator {
+    opacity: 0.45;
+    filter: invert(0.7) sepia(1) saturate(4) hue-rotate(350deg);
+    cursor: pointer;
+    padding: 0;
+    margin-left: 2px;
+    width: 12px;
+    height: 12px;
     transition: all 0.3s ease;
     color-scheme: dark;
     -webkit-appearance: none;
@@ -1286,51 +1325,8 @@ textarea:focus-visible,
         opacity: 0.4;
     }
 
-    #splash-screen {
-        max-width: 440px;
-        margin: 0 auto;
-        border-left: 1px solid rgba(255, 255, 255, 0.06);
-        border-right: 1px solid rgba(255, 255, 255, 0.06);
-        box-shadow:
-            0 0 0 1px rgba(201, 167, 74, 0.05),
-            0 0 80px rgba(0, 0, 0, 0.55),
-            0 0 180px rgba(201, 167, 74, 0.05);
-    }
-
-    #main-app {
-        max-width: 440px;
-        margin: 0 auto;
-        min-height: 100dvh;
-        position: relative;
-        border-left: 1px solid rgba(255, 255, 255, 0.06);
-        border-right: 1px solid rgba(255, 255, 255, 0.06);
-        box-shadow:
-            0 0 0 1px rgba(201, 167, 74, 0.05),
-            0 0 80px rgba(0, 0, 0, 0.55),
-            0 0 180px rgba(201, 167, 74, 0.05);
-        background: #0a0a0a;
-    }
-
-    /* Bottom nav: ancho de la app */
-    #main-app > div.fixed.bottom-0 {
-        max-width: 440px;
-        left: 50%;
-        right: auto;
-        transform: translateX(-50%);
-    }
-
-    /* Booking sticky footer */
-    #booking-tab > div.fixed[class*="bottom-"] {
-        max-width: 440px;
-        left: 50%;
-        right: auto;
-        transform: translateX(-50%);
-    }
-
-    /* FAB dentro del frame (se recalcula respecto al centro) */
-    #home-tab .floating-action-button {
-        right: calc(50vw - 220px + 1.5rem);
-    }
+    /* NOTA: el antiguo "marco móvil centrado 440px" se eliminó en favor
+       del layout desktop completo con sidebar. Ver public/desktop.css. */
 
     /* Atenuar smoke overlay en desktop */
     .smoke-overlay {
