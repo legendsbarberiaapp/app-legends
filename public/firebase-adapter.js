@@ -292,6 +292,15 @@ class FirebaseAuthAdapter {
                     loginButtons.style.animation = 'fadeIn 0.5s ease-out';
                 }
 
+                // Restablecer botón de Google por si quedó deshabilitado de una sesión anterior
+                const googleBtn = document.getElementById('google-login-btn');
+                if (googleBtn) {
+                    googleBtn.disabled = false;
+                    googleBtn.style.opacity = '1';
+                    googleBtn.style.pointerEvents = 'auto';
+                }
+                isLoginInProgress = false;
+
                 roleManager.currentUser = null;
                 roleManager.currentRole = null;
                 roleManager.hideAllTabs();
