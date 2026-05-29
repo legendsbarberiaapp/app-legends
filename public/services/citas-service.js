@@ -228,6 +228,91 @@
     }
 
     /**
+     * F2 — Reagendar una cita: cambia fecha y hora.
+     * Asume que la cita está en estado pendiente o confirmada (no validamos
+     * acá; quien llama decide si es válido).
+     */
+    async function reagendar(citaId, nuevaFecha, nuevaHora) {
+        const database = db();
+        if (!database || !citaId || !nuevaFecha || !nuevaHora) return false;
+        try {
+            await database.collection(COLLECTION).doc(citaId).update({
+                fecha: nuevaFecha,
+                hora: nuevaHora,
+                fechaHora: buildFechaHora(nuevaFecha, nuevaHora),
+                updatedAt: serverTimestamp()
+            });
+            console.log(`✓ Cita ${citaId} reagendada a ${nuevaFecha} ${nuevaHora}`);
+            return true;
+        } catch (error) {
+            console.error('❌ Error reagendando cita:', error);
+            return false;
+        }
+    }
+
+    /**
+     * F2 — Crear una cita walk-in (cliente presencial sin reserva previa).
+     * La llama la recepcionista desde su panel; el cliente puede no tener
+     * cuenta en la app, por eso `clienteId` queda en null.
+     *
+     * Estado inicial: 'confirmada' (el cliente ya está físicamente en la
+     * barbería, no necesita aprobación posterior).
+     *
+     * @param {object} data
+     *   - sedeId, barberoId, barberoNombre, barberoNivel
+     *   - clienteNombre, clientePhone
+     *   - servicioNombre, servicioPrecio
+     *   - fecha, hora
+     *   - creadoPor (uid del recepcionista — auditoría)
+     * @returns {Promise<string|null>}
+     */
+    async function createWalkin(data) {
+        const database = db();
+        if (!database) return null;
+        try {
+            const docRef = await database.collection(COLLECTION).add({
+                clienteId: null,
+                clienteNombre: data.clienteNombre || 'Walk-in',
+                clientePhotoURL: null,
+                clientePhone: data.clientePhone || null,
+
+                barberoId: data.barberoId,
+                barberoNombre: data.barberoNombre || '',
+                barberoNivel: data.barberoNivel || null,
+
+                sedeId: data.sedeId || null,
+
+                servicioNombre: data.servicioNombre || 'Corte',
+                servicioPrecio: Number(data.servicioPrecio) || 0,
+
+                fecha: data.fecha,
+                hora: data.hora,
+                fechaHora: buildFechaHora(data.fecha, data.hora),
+
+                // Flags de identificación: facilita reportes futuros (F3)
+                walkin: true,
+                creadoPor: data.creadoPor || null,
+
+                estado: ESTADOS.CONFIRMADA,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+                // Como nace confirmada, los flags de "contactar" no aplican
+                confirmedAt: serverTimestamp(),
+                confirmedBy: data.creadoPor || null,
+                adminContactoCliente: true,
+                adminContactoBarbero: true,
+                completedAt: null,
+                noShowAt: null
+            });
+            console.log(`✓ Walk-in creado: ${docRef.id}`);
+            return docRef.id;
+        } catch (error) {
+            console.error('❌ Error creando walk-in:', error);
+            return null;
+        }
+    }
+
+    /**
      * Devuelve las horas ("HH:mm") ya ocupadas por otro cliente para un
      * barbero en una fecha dada. Solo cuentan las citas activas
      * (pendiente o confirmada). Las canceladas/completadas liberan el slot.
@@ -384,6 +469,7 @@
 
     window.CitasService = {
         create,
+        createWalkin,
         listByCliente,
         listByBarbero,
         listPendientes,
@@ -391,6 +477,7 @@
         listBySedeRange,
         confirmar,
         cancelar,
+        reagendar,
         completar,
         markContactoCliente,
         markContactoBarbero,

@@ -4,9 +4,10 @@ rules_version = '2';
 // Pégalas en: Firebase Console -> Firestore Database -> Rules
 //
 // Última actualización: 2026-05-28
-// Último cambio: F1 multi-sede + rol recepcionista. Nueva colección `sedes`,
-//                helpers isRecepcionista() y recepcionistaSedeId(),
-//                recepcionista puede leer citas de su sede.
+// Último cambio: F2 — recepcionista puede actuar sobre citas de su sede
+//                (confirmar/cancelar/completar/no_show/reagendar) y crear
+//                walk-ins (citas presenciales sin reserva del cliente).
+//                F1 trajo: sedes, rol recepcionista, lectura read-only.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -107,23 +108,35 @@ service cloud.firestore {
         resource.data.estado == 'confirmada'
       );
 
-      // CREAR: solo el propio cliente puede agendar para sí mismo, y nace pendiente.
-      // Flags del stepper admin empiezan en false.
-      allow create: if isSignedIn()
-                    && request.resource.data.clienteId == request.auth.uid
-                    && request.resource.data.estado == 'pendiente';
+      // CREAR:
+      // - el cliente para sí mismo (estado nace pendiente; flujo normal de booking)
+      // - la recepcionista de la sede, para walk-ins (estado nace confirmada
+      //   porque el cliente ya está físicamente en la barbería)
+      allow create: if isSignedIn() && (
+        (request.resource.data.clienteId == request.auth.uid
+          && request.resource.data.estado == 'pendiente')
+        ||
+        (isRecepcionista()
+          && request.resource.data.sedeId == recepcionistaSedeId()
+          && (request.resource.data.estado == 'confirmada'
+              || request.resource.data.estado == 'pendiente'))
+      );
 
-      // NOTA: el estado 'no_show' lo marca el admin desde la Agenda cuando el
-      // cliente no se presenta; se trata igual que 'completada' para lecturas.
+      // NOTA: el estado 'no_show' lo marca el admin (Agenda) o la recepcionista
+      // cuando el cliente no se presenta; se trata igual que 'completada' para
+      // lecturas.
 
       // ACTUALIZAR:
-      // - admin puede confirmar/cancelar
+      // - admin puede confirmar/cancelar/cualquier transición
       // - el cliente puede cancelar su propia cita
       // - el barbero puede completar/cancelar su cita asignada
+      // - la recepcionista puede actuar sobre las citas de SU sede
+      //   (confirmar/cancelar/completar/no_show/reagendar)
       allow update: if isSignedIn() && (
         isAdmin() ||
         resource.data.clienteId == request.auth.uid ||
-        resource.data.barberoId == request.auth.uid
+        resource.data.barberoId == request.auth.uid ||
+        (isRecepcionista() && resource.data.sedeId == recepcionistaSedeId())
       );
 
       // BORRAR: solo admin (normalmente se cancela, no se borra).
