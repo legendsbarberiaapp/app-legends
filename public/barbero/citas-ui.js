@@ -56,9 +56,12 @@
             </div>
         ` : '';
 
+        // Si la recepcionista cobró con productos extra, totalCobrado tiene
+        // el monto final. Fallback al precio agendado para citas pre-F3.
+        const monto = cita.totalCobrado || cita.servicioPrecio || 0;
         const precioStr = typeof window.formatCOP === 'function'
-            ? window.formatCOP(cita.servicioPrecio || 0)
-            : `$${cita.servicioPrecio || 0}`;
+            ? window.formatCOP(monto)
+            : `$${monto}`;
 
         return `
             <div class="p-4 rounded-2xl bg-gradient-to-br from-surface-dark to-card-dark border border-white/10 ${opacity}">

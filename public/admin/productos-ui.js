@@ -17,8 +17,9 @@
         return;
     }
 
-    // Cache local de productos para evitar refetches mientras el overlay está abierto.
-    BarberManager.prototype.productos = [];
+    // Nota: `this.productos` está inicializado en el constructor de BarberManager
+    // (barber-manager.js) — NO se asigna al prototype para evitar state compartido
+    // entre instancias.
 
     BarberManager.prototype.loadProductos = async function () {
         try {

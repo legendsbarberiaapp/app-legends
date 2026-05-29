@@ -42,7 +42,10 @@
     function renderStats(citas) {
         const completadas = citas.filter(c => c.estado === 'completada');
         const proximas = citas.filter(c => c.estado === 'confirmada');
-        const gasto = completadas.reduce((sum, c) => sum + (Number(c.servicioPrecio) || 0), 0);
+        // Si la recepcionista agregó productos al cobrar, totalCobrado refleja
+        // el monto real (corte + productos). Fallback al precio agendado para
+        // citas viejas pre-F3 que no tienen el campo.
+        const gasto = completadas.reduce((sum, c) => sum + (Number(c.totalCobrado || c.servicioPrecio) || 0), 0);
 
         const vEl = document.getElementById('stat-visitas');
         const pEl = document.getElementById('stat-proximas');
@@ -87,7 +90,7 @@
                     <div class="flex-1 min-w-0">
                         <div class="flex items-start justify-between gap-2">
                             <p class="text-sm font-bold text-white leading-tight truncate">${cita.servicioNombre || 'Servicio'}</p>
-                            <span class="text-primary font-black text-sm shrink-0 tabular-nums">${window.formatCOP(cita.servicioPrecio || 0)}</span>
+                            <span class="text-primary font-black text-sm shrink-0 tabular-nums">${window.formatCOP(cita.totalCobrado || cita.servicioPrecio || 0)}</span>
                         </div>
                         <div class="flex items-center gap-2 text-xs text-white/65 mt-1 flex-wrap">
                             <span class="font-semibold ${theme.textCls}">${cita.barberoNombre || 'Barbero'}</span>

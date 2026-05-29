@@ -15,6 +15,7 @@ class BarberManager {
         this.serviciosCorte = []; // Servicios globales del corte
         this.adicionalesGlobal = []; // Adicionales globales
         this.sedes = []; // Sucursales (F1: 2 sedes fijas, renombrables)
+        this.productos = []; // Catálogo de productos para POS (F3)
         this.editingBarberId = null;
         this.initialized = false;
     }

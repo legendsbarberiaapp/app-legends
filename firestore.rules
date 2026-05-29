@@ -3,10 +3,11 @@ rules_version = '2';
 // Reglas para Legends Barbería
 // Pégalas en: Firebase Console -> Firestore Database -> Rules
 //
-// Última actualización: 2026-05-28
-// Último cambio: F3 — colecciones `productos` (admin gestiona) y `ventas`
-//                (recepcionista crea al cobrar; lee las de su sede; admin
-//                lee todas). Cliente lee las ventas asociadas a sus citas.
+// Última actualización: 2026-05-29
+// Último cambio: F3-fix — endurecimos `ventas`: total y subtotal deben ser
+//                >= 0 al crear (evita totales negativos). Resto igual:
+//                F3 trajo: colecciones `productos` (admin) y `ventas`
+//                (recepcionista crea al cobrar; lee de su sede; admin lee todo).
 //                F2 trajo: recepcionista opera citas + walk-ins.
 //                F1 trajo: sedes, rol recepcionista, lectura read-only.
 service cloud.firestore {
@@ -116,7 +117,11 @@ service cloud.firestore {
         isAdmin() ||
         (isRecepcionista()
           && request.resource.data.sedeId == recepcionistaSedeId()
-          && request.resource.data.cobradoPor == request.auth.uid)
+          && request.resource.data.cobradoPor == request.auth.uid
+          && request.resource.data.total is number
+          && request.resource.data.total >= 0
+          && request.resource.data.subtotal is number
+          && request.resource.data.subtotal >= 0)
       );
 
       allow update, delete: if isAdmin();

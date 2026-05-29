@@ -415,15 +415,24 @@
     // NAVEGACIÓN
     // ============================================
 
+    /**
+     * Avanza/retrocede un día desde un ISO "YYYY-MM-DD". Parsea la fecha
+     * MANUALMENTE (no `new Date(iso)`) porque `new Date(iso)` la interpreta
+     * como UTC y en Colombia (UTC-5) saltea un día. Misma pista que agenda admin.
+     */
+    function shiftISO(iso, deltaDays) {
+        const [y, m, d] = iso.split('-').map(Number);
+        const date = new Date(y, m - 1, d);
+        date.setDate(date.getDate() + deltaDays);
+        return toISO(date);
+    }
+
     function recepGoPrev() {
         const fechas = [...state.citasPorFecha.keys()].sort();
         const prev = fechas.reverse().find(f => f < state.fechaActual);
         if (prev) { state.fechaActual = prev; render(); }
         else {
-            // si no hay día con citas anterior, retrocedemos un día calendario
-            const d = new Date(state.fechaActual);
-            d.setDate(d.getDate() - 1);
-            state.fechaActual = toISO(d);
+            state.fechaActual = shiftISO(state.fechaActual, -1);
             render();
         }
     }
@@ -433,9 +442,7 @@
         const next = fechas.find(f => f > state.fechaActual);
         if (next) { state.fechaActual = next; render(); }
         else {
-            const d = new Date(state.fechaActual);
-            d.setDate(d.getDate() + 1);
-            state.fechaActual = toISO(d);
+            state.fechaActual = shiftISO(state.fechaActual, 1);
             render();
         }
     }

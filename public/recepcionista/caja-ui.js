@@ -160,7 +160,6 @@
             : (v.fechaHora?.seconds ? new Date(v.fechaHora.seconds * 1000).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false }) : '--:--');
         const cliente = v.clienteNombre || 'Cliente';
         const tipo = v.tipo === 'venta_directa' ? 'Venta directa' : (v.barberoNombre ? `con ${v.barberoNombre}` : 'Cita');
-        const itemsCount = (v.items || []).length;
         const productos = (v.items || []).filter(it => it.tipo === 'producto').length;
 
         return `

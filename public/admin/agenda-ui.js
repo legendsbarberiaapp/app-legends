@@ -383,9 +383,12 @@
                 : '';
         }
 
+        // Para citas completadas que pasaron por cobro, totalCobrado refleja
+        // el monto real (incluyendo productos vendidos al cierre).
+        const monto = cita.totalCobrado || cita.servicioPrecio || 0;
         const precioStr = typeof window.formatCOP === 'function'
-            ? window.formatCOP(cita.servicioPrecio || 0)
-            : `$${cita.servicioPrecio || 0}`;
+            ? window.formatCOP(monto)
+            : `$${monto}`;
 
         return `
             <div class="p-3.5 rounded-xl bg-white/[0.02] border ${s.border}" style="${theme.borderLeft}">

@@ -42,26 +42,53 @@
         return (typeof roleManager !== 'undefined') ? roleManager.currentUser : null;
     }
 
+    /**
+     * FIX #6: en vez de depender SOLO de window.recepState.sedeId (que se
+     * inicializa en citas-ui), buscamos la sede en este orden:
+     *   1. user.sedeId del roleManager (fuente de verdad — siempre presente)
+     *   2. window.recepState.sedeId (cache si ya cargó la pantalla citas)
+     * Esto desacopla el overlay y evita el bug si por algún motivo se llega
+     * a este flujo sin pasar antes por la pantalla citas.
+     */
+    function getSedeId() {
+        const user = getCurrentUser();
+        if (user && user.sedeId) return user.sedeId;
+        const rs = window.recepState;
+        if (rs && rs.sedeId) return rs.sedeId;
+        return null;
+    }
+
+    /**
+     * Nombre de la sede para mostrar en el header. Igual estrategia: cache
+     * primero (recepState/cajaState), user no tiene el nombre, solo el id.
+     */
+    function getSedeNombre() {
+        const rs = window.recepState;
+        if (rs && rs.sedeNombre) return rs.sedeNombre;
+        return '';
+    }
+
     // ============================================
     // BUILDERS DE ITEMS
     // ============================================
 
     /**
      * Construye los items iniciales a partir de una cita.
-     * Items marcados como `protegido:true` no se pueden quitar desde el UI
-     * (son lo que el cliente reservó, no estamos editando la reserva).
+     *
+     * FIX #5: los items YA NO son "protegidos". En la práctica de una barbería
+     * el cliente a veces ajusta lo que pidió (cancela la barba, decide solo
+     * corte, etc.). La recepcionista puede quitar ítems antes de cobrar.
+     * El submit valida que el total sea > 0 — si se queda en 0 no se cobra.
      */
     function itemsDesdeCita(cita) {
         const items = [];
-        // Servicio principal
         if (cita.servicioNombre && (cita.servicioPrecio || cita.total)) {
             items.push({
                 tipo: 'servicio',
                 nombre: cita.servicioNombre,
                 cantidad: 1,
                 precioUnit: Number(cita.servicioPrecio || cita.total || 0),
-                subtotal: Number(cita.servicioPrecio || cita.total || 0),
-                protegido: true
+                subtotal: Number(cita.servicioPrecio || cita.total || 0)
             });
         }
         return items;
@@ -122,11 +149,11 @@
         const existing = document.getElementById('cobrar-overlay');
         if (existing) existing.remove();
 
-        const recepState = window.recepState || {};
         const titulo = ctx.modo === 'cita' ? 'Cobrar cita' : 'Venta directa';
+        const sedeNombre = getSedeNombre();
         const sub = ctx.modo === 'cita'
             ? `${ctx.cita?.clienteNombre || 'Cliente'} · ${ctx.cita?.hora || ''}`
-            : `Sede ${recepState.sedeNombre || ''}`;
+            : (sedeNombre ? `Sede ${sedeNombre}` : 'Tu sede');
 
         const html = `
         <div id="cobrar-overlay" class="barber-modal-overlay" style="z-index:155">
@@ -324,15 +351,32 @@
     // SUBMIT
     // ============================================
 
+    /**
+     * Submit atómico (FIX #3 de inspección).
+     *
+     * Antes: 1) create venta, 2) update cita. Si la cita fallaba (típico:
+     * cita vieja sin sedeId que las rules rechazan), la venta quedaba y la
+     * cita seguía en confirmada → segundo intento creaba venta duplicada.
+     *
+     * Ahora usamos `db.batch()`. Pre-generamos el ventaId con `.doc()` para
+     * poder denormalizarlo en la cita, y commiteamos venta+cita juntas.
+     * Si una falla, ambas son rollback. Sin doble cobro.
+     */
     async function submit() {
-        const recepState = window.recepState;
-        if (!recepState || !recepState.sedeId) {
+        const sedeId = getSedeId();
+        if (!sedeId) {
             if (typeof window.showToast === 'function') window.showToast('Sin sede asignada', 'error');
             return;
         }
         const total = calcularSubtotal();
         if (total <= 0) {
             if (typeof window.showToast === 'function') window.showToast('Total en 0 — agregá items', 'error');
+            return;
+        }
+
+        const database = firebaseAdapter?.db;
+        if (!database) {
+            if (typeof window.showToast === 'function') window.showToast('Firebase no disponible', 'error');
             return;
         }
 
@@ -344,53 +388,62 @@
             submitBtn.innerHTML = '<div class="auth-checking-spinner" style="width:1.2rem;height:1.2rem;border-width:2px;margin:0 auto"></div>';
         }
 
-        // 1. Crear la venta
-        const ventaData = {
-            sedeId: recepState.sedeId,
+        // Pre-genera el id de la venta antes del commit → podemos denormalizarlo
+        // en la cita en el mismo batch.
+        const ventaRef = database.collection('ventas').doc();
+        const ventaId = ventaRef.id;
+        const serverTS = firebase.firestore.FieldValue.serverTimestamp();
+
+        const ventaDoc = {
+            sedeId,
             fecha: todayISO(),
+            fechaHora: serverTS,
+
             citaId: ctx.cita?.id || null,
             clienteId: ctx.cita?.clienteId || null,
             clienteNombre: ctx.cita?.clienteNombre || 'Cliente',
             barberoId: ctx.cita?.barberoId || null,
             barberoNombre: ctx.cita?.barberoNombre || '',
-            items: ctx.items.map(({ protegido, ...rest }) => rest), // limpiar flag UI
+
+            items: ctx.items.map(({ protegido, ...rest }) => rest), // limpiar flag UI legacy si quedaba
             subtotal: total,
             total,
             metodoPago: ctx.metodoPago,
+
             cobradoPor: user?.uid || null,
             cobradoPorNombre: user?.displayName || '',
-            tipo: ctx.modo === 'cita' ? 'cita' : 'venta_directa'
+            tipo: ctx.modo === 'cita' ? 'cita' : 'venta_directa',
+            createdAt: serverTS
         };
 
-        const ventaId = await VentasService.create(ventaData);
+        const batch = database.batch();
+        batch.set(ventaRef, ventaDoc);
 
-        if (!ventaId) {
-            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = orig; }
-            if (typeof window.showToast === 'function') window.showToast('No se pudo crear la venta', 'error');
-            return;
+        if (ctx.modo === 'cita' && ctx.cita?.id) {
+            const citaRef = database.collection('citas').doc(ctx.cita.id);
+            batch.update(citaRef, {
+                estado: 'completada',
+                completedAt: serverTS,
+                updatedAt: serverTS,
+                totalCobrado: total,
+                metodoPago: ctx.metodoPago,
+                ventaId
+            });
         }
 
-        // 2. Si es por cita: marcar cita completada + denormalizar pago
-        if (ctx.modo === 'cita' && ctx.cita?.id) {
-            try {
-                const database = firebaseAdapter?.db;
-                if (database) {
-                    await database.collection('citas').doc(ctx.cita.id).update({
-                        estado: 'completada',
-                        completedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        totalCobrado: total,
-                        metodoPago: ctx.metodoPago,
-                        ventaId
-                    });
-                }
-            } catch (e) {
-                console.error('❌ Cita marcada parcialmente — venta creada pero falló update de cita:', e);
-                // No fallamos el flujo: la venta ya quedó. Avisamos.
-                if (typeof window.showToast === 'function') {
-                    window.showToast('Venta registrada, pero no se pudo cerrar la cita. Revisá la agenda.', 'error');
-                }
+        try {
+            await batch.commit();
+        } catch (e) {
+            console.error('❌ Cobro atómico falló:', e);
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = orig; }
+            if (typeof window.showToast === 'function') {
+                // Mensaje específico para el caso más común: cita vieja sin sedeId
+                const msg = ctx.modo === 'cita'
+                    ? 'No se pudo cobrar. ¿La cita es vieja sin sede? Pedile al admin que la asigne.'
+                    : 'No se pudo registrar la venta';
+                window.showToast(msg, 'error');
             }
+            return;
         }
 
         if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = orig; }
