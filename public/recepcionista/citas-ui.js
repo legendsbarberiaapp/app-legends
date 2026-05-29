@@ -370,15 +370,34 @@
         }
     }
 
-    async function recepCompletar(citaId) {
-        if (!window.confirm('¿Marcar como completada?')) return;
-        const ok = await CitasService.completar(citaId);
-        if (ok) {
-            localUpdate(citaId, { estado: 'completada' });
-            toast('Marcada como completada ✓', 'success');
-        } else {
-            toast('No se pudo completar', 'error');
+    /**
+     * F3: completar pasa por COBRAR. El overlay de cobro crea la venta y, si
+     * sale OK, marca la cita completada con totalCobrado + metodoPago
+     * denormalizados (para que el cliente vea su recibo en perfil).
+     *
+     * Si por alguna razón no se quiere cobrar (cortesía, prueba), el flujo
+     * cancela el overlay y la cita queda en confirmada.
+     */
+    function recepCompletar(citaId) {
+        const cita = state.citasRango.find(c => c.id === citaId);
+        if (!cita) return;
+        if (typeof window.openCobrarParaCita !== 'function') {
+            toast('Módulo de cobro no cargado', 'error');
+            return;
         }
+        window.openCobrarParaCita(cita);
+    }
+
+    /**
+     * Hook llamado por cobrar-ui.js cuando una venta de cita se concretó:
+     * marca la cita completada en el cache local y re-renderiza.
+     */
+    function onCobroCita(citaId, { total, metodoPago }) {
+        localUpdate(citaId, {
+            estado: 'completada',
+            totalCobrado: total,
+            metodoPago
+        });
     }
 
     async function recepNoShow(citaId) {
@@ -464,6 +483,7 @@
     window.recepNoShow = recepNoShow;
     window.onRecepWalkinCreated = onWalkinCreated;
     window.onRecepCitaReagendada = onCitaReagendada;
+    window.onRecepCobroCita = onCobroCita;
 
     console.log('✓ RecepcionistaCitasUI (F2) loaded');
 })();

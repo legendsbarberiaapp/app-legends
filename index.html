@@ -86,6 +86,8 @@
     <script src="services/adicionales-service.js"></script>
     <script src="services/citas-service.js"></script>
     <script src="services/sedes-service.js"></script>
+    <script src="services/productos-service.js"></script>
+    <script src="services/ventas-service.js"></script>
     <!-- Loader de pantallas (partials) -->
     <script src="screen-loader.js"></script>
     <!-- Coordinador de UI de administración -->
@@ -96,6 +98,7 @@
     <script src="admin/servicios-picker-ui.js"></script>
     <script src="admin/adicionales-picker-ui.js"></script>
     <script src="admin/sedes-ui.js"></script>
+    <script src="admin/productos-ui.js"></script>
     <script src="admin/confirm-dialog-ui.js"></script>
     <!-- UI del admin (usuarios, dashboard, citas) -->
     <script src="admin/usuarios-ui.js"></script>
@@ -112,10 +115,12 @@
     <script src="cliente/cita-listener.js"></script>
     <!-- UI del barbero (citas) -->
     <script src="barbero/citas-ui.js"></script>
-    <!-- UI de la recepcionista (F2: opera citas + walk-ins + reagendar) -->
+    <!-- UI de la recepcionista (F2: opera citas/walkin/reagendar · F3: cobro + caja) -->
     <script src="recepcionista/citas-ui.js"></script>
     <script src="recepcionista/walkin-ui.js"></script>
     <script src="recepcionista/reagendar-ui.js"></script>
+    <script src="recepcionista/cobrar-ui.js"></script>
+    <script src="recepcionista/caja-ui.js"></script>
     <!-- Interacciones táctiles/UI globales -->
     <script src="interactions.js"></script>
 
@@ -310,6 +315,10 @@
         <!-- RECEPCIONISTA CITAS TAB (partial) -->
         <div id="recepcionista-citas-tab" class="tab-content hidden h-[100dvh] w-full overflow-y-auto bg-background-dark"
             data-partial="screens/recepcionista/citas.html"></div>
+
+        <!-- RECEPCIONISTA CAJA TAB (partial — F3) -->
+        <div id="recepcionista-caja-tab" class="tab-content hidden h-[100dvh] w-full overflow-y-auto bg-background-dark"
+            data-partial="screens/recepcionista/caja.html"></div>
 
         <!-- ============================================
              ADMIN TABS (5 tabs)

@@ -33,13 +33,15 @@ const ROLE_CONFIGS = {
         showFAB: false
     },
 
-    // F1: una sola pantalla read-only ("Citas Hoy" de su sede).
-    // F2 sumará: gestionar citas (confirmar/cancelar/reagendar) y walk-ins.
-    // F3 sumará: cobrar / POS.
+    // F1: pantalla read-only "Citas Hoy" de su sede.
+    // F2 sumó: gestionar citas (confirmar/cancelar/reagendar) + walk-ins.
+    // F3 sumó: tab "Caja" (cobro al completar cita, venta directa de productos,
+    //          cierre del día por método de pago).
     // F4 sumará: inventario.
     recepcionista: {
         tabs: [
-            { id: 'recepcionista-citas', icon: 'event_available', label: 'Citas Hoy', fill: true }
+            { id: 'recepcionista-citas', icon: 'event_available', label: 'Citas',  fill: true  },
+            { id: 'recepcionista-caja',  icon: 'point_of_sale',   label: 'Caja',   fill: false }
         ],
         defaultTab: 'recepcionista-citas',
         showFAB: false

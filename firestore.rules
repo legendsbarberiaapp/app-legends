@@ -4,9 +4,10 @@ rules_version = '2';
 // Pégalas en: Firebase Console -> Firestore Database -> Rules
 //
 // Última actualización: 2026-05-28
-// Último cambio: F2 — recepcionista puede actuar sobre citas de su sede
-//                (confirmar/cancelar/completar/no_show/reagendar) y crear
-//                walk-ins (citas presenciales sin reserva del cliente).
+// Último cambio: F3 — colecciones `productos` (admin gestiona) y `ventas`
+//                (recepcionista crea al cobrar; lee las de su sede; admin
+//                lee todas). Cliente lee las ventas asociadas a sus citas.
+//                F2 trajo: recepcionista opera citas + walk-ins.
 //                F1 trajo: sedes, rol recepcionista, lectura read-only.
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -82,6 +83,43 @@ service cloud.firestore {
     match /sedes/{sedeId} {
       allow read: if isSignedIn();
       allow create, update, delete: if isAdmin();
+    }
+
+    // ============================================
+    // PRODUCTOS (catálogo para POS) — F3
+    // Solo admin gestiona. Todos los logeados leen (la recepcionista los muestra
+    // al cobrar; el cliente podría verlos en su recibo futuro).
+    // ============================================
+    match /productos/{productoId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ============================================
+    // VENTAS (transacciones cerradas) — F3
+    // - Crear: solo la recepcionista de la sede (al cobrar o al hacer venta directa).
+    //   El admin también puede (para correcciones futuras).
+    // - Leer: la recepcionista de la sede; el admin; el cliente dueño (las
+    //   asociadas a sus citas); el barbero asignado (para saber lo que vendió).
+    // - Update/delete: solo admin (las ventas son inmutables — para corregir
+    //   se crea otra venta opuesta en F4+; por ahora bloqueamos).
+    // ============================================
+    match /ventas/{ventaId} {
+      allow read: if isSignedIn() && (
+        isAdmin() ||
+        (isRecepcionista() && resource.data.sedeId == recepcionistaSedeId()) ||
+        resource.data.clienteId == request.auth.uid ||
+        resource.data.barberoId == request.auth.uid
+      );
+
+      allow create: if isSignedIn() && (
+        isAdmin() ||
+        (isRecepcionista()
+          && request.resource.data.sedeId == recepcionistaSedeId()
+          && request.resource.data.cobradoPor == request.auth.uid)
+      );
+
+      allow update, delete: if isAdmin();
     }
 
     // ============================================
