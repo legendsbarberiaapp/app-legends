@@ -86,6 +86,9 @@ function autoLoadDataForTab(tabName) {
     if (tabName === 'admin-agenda' && typeof initAgenda === 'function') {
         initAgenda();
     }
+    if (tabName === 'admin-reportes' && typeof initReportes === 'function') {
+        initReportes();
+    }
     if (tabName === 'home' && typeof initHome === 'function') {
         initHome();
     }

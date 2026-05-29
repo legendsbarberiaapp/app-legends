@@ -86,6 +86,9 @@
                 cobradoPor: data.cobradoPor || null,
                 cobradoPorNombre: data.cobradoPorNombre || '',
                 tipo: data.tipo || TIPOS.CITA,
+                // F5: denormalizado del flag de la cita original (si aplica).
+                // Permite contar walk-ins vs reservas con app en reportes.
+                walkin: !!data.walkin,
 
                 createdAt: serverTimestamp()
             });
@@ -94,6 +97,33 @@
         } catch (error) {
             console.error('❌ Error creando venta:', error);
             return null;
+        }
+    }
+
+    /**
+     * F5: listar TODAS las ventas en un rango (sin filtro de sede). Usado
+     * por reportes admin cuando elige "Todas las sedes". Usa solo el campo
+     * `fecha` (single-field range) — no requiere índice compuesto.
+     */
+    async function listByRange(fechaDesde, fechaHasta) {
+        const database = db();
+        if (!database) return [];
+        try {
+            const snapshot = await database.collection(COLLECTION)
+                .where('fecha', '>=', fechaDesde)
+                .where('fecha', '<=', fechaHasta)
+                .get();
+            const result = [];
+            snapshot.forEach(doc => result.push({ id: doc.id, ...doc.data() }));
+            result.sort((a, b) => {
+                const sa = a.fechaHora?.seconds || 0;
+                const sb = b.fechaHora?.seconds || 0;
+                return sa - sb;
+            });
+            return result;
+        } catch (e) {
+            console.error('❌ Error listando ventas (range):', e);
+            return [];
         }
     }
 
@@ -140,6 +170,6 @@
         return agg;
     }
 
-    window.VentasService = { create, listBySedeRange, aggregarPorMetodo, METODOS_PAGO, TIPOS };
+    window.VentasService = { create, listBySedeRange, listByRange, aggregarPorMetodo, METODOS_PAGO, TIPOS };
     console.log('✓ VentasService loaded');
 })();

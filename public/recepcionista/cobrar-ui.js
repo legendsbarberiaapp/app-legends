@@ -483,6 +483,9 @@
             cobradoPor: user?.uid || null,
             cobradoPorNombre: user?.displayName || '',
             tipo: ctx.modo === 'cita' ? 'cita' : 'venta_directa',
+            // F5: denormalizamos el flag walk-in de la cita original para que
+            // reportes pueda separar "citas reservadas con app" vs "walk-ins".
+            walkin: !!ctx.cita?.walkin,
             createdAt: serverTS
         };
 
