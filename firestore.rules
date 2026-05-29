@@ -4,10 +4,9 @@ rules_version = '2';
 // Pégalas en: Firebase Console -> Firestore Database -> Rules
 //
 // Última actualización: 2026-05-29
-// Último cambio: F4 — colecciones `stock` y `stock_movimientos` (inventario por
-//                sede). Recepcionista puede actualizar stock de su sede (ventas,
-//                entradas, ajustes) y crea movimientos firmados con su uid.
-//                Admin tiene control total.
+// Último cambio: F4-fix — bloqueamos cambio de `minimo` del stock por
+//                recepcionista (umbral de alerta es decisión del dueño).
+//                F4 trajo colecciones `stock` y `stock_movimientos`.
 //                F3-fix endureció ventas (total/subtotal >= 0).
 //                F3 trajo `productos` y `ventas`.
 //                F2 trajo recepcionista operando citas + walk-ins.
@@ -133,9 +132,11 @@ service cloud.firestore {
     // STOCK (inventario por sede) — F4
     // - Doc id determinístico: `${productoId}_${sedeId}`
     // - Crear: admin (al setear stock inicial) o recepcionista de la sede
-    //   (al recibir mercancía si no había doc todavía).
+    //   (al recibir mercancía si no había doc todavía, o al vender sin
+    //    stock inicial pre-existente).
     // - Actualizar: admin o recepcionista de la sede (entrada, venta o ajuste).
-    //   La recepcionista NO puede cambiar sedeId/productoId (immutable).
+    //   La recepcionista NO puede cambiar sedeId/productoId (immutable) NI
+    //   el `minimo` (umbral de alerta es decisión del dueño).
     // - Read: todos los logeados (caja muestra disponibilidad al cobrar).
     // - Delete: solo admin.
     // ============================================
@@ -152,7 +153,8 @@ service cloud.firestore {
         (isRecepcionista()
           && resource.data.sedeId == recepcionistaSedeId()
           && request.resource.data.sedeId == resource.data.sedeId
-          && request.resource.data.productoId == resource.data.productoId)
+          && request.resource.data.productoId == resource.data.productoId
+          && request.resource.data.minimo == resource.data.minimo)
       );
 
       allow delete: if isAdmin();

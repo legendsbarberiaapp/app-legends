@@ -8,8 +8,9 @@
  *   - FAB "Entrada" → modal para registrar mercancía recibida
  *
  * Las ventas decrementan automáticamente desde el batch de cobrar-ui.
- * Acá la recepcionista solo registra ENTRADAS (recibir pedido) — los ajustes
- * los hace el admin.
+ * Acá la recepcionista solo registra ENTRADAS (recibir pedido). Los
+ * umbrales mínimos los setea el admin (las rules lo enforce); ajustes
+ * manuales también vía admin.
  */
 (function () {
     'use strict';
@@ -22,7 +23,11 @@
     const state = {
         sedeId: null,
         sedeNombre: '',
-        productos: [],            // catálogo (todos los activos)
+        // FIX F4-#6: guardamos TODOS los productos (activos + desactivados)
+        // para que el historial de movimientos pueda resolver el nombre incluso
+        // de productos que el admin desactivó después.
+        productos: [],            // TODOS los productos del catálogo
+        productosActivos: [],     // solo los activos (los que se muestran en la lista principal)
         stockBySedeIdProductoId: {}, // productoId → { cantidad, minimo }
         movimientos: []
     };
@@ -54,7 +59,9 @@
         try {
             const [sedes, productos, stockRows, movimientos] = await Promise.all([
                 (typeof SedesService !== 'undefined') ? SedesService.list() : Promise.resolve([]),
-                (typeof ProductosService !== 'undefined') ? ProductosService.list({ soloActivos: true }) : Promise.resolve([]),
+                // FIX F4-#6: traemos TODOS (no soloActivos) para que el historial
+                // de movimientos pueda resolver nombres de productos desactivados.
+                (typeof ProductosService !== 'undefined') ? ProductosService.list() : Promise.resolve([]),
                 (typeof StockService !== 'undefined') ? StockService.listBySede(state.sedeId) : Promise.resolve([]),
                 (typeof StockService !== 'undefined') ? StockService.listMovimientos(state.sedeId, 20) : Promise.resolve([])
             ]);
@@ -63,6 +70,7 @@
                 ? SedesService.nombreById(sedes, state.sedeId)
                 : '';
             state.productos = productos;
+            state.productosActivos = (productos || []).filter(p => p.activo !== false);
             state.stockBySedeIdProductoId = {};
             (stockRows || []).forEach(s => {
                 state.stockBySedeIdProductoId[s.productoId] = {
@@ -93,16 +101,19 @@
         const data = state.stockBySedeIdProductoId[productoId];
         if (!data) return { cantidad: undefined, minimo: 0, nivel: 'sin-registro' };
         const { cantidad, minimo } = data;
+        // FIX F4-#7: chequear negativo PRIMERO. Antes, cantidad=-1 con minimo=5
+        // caía en 'bajo' por el orden de checks → label confuso "Bajo: -1 / mín 5".
+        if (cantidad < 0) return { cantidad, minimo, nivel: 'negativo' };
         if (cantidad === 0) return { cantidad, minimo, nivel: 'agotado' };
         if (minimo > 0 && cantidad <= minimo) return { cantidad, minimo, nivel: 'bajo' };
-        if (cantidad < 0) return { cantidad, minimo, nivel: 'negativo' };
         return { cantidad, minimo, nivel: 'ok' };
     }
 
     function renderAlertas() {
         const container = document.getElementById('inv-alertas');
         if (!container) return;
-        const criticos = state.productos
+        // Alertas solo de productos activos — no avisamos de desactivados.
+        const criticos = state.productosActivos
             .map(p => ({ p, e: getEstadoStock(p.id) }))
             .filter(({ e }) => e.nivel === 'agotado' || e.nivel === 'bajo' || e.nivel === 'negativo');
 
@@ -141,7 +152,8 @@
     function renderProductos() {
         const container = document.getElementById('inv-productos-list');
         if (!container) return;
-        if (!state.productos || state.productos.length === 0) {
+        // Lista principal solo muestra productos ACTIVOS (los que se pueden vender).
+        if (!state.productosActivos || state.productosActivos.length === 0) {
             container.innerHTML = `
                 <div class="flex flex-col items-center gap-3 py-10 px-6 rounded-xl bg-white/[0.02] border border-white/[0.04]">
                     <span class="material-symbols-outlined text-white/20 text-4xl" style="font-variation-settings: 'FILL' 1">inventory_2</span>
@@ -150,7 +162,7 @@
                 </div>`;
             return;
         }
-        container.innerHTML = state.productos.map(p => {
+        container.innerHTML = state.productosActivos.map(p => {
             const e = getEstadoStock(p.id);
             const cantTxt = e.cantidad === undefined ? '—' : fmtCantidad(e.cantidad);
             const mintxt = e.minimo > 0 ? `mín ${e.minimo}` : 'sin mínimo';
@@ -260,14 +272,15 @@
     // ============================================
 
     function openEntradaModal() {
-        if (!state.productos || state.productos.length === 0) {
+        // Solo permitimos entradas de productos activos.
+        if (!state.productosActivos || state.productosActivos.length === 0) {
             if (typeof window.showToast === 'function') window.showToast('No hay productos en el catálogo', 'error');
             return;
         }
         const existing = document.getElementById('entrada-overlay');
         if (existing) existing.remove();
 
-        const productosOptions = state.productos.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+        const productosOptions = state.productosActivos.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
 
         const html = `
         <div id="entrada-overlay" class="barber-modal-overlay" style="z-index:160">

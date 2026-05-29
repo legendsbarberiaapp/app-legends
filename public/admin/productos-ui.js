@@ -249,6 +249,23 @@
     };
 
     BarberManager.prototype.confirmDeleteProducto = async function (id, nombre) {
+        // FIX F4-#5: chequear que no quede stock por ninguna sede antes de borrar
+        // (evita stock huérfano y pérdida de trazabilidad en movimientos).
+        if (typeof StockService !== 'undefined' && this.sedes && this.sedes.length > 0) {
+            const stockRows = await Promise.all(
+                this.sedes.map(s => StockService.get(id, s.id))
+            );
+            const conStock = stockRows
+                .map((row, i) => ({ row, sede: this.sedes[i] }))
+                .filter(({ row }) => row && (Number(row.cantidad) || 0) > 0);
+
+            if (conStock.length > 0) {
+                const nombresSedes = conStock.map(({ sede }) => sede.nombre).join(', ');
+                alert(`No se puede eliminar "${nombre}" porque tiene stock en: ${nombresSedes}.\n\nPoné la cantidad en 0 en cada sede primero (botón Stock), o desactivá el producto en vez de borrarlo.`);
+                return;
+            }
+        }
+
         if (!confirm(`¿Eliminar el producto "${nombre}"? Las ventas históricas que lo incluyan se conservan.`)) return;
         const ok = await ProductosService.remove(id);
         if (!ok) { this.showToast('Error eliminando', 'error'); return; }
@@ -365,13 +382,24 @@
         if (isNaN(cantidad) || cantidad < 0) { this.showToast('Cantidad inválida', 'error'); return; }
         if (isNaN(minimo) || minimo < 0) { this.showToast('Mínimo inválido', 'error'); return; }
 
-        const user = (typeof firebaseAdapter !== 'undefined') ? null : null;
         const currentUser = (typeof roleManager !== 'undefined') ? roleManager.currentUser : null;
 
         const origText = btnEl?.innerHTML;
         if (btnEl) { btnEl.disabled = true; btnEl.innerHTML = '...'; }
 
         try {
+            // FIX F4-#4: setMinimo PRIMERO (solo cambia un campo, riesgo bajo).
+            // Si falla acá, la cantidad NO se modificó — estado consistente.
+            // Si la primera pasa y `ajustar` falla, queda el minimo nuevo pero
+            // cantidad vieja: el admin ve el error y reintenta sin riesgo de
+            // corromper la cantidad.
+            const okMin = await StockService.setMinimo({ productoId, sedeId, minimo });
+            if (!okMin) {
+                this.showToast('Error guardando el mínimo', 'error');
+                if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = origText; }
+                return;
+            }
+
             const okAjuste = await StockService.ajustar({
                 productoId,
                 sedeId,
@@ -380,13 +408,12 @@
                 creadoPor: currentUser?.uid || null,
                 creadoPorNombre: currentUser?.displayName || ''
             });
-            const okMin = await StockService.setMinimo({ productoId, sedeId, minimo });
-
-            if (!okAjuste || !okMin) {
-                this.showToast('Error al guardar', 'error');
+            if (!okAjuste) {
+                this.showToast('Error guardando la cantidad (el mínimo sí se guardó)', 'error');
                 if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = origText; }
                 return;
             }
+
             this.showToast('Stock actualizado ✓', 'success');
             if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = origText; }
         } catch (e) {

@@ -100,7 +100,11 @@
     /**
      * Registrar entrada de mercancía. Aumenta cantidad e inserta movimiento.
      * Si el doc no existe (primera vez), lo crea con cantidad inicial = delta.
-     * Atomic via batch.
+     *
+     * FIX F4-#2: usamos `runTransaction` en lugar de get + batch. El get
+     * estaba FUERA del batch, lo que abría una race: dos entradas concurrentes
+     * de un producto sin doc previo podían pisarse (set vs set, queda solo
+     * el último). La transaction garantiza lectura+escritura atómica.
      */
     async function registrarEntrada({ productoId, sedeId, cantidad, notas = '', creadoPor, creadoPorNombre = '' }) {
         const database = db();
@@ -112,39 +116,38 @@
         const movRef = database.collection(COL_MOV).doc();
 
         try {
-            const snap = await stockRef.get();
-            const batch = database.batch();
-            const ts = serverTimestamp();
+            await database.runTransaction(async (tx) => {
+                const snap = await tx.get(stockRef);
+                const ts = serverTimestamp();
 
-            if (snap.exists) {
-                batch.update(stockRef, {
-                    cantidad: increment(cantidad),
-                    updatedAt: ts
-                });
-            } else {
-                batch.set(stockRef, {
+                if (snap.exists) {
+                    tx.update(stockRef, {
+                        cantidad: increment(cantidad),
+                        updatedAt: ts
+                    });
+                } else {
+                    tx.set(stockRef, {
+                        productoId,
+                        sedeId,
+                        cantidad: cantidad,
+                        minimo: 0,
+                        createdAt: ts,
+                        updatedAt: ts
+                    });
+                }
+
+                tx.set(movRef, {
                     productoId,
                     sedeId,
+                    tipo: TIPOS_MOV.ENTRADA,
                     cantidad: cantidad,
-                    minimo: 0,
-                    createdAt: ts,
-                    updatedAt: ts
+                    ventaId: null,
+                    notas: notas || '',
+                    creadoPor: creadoPor || null,
+                    creadoPorNombre: creadoPorNombre || '',
+                    createdAt: ts
                 });
-            }
-
-            batch.set(movRef, {
-                productoId,
-                sedeId,
-                tipo: TIPOS_MOV.ENTRADA,
-                cantidad: cantidad,
-                ventaId: null,
-                notas: notas || '',
-                creadoPor: creadoPor || null,
-                creadoPorNombre: creadoPorNombre || '',
-                createdAt: ts
             });
-
-            await batch.commit();
             return true;
         } catch (e) {
             console.error('❌ Error registrando entrada:', e);
@@ -209,7 +212,11 @@
         }
     }
 
-    /** Set umbral mínimo (para alertas). Solo admin. */
+    /**
+     * Set umbral mínimo (para alertas). Solo admin puede llamarlo en la
+     * práctica — las rules bloquean a la recepcionista para que no toque
+     * el campo `minimo` (decisión del dueño).
+     */
     async function setMinimo({ productoId, sedeId, minimo }) {
         const database = db();
         if (!database || !productoId || !sedeId) return false;
@@ -261,10 +268,18 @@
 
     /**
      * Helper: dado un array de items de venta (los que tienen tipo='producto'),
-     * devuelve los inputs listos para meter en un batch externo:
-     *   - stockRef + update({cantidad: increment(-cantidadVendida)})
-     *   - movRef + set({tipo: 'venta', cantidad: -cantidadVendida, ventaId, ...})
-     * cobrar-ui usa esto para sumar al batch del cobro.
+     * devuelve las ops listas para meter en un batch externo (cobrar-ui).
+     *
+     * FIX CRÍTICO F4-#1: usamos `set + merge` en vez de `update` para que el
+     * cobro NO falle cuando un producto se vende sin que el admin haya
+     * registrado stock inicial. `update` tira NOT_FOUND si el doc no existe;
+     * `set + merge` crea con cantidad=-n (queda visible como "Sobrevendido"
+     * en Inventario, flag para que el admin reaccione).
+     *
+     * Pasamos `productoId` y `sedeId` siempre para que satisfaga TANTO la
+     * regla CREATE (cuando el doc no existía) como la UPDATE (mismos
+     * valores que ya tenía, no cambia). NO pasamos `minimo` para evitar
+     * pisar el umbral seteado por el admin.
      */
     function buildOpsVenta({ items, sedeId, ventaId, creadoPor, creadoPorNombre = '' }) {
         const database = db();
@@ -277,9 +292,14 @@
             const stockRef = database.collection(COL_STOCK).doc(stockId(it.productoId, sedeId));
             const movRef = database.collection(COL_MOV).doc();
             ops.push({
-                type: 'update',
+                type: 'setMerge',
                 ref: stockRef,
-                data: { cantidad: increment(-cantidadVendida), updatedAt: ts }
+                data: {
+                    productoId: it.productoId,
+                    sedeId,
+                    cantidad: increment(-cantidadVendida),
+                    updatedAt: ts
+                }
             });
             ops.push({
                 type: 'set',

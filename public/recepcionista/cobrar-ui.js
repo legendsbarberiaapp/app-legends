@@ -503,6 +503,8 @@
 
         // F4: agregar al MISMO batch los decrementos de stock + sus movimientos
         // de auditoría. Si falla la venta o la cita, el stock también se rollback.
+        // El tipo 'setMerge' soporta el fix crítico: si el producto nunca tuvo
+        // stock registrado, crea el doc con cantidad negativa en vez de fallar.
         if (typeof StockService !== 'undefined') {
             const stockOps = StockService.buildOpsVenta({
                 items: ctx.items,
@@ -512,7 +514,8 @@
                 creadoPorNombre: user?.displayName || ''
             });
             stockOps.forEach(op => {
-                if (op.type === 'update') batch.update(op.ref, op.data);
+                if (op.type === 'setMerge') batch.set(op.ref, op.data, { merge: true });
+                else if (op.type === 'update') batch.update(op.ref, op.data);
                 else if (op.type === 'set') batch.set(op.ref, op.data);
             });
         }
