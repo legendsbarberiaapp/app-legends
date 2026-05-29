@@ -4,12 +4,14 @@ rules_version = '2';
 // Pégalas en: Firebase Console -> Firestore Database -> Rules
 //
 // Última actualización: 2026-05-29
-// Último cambio: F3-fix — endurecimos `ventas`: total y subtotal deben ser
-//                >= 0 al crear (evita totales negativos). Resto igual:
-//                F3 trajo: colecciones `productos` (admin) y `ventas`
-//                (recepcionista crea al cobrar; lee de su sede; admin lee todo).
-//                F2 trajo: recepcionista opera citas + walk-ins.
-//                F1 trajo: sedes, rol recepcionista, lectura read-only.
+// Último cambio: F4 — colecciones `stock` y `stock_movimientos` (inventario por
+//                sede). Recepcionista puede actualizar stock de su sede (ventas,
+//                entradas, ajustes) y crea movimientos firmados con su uid.
+//                Admin tiene control total.
+//                F3-fix endureció ventas (total/subtotal >= 0).
+//                F3 trajo `productos` y `ventas`.
+//                F2 trajo recepcionista operando citas + walk-ins.
+//                F1 trajo sedes y rol recepcionista.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -122,6 +124,57 @@ service cloud.firestore {
           && request.resource.data.total >= 0
           && request.resource.data.subtotal is number
           && request.resource.data.subtotal >= 0)
+      );
+
+      allow update, delete: if isAdmin();
+    }
+
+    // ============================================
+    // STOCK (inventario por sede) — F4
+    // - Doc id determinístico: `${productoId}_${sedeId}`
+    // - Crear: admin (al setear stock inicial) o recepcionista de la sede
+    //   (al recibir mercancía si no había doc todavía).
+    // - Actualizar: admin o recepcionista de la sede (entrada, venta o ajuste).
+    //   La recepcionista NO puede cambiar sedeId/productoId (immutable).
+    // - Read: todos los logeados (caja muestra disponibilidad al cobrar).
+    // - Delete: solo admin.
+    // ============================================
+    match /stock/{stockId} {
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn() && (
+        isAdmin() ||
+        (isRecepcionista() && request.resource.data.sedeId == recepcionistaSedeId())
+      );
+
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        (isRecepcionista()
+          && resource.data.sedeId == recepcionistaSedeId()
+          && request.resource.data.sedeId == resource.data.sedeId
+          && request.resource.data.productoId == resource.data.productoId)
+      );
+
+      allow delete: if isAdmin();
+    }
+
+    // ============================================
+    // STOCK_MOVIMIENTOS (audit log) — F4
+    // - Inmutables: solo se crean, nunca se editan/borran (admin puede).
+    // - Crear: admin o recepcionista de la sede, firmado con su uid.
+    // - Read: admin o recepcionista de la sede.
+    // ============================================
+    match /stock_movimientos/{movId} {
+      allow read: if isSignedIn() && (
+        isAdmin() ||
+        (isRecepcionista() && resource.data.sedeId == recepcionistaSedeId())
+      );
+
+      allow create: if isSignedIn() && (
+        isAdmin() ||
+        (isRecepcionista()
+          && request.resource.data.sedeId == recepcionistaSedeId()
+          && request.resource.data.creadoPor == request.auth.uid)
       );
 
       allow update, delete: if isAdmin();

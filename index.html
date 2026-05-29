@@ -88,6 +88,7 @@
     <script src="services/sedes-service.js"></script>
     <script src="services/productos-service.js"></script>
     <script src="services/ventas-service.js"></script>
+    <script src="services/stock-service.js"></script>
     <!-- Loader de pantallas (partials) -->
     <script src="screen-loader.js"></script>
     <!-- Coordinador de UI de administración -->
@@ -115,12 +116,13 @@
     <script src="cliente/cita-listener.js"></script>
     <!-- UI del barbero (citas) -->
     <script src="barbero/citas-ui.js"></script>
-    <!-- UI de la recepcionista (F2: opera citas/walkin/reagendar · F3: cobro + caja) -->
+    <!-- UI de la recepcionista (F2: opera citas/walkin/reagendar · F3: cobro + caja · F4: inventario) -->
     <script src="recepcionista/citas-ui.js"></script>
     <script src="recepcionista/walkin-ui.js"></script>
     <script src="recepcionista/reagendar-ui.js"></script>
     <script src="recepcionista/cobrar-ui.js"></script>
     <script src="recepcionista/caja-ui.js"></script>
+    <script src="recepcionista/inventario-ui.js"></script>
     <!-- Interacciones táctiles/UI globales -->
     <script src="interactions.js"></script>
 
@@ -319,6 +321,10 @@
         <!-- RECEPCIONISTA CAJA TAB (partial — F3) -->
         <div id="recepcionista-caja-tab" class="tab-content hidden h-[100dvh] w-full overflow-y-auto bg-background-dark"
             data-partial="screens/recepcionista/caja.html"></div>
+
+        <!-- RECEPCIONISTA INVENTARIO TAB (partial — F4) -->
+        <div id="recepcionista-inventario-tab" class="tab-content hidden h-[100dvh] w-full overflow-y-auto bg-background-dark"
+            data-partial="screens/recepcionista/inventario.html"></div>
 
         <!-- ============================================
              ADMIN TABS (5 tabs)

@@ -37,11 +37,13 @@ const ROLE_CONFIGS = {
     // F2 sumó: gestionar citas (confirmar/cancelar/reagendar) + walk-ins.
     // F3 sumó: tab "Caja" (cobro al completar cita, venta directa de productos,
     //          cierre del día por método de pago).
-    // F4 sumará: inventario.
+    // F4 sumó: tab "Inventario" (stock por sede, alertas de bajo stock,
+    //          registrar entradas de mercancía).
     recepcionista: {
         tabs: [
-            { id: 'recepcionista-citas', icon: 'event_available', label: 'Citas',  fill: true  },
-            { id: 'recepcionista-caja',  icon: 'point_of_sale',   label: 'Caja',   fill: false }
+            { id: 'recepcionista-citas',      icon: 'event_available', label: 'Citas',      fill: true  },
+            { id: 'recepcionista-caja',       icon: 'point_of_sale',   label: 'Caja',       fill: false },
+            { id: 'recepcionista-inventario', icon: 'inventory_2',     label: 'Stock',      fill: false }
         ],
         defaultTab: 'recepcionista-citas',
         showFAB: false

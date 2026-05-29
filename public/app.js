@@ -104,6 +104,9 @@ function autoLoadDataForTab(tabName) {
     if (tabName === 'recepcionista-caja' && typeof initRecepcionistaCaja === 'function') {
         initRecepcionistaCaja();
     }
+    if (tabName === 'recepcionista-inventario' && typeof initRecepcionistaInventario === 'function') {
+        initRecepcionistaInventario();
+    }
 }
 
 window.switchTab = switchTab;

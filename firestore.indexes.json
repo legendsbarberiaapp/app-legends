@@ -15,6 +15,14 @@
         { "fieldPath": "sedeId", "order": "ASCENDING" },
         { "fieldPath": "fecha", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "stock_movimientos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "sedeId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

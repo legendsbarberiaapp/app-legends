@@ -26,9 +26,10 @@
     const ctx = {
         modo: null,           // 'cita' | 'directa'
         cita: null,           // referencia cuando modo='cita'
-        items: [],            // {tipo,nombre,cantidad,precioUnit,subtotal,productoId?,protegido?}
+        items: [],            // {tipo,nombre,cantidad,precioUnit,subtotal,productoId?}
         metodoPago: 'efectivo',
-        productosCache: []
+        productosCache: [],
+        stockCache: {}        // F4: productoId → cantidad disponible (de la sede actual)
     };
 
     function fmtCOP(n) {
@@ -111,7 +112,7 @@
         ctx.cita = cita;
         ctx.items = itemsDesdeCita(cita);
         ctx.metodoPago = 'efectivo';
-        await loadProductos();
+        await loadProductosYStock();
         renderOverlay();
     }
 
@@ -123,18 +124,47 @@
         ctx.cita = null;
         ctx.items = [];
         ctx.metodoPago = 'efectivo';
-        await loadProductos();
+        await loadProductosYStock();
         renderOverlay();
     }
 
-    async function loadProductos() {
+    /**
+     * F4: carga productos activos + el stock de la sede actual. Si StockService
+     * no está cargado o falla, dejamos stockCache vacío y todos los productos
+     * se ven con "stock desconocido" (no se bloquea el flujo del cobro).
+     */
+    async function loadProductosYStock() {
+        const sedeId = getSedeId();
         try {
-            ctx.productosCache = (typeof ProductosService !== 'undefined')
-                ? await ProductosService.list({ soloActivos: true })
-                : [];
+            const [productos, stockRows] = await Promise.all([
+                (typeof ProductosService !== 'undefined')
+                    ? ProductosService.list({ soloActivos: true })
+                    : Promise.resolve([]),
+                (sedeId && typeof StockService !== 'undefined')
+                    ? StockService.listBySede(sedeId)
+                    : Promise.resolve([])
+            ]);
+            ctx.productosCache = productos;
+            ctx.stockCache = {};
+            (stockRows || []).forEach(s => {
+                ctx.stockCache[s.productoId] = Number(s.cantidad) || 0;
+            });
         } catch (e) {
+            console.error('❌ Error cargando productos/stock:', e);
             ctx.productosCache = [];
+            ctx.stockCache = {};
         }
+    }
+
+    /** Cantidad disponible de un producto. undefined si nunca se seteó stock. */
+    function stockDe(productoId) {
+        return ctx.stockCache[productoId];
+    }
+
+    /** Cantidad ya agregada al ticket de un producto. */
+    function cantidadEnCarrito(productoId) {
+        const it = ctx.items.find(x => x.productoId === productoId);
+        return it ? Number(it.cantidad) || 0 : 0;
     }
 
     function close() {
@@ -274,16 +304,41 @@
                 </p>`;
             return;
         }
-        container.innerHTML = productos.map(p => `
-            <button type="button" onclick="cobrarAddProducto('${p.id}')"
-                class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.08] hover:border-primary/30 hover:bg-primary/5 transition-all active:scale-[0.97] text-left">
-                <span class="min-w-0">
-                    <span class="block text-white text-xs font-bold truncate">${p.nombre}</span>
-                    <span class="block text-primary text-xs font-black tabular-nums">${fmtCOP(p.precio || 0)}</span>
-                </span>
-                <span class="material-symbols-outlined text-white/30 text-base shrink-0">add_circle</span>
-            </button>
-        `).join('');
+        container.innerHTML = productos.map(p => {
+            const stock = stockDe(p.id);
+            const enCarrito = cantidadEnCarrito(p.id);
+            const disponibleNow = (stock === undefined) ? null : Math.max(0, stock - enCarrito);
+            const agotado = disponibleNow === 0;
+
+            // Etiqueta de stock: "5 disp." / "Agotado" / "Sin registro" (si nunca se seteó)
+            let stockBadge = '';
+            if (stock === undefined) {
+                stockBadge = `<span class="block text-white/30 text-[9px] font-bold uppercase tracking-wider">Sin registro</span>`;
+            } else if (agotado) {
+                stockBadge = `<span class="block text-red-400 text-[9px] font-black uppercase tracking-wider">Agotado</span>`;
+            } else if (stock <= 3) {
+                stockBadge = `<span class="block text-amber-400 text-[9px] font-black uppercase tracking-wider">${disponibleNow} disp.</span>`;
+            } else {
+                stockBadge = `<span class="block text-white/40 text-[9px] font-bold uppercase tracking-wider">${disponibleNow} disp.</span>`;
+            }
+
+            const disabled = agotado ? 'disabled' : '';
+            const stateClass = agotado
+                ? 'opacity-50 cursor-not-allowed bg-white/[0.02] border-white/[0.05]'
+                : 'bg-white/[0.03] border-white/[0.08] hover:border-primary/30 hover:bg-primary/5 active:scale-[0.97]';
+
+            return `
+                <button type="button" onclick="cobrarAddProducto('${p.id}')" ${disabled}
+                    class="flex items-center justify-between gap-2 p-2.5 rounded-xl border transition-all text-left ${stateClass}">
+                    <span class="min-w-0">
+                        <span class="block text-white text-xs font-bold truncate">${p.nombre}</span>
+                        <span class="block text-primary text-xs font-black tabular-nums">${fmtCOP(p.precio || 0)}</span>
+                        ${stockBadge}
+                    </span>
+                    <span class="material-symbols-outlined ${agotado ? 'text-red-400/50' : 'text-white/30'} text-base shrink-0">${agotado ? 'block' : 'add_circle'}</span>
+                </button>
+            `;
+        }).join('');
     }
 
     function renderMetodos() {
@@ -315,6 +370,19 @@
     function addProducto(productoId) {
         const p = ctx.productosCache.find(x => x.id === productoId);
         if (!p) return;
+
+        // F4: validar stock. Si stock está registrado, no permitir exceder.
+        // Si nunca se registró (undefined), dejamos pasar — "sin registro" no
+        // bloquea (el admin todavía no setea el inventario para ese producto).
+        const stock = stockDe(productoId);
+        const enCarrito = cantidadEnCarrito(productoId);
+        if (stock !== undefined && enCarrito + 1 > stock) {
+            if (typeof window.showToast === 'function') {
+                window.showToast(`Solo hay ${stock} en stock`, 'error');
+            }
+            return;
+        }
+
         // Si ya está en items, incrementamos la cantidad
         const existing = ctx.items.find(it => it.productoId === productoId);
         if (existing) {
@@ -331,6 +399,7 @@
             });
         }
         renderItems();
+        renderProductos(); // re-render para actualizar "X disp." restando lo del carrito
         renderTotal();
     }
 
@@ -338,6 +407,7 @@
         if (index < 0 || index >= ctx.items.length) return;
         ctx.items.splice(index, 1);
         renderItems();
+        renderProductos(); // recupera el "X disp." en el grid si era producto
         renderTotal();
     }
 
@@ -431,16 +501,37 @@
             });
         }
 
+        // F4: agregar al MISMO batch los decrementos de stock + sus movimientos
+        // de auditoría. Si falla la venta o la cita, el stock también se rollback.
+        if (typeof StockService !== 'undefined') {
+            const stockOps = StockService.buildOpsVenta({
+                items: ctx.items,
+                sedeId,
+                ventaId,
+                creadoPor: user?.uid || null,
+                creadoPorNombre: user?.displayName || ''
+            });
+            stockOps.forEach(op => {
+                if (op.type === 'update') batch.update(op.ref, op.data);
+                else if (op.type === 'set') batch.set(op.ref, op.data);
+            });
+        }
+
         try {
             await batch.commit();
         } catch (e) {
             console.error('❌ Cobro atómico falló:', e);
             if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = orig; }
             if (typeof window.showToast === 'function') {
-                // Mensaje específico para el caso más común: cita vieja sin sedeId
-                const msg = ctx.modo === 'cita'
-                    ? 'No se pudo cobrar. ¿La cita es vieja sin sede? Pedile al admin que la asigne.'
-                    : 'No se pudo registrar la venta';
+                // Mensajes específicos por causa más común
+                let msg;
+                if (ctx.modo === 'cita') {
+                    msg = 'No se pudo cobrar. ¿La cita es vieja sin sede? Pedile al admin que la asigne.';
+                } else if (ctx.items.some(it => it.tipo === 'producto')) {
+                    msg = 'No se pudo registrar. Quizás el stock de algún producto está mal — revisá Inventario.';
+                } else {
+                    msg = 'No se pudo registrar la venta';
+                }
                 window.showToast(msg, 'error');
             }
             return;
