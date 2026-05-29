@@ -88,12 +88,13 @@
 
     const state = {
         step: 1,
-        barbero: null,       // {id (userId), docId, nombre, photoURL, nivel, corte, adicionalesConfig, horario}
+        barbero: null,       // {id (userId), docId, nombre, photoURL, nivel, corte, adicionalesConfig, horario, sedeId}
         conCorte: null,      // true | false | null
         adicionales: [],     // [{id, nombre, precio}]  (precio recalculado si cambia conCorte)
         fecha: null,
         hora: null,
-        servicioFilter: null // {id, nombre} cuando viene preseleccionado desde "Servicios Populares" en home
+        servicioFilter: null,// {id, nombre} cuando viene preseleccionado desde "Servicios Populares" en home
+        sedeId: null         // F1: sede seleccionada por el cliente (auto si hay 1 sola)
     };
 
     // Preselección desde home (solo barbero; servicio legacy se ignora porque
@@ -106,6 +107,7 @@
     let occupiedSlots = [];
     let lastTotal = 0;
     let cachedBarberos = null; // evita doble fetch
+    let cachedSedes = null;    // F1: cache de sedes para el segmented control
 
     const reduceMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -244,6 +246,50 @@
         `;
     }
 
+    /**
+     * Segmented control de sedes (F1). Se muestra arriba del grid del step 1.
+     * Si solo hay 1 sede, devuelve string vacío (auto-seleccionada, no hay
+     * decisión que tomar).
+     */
+    function renderSedeSelector() {
+        const sedes = cachedSedes || [];
+        if (sedes.length <= 1) return '';
+
+        const pills = sedes.map(s => {
+            const active = state.sedeId === s.id;
+            return `
+                <button onclick="window.selectBookingSede('${s.id}')" aria-label="Ver barberos de ${s.nombre}" aria-pressed="${active}"
+                    class="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.97]
+                        ${active
+                            ? 'bg-primary text-black shadow-[0_4px_15px_rgba(201,167,74,0.3)]'
+                            : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white'}">
+                    <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1" aria-hidden="true">storefront</span>
+                    <span class="truncate">${s.nombre}</span>
+                </button>
+            `;
+        }).join('');
+
+        return `
+            <div class="mb-4 fade-in-soft">
+                <p class="text-white/45 text-[10px] font-bold uppercase tracking-[0.2em] mb-2 pl-1">Sede</p>
+                <div class="flex gap-2">${pills}</div>
+            </div>
+        `;
+    }
+
+    /** Determina si un barbero corresponde a la sede actualmente filtrada. */
+    function barberoMatchesSede(barbero, sedeId, sedes) {
+        if (!sedeId) return true;
+        if (barbero.sedeId === sedeId) return true;
+        // Fallback de migración: barberos legacy sin sedeId aparecen solo en la
+        // primera sede (la "default"), para que sigan siendo reservables
+        // mientras el admin no los reasigna.
+        if (!barbero.sedeId && Array.isArray(sedes) && sedes.length > 0 && sedes[0].id === sedeId) {
+            return true;
+        }
+        return false;
+    }
+
     async function renderBarberosStep() {
         const container = document.getElementById('booking-barberos');
         if (!container) return;
@@ -251,7 +297,7 @@
         // Contenedor pasa a ser flex-col para poder llevar banner + grid.
         container.className = 'flex flex-col';
 
-        if (!cachedBarberos) {
+        if (!cachedBarberos || !cachedSedes) {
             container.innerHTML = `
                 ${renderServicioFilterBanner()}
                 <div class="grid grid-cols-2 gap-3">
@@ -262,16 +308,27 @@
                 </div>
             `;
             try {
-                cachedBarberos = await BarbersService.list();
+                const [bs, sd] = await Promise.all([
+                    cachedBarberos ? Promise.resolve(cachedBarberos) : BarbersService.list(),
+                    cachedSedes ? Promise.resolve(cachedSedes) : (typeof SedesService !== 'undefined' ? SedesService.list() : Promise.resolve([]))
+                ]);
+                cachedBarberos = bs;
+                cachedSedes = sd;
             } catch (error) {
-                console.error('❌ Error cargando barberos:', error);
+                console.error('❌ Error cargando barberos/sedes:', error);
                 container.innerHTML = renderServicioFilterBanner() + renderEmptyError('Error al cargar barberos', 'initBooking()');
                 return;
             }
         }
 
+        // Auto-seleccionar la primera sede si aún no hay sede elegida.
+        if (!state.sedeId && cachedSedes.length > 0) {
+            state.sedeId = cachedSedes[0].id;
+        }
+
         if (!cachedBarberos || cachedBarberos.length === 0) {
             container.innerHTML = `
+                ${renderSedeSelector()}
                 ${renderServicioFilterBanner()}
                 <div class="empty-state-premium fade-in-soft">
                     <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/25 flex items-center justify-center">
@@ -289,27 +346,38 @@
             return (NIVEL_ORDER[a.nivel] ?? 9) - (NIVEL_ORDER[b.nivel] ?? 9);
         });
 
-        // Si hay filtro de servicio, dejamos solo los barberos que lo ofrecen.
+        // Filtro por sede (F1)
+        ordenados = ordenados.filter(b => barberoMatchesSede(b, state.sedeId, cachedSedes));
+
+        // Filtro por servicio (si vino de "Servicios Populares" en home)
         if (state.servicioFilter) {
             const svcId = state.servicioFilter.id;
             ordenados = ordenados.filter(b => b?.corte?.servicios?.some(s => s.id === svcId));
         }
 
         if (ordenados.length === 0) {
+            const motivoFiltroServicio = !!state.servicioFilter;
+            const sedeNombre = (cachedSedes.find(s => s.id === state.sedeId) || {}).nombre || 'esta sede';
             container.innerHTML = `
+                ${renderSedeSelector()}
                 ${renderServicioFilterBanner()}
                 <div class="empty-state-premium fade-in-soft">
                     <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/25 flex items-center justify-center">
                         <span class="material-symbols-outlined text-primary/60 text-4xl" style="font-variation-settings: 'FILL' 1" aria-hidden="true">person_search</span>
                     </div>
-                    <p class="text-white/85 text-sm font-bold">Ningún barbero ofrece este servicio aún</p>
-                    <p class="text-white/50 text-xs">Tocá "Ver todos" para ver el listado completo</p>
+                    <p class="text-white/85 text-sm font-bold">
+                        ${motivoFiltroServicio ? 'Ningún barbero ofrece este servicio aún' : `No hay barberos en ${sedeNombre} aún`}
+                    </p>
+                    <p class="text-white/50 text-xs">
+                        ${motivoFiltroServicio ? 'Tocá "Ver todos" o probá otra sede' : 'Probá la otra sede o esperá novedades'}
+                    </p>
                 </div>
             `;
             return;
         }
 
-        container.innerHTML = renderServicioFilterBanner()
+        container.innerHTML = renderSedeSelector()
+            + renderServicioFilterBanner()
             + `<div class="grid grid-cols-2 gap-3">${ordenados.map((b, i) => renderBarberoCard(b, i)).join('')}</div>`;
 
         container.querySelectorAll('[data-barbero-doc-id]').forEach(btn => {
@@ -323,6 +391,18 @@
 
     function clearServicioFilter() {
         state.servicioFilter = null;
+        if (state.step === 1) {
+            renderBarberosStep();
+        }
+    }
+
+    function selectBookingSede(sedeId) {
+        if (!sedeId || state.sedeId === sedeId) return;
+        state.sedeId = sedeId;
+        // Si había barbero seleccionado de otra sede, lo reseteamos
+        if (state.barbero && state.barbero.sedeId && state.barbero.sedeId !== sedeId) {
+            state.barbero = null;
+        }
         if (state.step === 1) {
             renderBarberosStep();
         }
@@ -417,7 +497,8 @@
             nivel: barbero.nivel || 'Experto',
             corte: barbero.corte || { servicios: [], precio: 0 },
             adicionalesConfig: barbero.adicionales || [],
-            horario: barbero.horario || {}
+            horario: barbero.horario || {},
+            sedeId: barbero.sedeId || state.sedeId || null // se denormaliza a la cita al confirmar
         };
         // Reset estado aguas abajo porque cambia el barbero
         state.conCorte = null;
@@ -1125,6 +1206,7 @@
             barberoId: state.barbero.id,
             barberoNombre: state.barbero.nombre,
             barberoNivel: state.barbero.nivel || null,
+            sedeId: state.barbero.sedeId || state.sedeId || null,
 
             // Schema nuevo (datos ricos)
             conCorte: state.conCorte === true,
@@ -1166,6 +1248,8 @@
         state.adicionales = [];
         state.fecha = null;
         state.hora = null;
+        state.sedeId = null;        // se re-elige al abrir el wizard
+        state.servicioFilter = null;
         lastTotal = 0;
         occupiedSlots = [];
     }
@@ -1225,6 +1309,7 @@
     async function initBooking() {
         resetState();
         cachedBarberos = null;
+        cachedSedes = null;
 
         // Bloqueo: solo 1 cita activa por cliente
         const user = roleManager && roleManager.currentUser;
@@ -1296,5 +1381,6 @@
     window.confirmarReserva = confirmarReserva;
     window.preselectBooking = preselectBooking;
     window.clearServicioFilter = clearServicioFilter;
+    window.selectBookingSede = selectBookingSede;
     console.log('✓ BookingUI loaded (wizard 4 pasos)');
 })();

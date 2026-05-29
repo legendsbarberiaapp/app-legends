@@ -23,6 +23,15 @@ service cloud.firestore {
       return isSignedIn() && userRole() == 'barbero';
     }
 
+    function isRecepcionista() {
+      return isSignedIn() && userRole() == 'recepcionista';
+    }
+
+    // Helper: sede asignada a la recepcionista que hace la request
+    function recepcionistaSedeId() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.sedeId;
+    }
+
     // ============================================
     // USERS
     // ============================================
@@ -61,6 +70,15 @@ service cloud.firestore {
     }
 
     // ============================================
+    // SEDES (sucursales) — F1: el catálogo lo crea/edita solo el admin.
+    // Cualquier usuario logeado lee (para mostrar el nombre en sus pantallas).
+    // ============================================
+    match /sedes/{sedeId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ============================================
     // CITAS (el corazón del flujo de reserva)
     // ============================================
     match /citas/{citaId} {
@@ -69,6 +87,7 @@ service cloud.firestore {
       // - el cliente dueño de la cita
       // - el barbero asignado a esa cita
       // - cualquier admin o barbero (para panels internos)
+      // - la recepcionista de la misma sede de la cita (F1: read-only)
       // - cualquier usuario autenticado SI la cita está activa (pendiente o
       //   confirmada). Necesario para que el flujo de reserva del cliente
       //   pueda saber qué slots están ocupados por otros. Las citas canceladas
@@ -78,6 +97,7 @@ service cloud.firestore {
         resource.data.barberoId == request.auth.uid ||
         isAdmin() ||
         isBarbero() ||
+        (isRecepcionista() && resource.data.sedeId == recepcionistaSedeId()) ||
         resource.data.estado == 'pendiente' ||
         resource.data.estado == 'confirmada'
       );

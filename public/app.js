@@ -98,6 +98,9 @@ function autoLoadDataForTab(tabName) {
     if (tabName === 'barbero-citas' && typeof initBarberoCitas === 'function') {
         initBarberoCitas();
     }
+    if (tabName === 'recepcionista-citas' && typeof initRecepcionistaCitas === 'function') {
+        initRecepcionistaCitas();
+    }
 }
 
 window.switchTab = switchTab;

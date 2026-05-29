@@ -9,6 +9,7 @@
 const ROLES = {
     ADMIN: 'admin',
     BARBERO: 'barbero',
+    RECEPCIONISTA: 'recepcionista',
     CLIENTE: 'cliente'
 };
 
@@ -29,6 +30,18 @@ const ROLE_CONFIGS = {
             { id: 'barbero-citas', icon: 'calendar_today', label: 'Mis Citas', fill: false }
         ],
         defaultTab: 'barbero-dashboard',
+        showFAB: false
+    },
+
+    // F1: una sola pantalla read-only ("Citas Hoy" de su sede).
+    // F2 sumará: gestionar citas (confirmar/cancelar/reagendar) y walk-ins.
+    // F3 sumará: cobrar / POS.
+    // F4 sumará: inventario.
+    recepcionista: {
+        tabs: [
+            { id: 'recepcionista-citas', icon: 'event_available', label: 'Citas Hoy', fill: true }
+        ],
+        defaultTab: 'recepcionista-citas',
         showFAB: false
     },
 

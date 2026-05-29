@@ -45,7 +45,7 @@
      * Recibe los datos ya validados — no valida aquí.
      *
      * @param {object} data - { clienteId, clienteNombre, clientePhotoURL,
-     *                          barberoId, barberoNombre,
+     *                          barberoId, barberoNombre, sedeId,
      *                          servicioNombre, servicioPrecio,
      *                          fecha ("YYYY-MM-DD"), hora ("HH:mm") }
      * @returns {Promise<string|null>} id de la cita creada, o null si falla
@@ -64,6 +64,11 @@
                 barberoId: data.barberoId,
                 barberoNombre: data.barberoNombre || '',
                 barberoNivel: data.barberoNivel || null,
+
+                // Sede denormalizada desde el barbero (F1). Sirve para que la
+                // agenda admin y la pantalla de la recepcionista filtren rápido
+                // sin tener que cruzar con la colección barberos.
+                sedeId: data.sedeId || null,
 
                 servicioNombre: data.servicioNombre || '',
                 servicioPrecio: Number(data.servicioPrecio) || 0,
@@ -89,6 +94,28 @@
         } catch (error) {
             console.error('❌ Error creando cita:', error);
             return null;
+        }
+    }
+
+    /**
+     * Listar citas de una sede en un rango de fechas — usado por agenda admin
+     * y por la pantalla de la recepcionista.
+     */
+    async function listBySedeRange(sedeId, fechaDesde, fechaHasta) {
+        const database = db();
+        if (!database || !sedeId) return [];
+        try {
+            const snapshot = await database.collection(COLLECTION)
+                .where('sedeId', '==', sedeId)
+                .where('fecha', '>=', fechaDesde)
+                .where('fecha', '<=', fechaHasta)
+                .get();
+            const result = [];
+            snapshot.forEach(doc => result.push({ id: doc.id, ...doc.data() }));
+            return sortAsc(result);
+        } catch (error) {
+            console.error('❌ Error listando citas por sede:', error);
+            return [];
         }
     }
 
@@ -361,6 +388,7 @@
         listByBarbero,
         listPendientes,
         listByRange,
+        listBySedeRange,
         confirmar,
         cancelar,
         completar,

@@ -209,8 +209,15 @@ class FirebaseAuthAdapter {
     /**
      * Cambiar el rol de un usuario en Firestore.
      * No permite cambiar el rol del admin.
+     *
+     * @param {string} uid
+     * @param {string} newRole
+     * @param {object} [extraFields] - campos adicionales a setear en el mismo update
+     *                                  (ej. { sedeId: 'abc' } al promover a recepcionista).
+     *                                  Si el nuevo rol NO es 'recepcionista', se limpia sedeId
+     *                                  automáticamente para evitar datos huérfanos.
      */
-    async setUserRole(uid, newRole) {
+    async setUserRole(uid, newRole, extraFields) {
         if (!this.initialized) return false;
 
         try {
@@ -224,7 +231,14 @@ class FirebaseAuthAdapter {
                 }
             }
 
-            await this.db.collection('users').doc(uid).update({ role: newRole });
+            const update = { role: newRole, ...(extraFields || {}) };
+            // Limpia sedeId si el nuevo rol no la necesita (recepcionista es el único
+            // rol con sede en F1; barbero la tiene en su doc `barberos`, no en `users`).
+            if (newRole !== 'recepcionista' && !('sedeId' in update)) {
+                update.sedeId = firebase.firestore.FieldValue.delete();
+            }
+
+            await this.db.collection('users').doc(uid).update(update);
             console.log(`✓ Rol de ${uid} cambiado a: ${newRole}`);
             return true;
         } catch (error) {

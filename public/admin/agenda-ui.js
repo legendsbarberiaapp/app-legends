@@ -35,6 +35,8 @@
     let fechasConCitas = [];         // lista ordenada de fechas que tienen ≥1 cita
     let fechaActual = null;          // "YYYY-MM-DD" del día visible
     let barberosCache = [];          // cache de barberos (para teléfono/nivel). Se indexa por userId al buscar.
+    let sedesCache = [];             // F1: cache de sedes para el filtro
+    let sedeFilter = 'all';          // F1: 'all' | <sedeId>. Filtra in-memory las citas visibles.
 
     function findBarberoByCitaId(citaBarberoId) {
         // En una cita, `barberoId` es el userId (Auth UID) del barbero, no el docId.
@@ -154,28 +156,21 @@
         }
 
         try {
-            // 1 sola query cubriendo rango amplio + barberos en paralelo
-            const [citas, barberos] = await Promise.all([
+            // 1 sola query cubriendo rango amplio + barberos + sedes en paralelo
+            const [citas, barberos, sedes] = await Promise.all([
                 CitasService.listByRange(),
-                BarbersService.list()
+                BarbersService.list(),
+                (typeof SedesService !== 'undefined') ? SedesService.list() : Promise.resolve([])
             ]);
 
             citasDelRango = citas || [];
             barberosCache = barberos || [];
+            sedesCache = sedes || [];
 
-            // Agrupar por fecha
-            citasPorFecha = new Map();
-            citasDelRango.forEach(c => {
-                if (!c.fecha) return;
-                if (!citasPorFecha.has(c.fecha)) citasPorFecha.set(c.fecha, []);
-                citasPorFecha.get(c.fecha).push(c);
-            });
+            // Agrupar por fecha (sin filtrar todavía — el filtro se aplica al render)
+            recomputarAgrupacion();
 
-            // Ordenar citas por hora dentro de cada día
-            citasPorFecha.forEach(arr => arr.sort((a, b) => (a.hora || '').localeCompare(b.hora || '')));
-
-            fechasConCitas = [...citasPorFecha.keys()].sort();
-            console.log(`✓ Agenda: ${citasDelRango.length} citas cargadas en ${fechasConCitas.length} fechas`);
+            console.log(`✓ Agenda: ${citasDelRango.length} citas cargadas en ${fechasConCitas.length} fechas (${sedesCache.length} sedes)`);
 
             // Posicionarse en hoy por defecto (aunque no tenga citas)
             if (!fechaActual) fechaActual = todayISO();
@@ -197,6 +192,88 @@
 
     function reloadAgenda() {
         loadData();
+    }
+
+    /**
+     * Determina si una cita pertenece a la sede actualmente filtrada.
+     * Fallback de migración: citas sin sedeId aparecen en la primera sede
+     * (la "default"), igual que los barberos legacy en el booking.
+     */
+    function citaMatchesSede(cita) {
+        if (sedeFilter === 'all') return true;
+        if (cita.sedeId === sedeFilter) return true;
+        if (!cita.sedeId && sedesCache.length > 0 && sedesCache[0].id === sedeFilter) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Reagrupa citasDelRango → citasPorFecha aplicando el filtro de sede.
+     * Llamado tras cargar datos o tras cambiar el filtro.
+     */
+    function recomputarAgrupacion() {
+        citasPorFecha = new Map();
+        citasDelRango.forEach(c => {
+            if (!c.fecha) return;
+            if (!citaMatchesSede(c)) return;
+            if (!citasPorFecha.has(c.fecha)) citasPorFecha.set(c.fecha, []);
+            citasPorFecha.get(c.fecha).push(c);
+        });
+        citasPorFecha.forEach(arr => arr.sort((a, b) => (a.hora || '').localeCompare(b.hora || '')));
+        fechasConCitas = [...citasPorFecha.keys()].sort();
+    }
+
+    /**
+     * Render del segmented control de sedes en el header de la agenda.
+     * Si solo hay 1 sede (o ninguna), no se muestra — sedeFilter queda 'all'.
+     */
+    function renderSedeFilter() {
+        const container = document.getElementById('agenda-sede-filter');
+        if (!container) return;
+        if (!sedesCache || sedesCache.length <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+
+        const pill = (label, value, icon) => {
+            const active = sedeFilter === value;
+            return `
+                <button onclick="window.setAgendaSedeFilter('${value}')" aria-pressed="${active}"
+                    class="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all active:scale-[0.97]
+                        ${active
+                            ? 'bg-primary text-black shadow-[0_4px_15px_rgba(201,167,74,0.25)]'
+                            : 'bg-white/[0.04] border border-white/[0.08] text-white/55 hover:bg-white/[0.07] hover:text-white'}">
+                    <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1" aria-hidden="true">${icon}</span>
+                    <span class="truncate">${label}</span>
+                </button>
+            `;
+        };
+
+        const pills = [pill('Todas', 'all', 'select_all')]
+            .concat(sedesCache.map(s => pill(s.nombre, s.id, 'storefront')))
+            .join('');
+
+        container.innerHTML = `
+            <div class="p-3 rounded-2xl bg-white/[0.02] border border-white/[0.04]">
+                <p class="text-white/35 text-[9px] font-black uppercase tracking-[0.3em] mb-2 pl-1">Sede</p>
+                <div class="flex gap-1.5">${pills}</div>
+            </div>
+        `;
+    }
+
+    function setAgendaSedeFilter(value) {
+        if (sedeFilter === value) return;
+        sedeFilter = value;
+        recomputarAgrupacion();
+        // Si la fecha actual ya no tiene citas, intentar saltar a una que tenga
+        if (fechaActual && !citasPorFecha.has(fechaActual) && fechasConCitas.length > 0) {
+            // Mantener fechaActual si es hoy aunque esté vacío (el día vacío es válido)
+            if (!esHoy(fechaActual)) {
+                fechaActual = fechasConCitas.find(f => f >= todayISO()) || fechasConCitas[fechasConCitas.length - 1];
+            }
+        }
+        render();
     }
 
     // ---- Navegación entre días ----
@@ -356,6 +433,7 @@
     }
 
     function render() {
+        renderSedeFilter();
         renderHeader();
         renderBody();
         renderNavButtons();
@@ -489,5 +567,6 @@
     window.agendaMarcarCompletada = agendaMarcarCompletada;
     window.agendaMarcarNoShow = agendaMarcarNoShow;
     window.agendaCancelar = agendaCancelar;
+    window.setAgendaSedeFilter = setAgendaSedeFilter;
     console.log('✓ AdminAgendaUI loaded');
 })();

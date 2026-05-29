@@ -14,6 +14,7 @@ class BarberManager {
         this.allUsers = [];
         this.serviciosCorte = []; // Servicios globales del corte
         this.adicionalesGlobal = []; // Adicionales globales
+        this.sedes = []; // Sucursales (F1: 2 sedes fijas, renombrables)
         this.editingBarberId = null;
         this.initialized = false;
     }
@@ -25,8 +26,21 @@ class BarberManager {
     async init() {
         console.log('🔧 Inicializando BarberManager...');
         this.initialized = true;
-        await Promise.all([this.loadServiciosCorte(), this.loadAdicionales()]);
+        await Promise.all([this.loadServiciosCorte(), this.loadAdicionales(), this.loadSedes()]);
         await this.loadBarbers();
+    }
+
+    async loadSedes() {
+        try {
+            if (typeof SedesService === 'undefined') {
+                this.sedes = [];
+                return;
+            }
+            this.sedes = await SedesService.list();
+        } catch (error) {
+            console.error('❌ Error cargando sedes:', error);
+            this.sedes = [];
+        }
     }
 
     // =============================================

@@ -41,13 +41,13 @@
 
     BarberManager.prototype.openAddBarberModal = async function () {
         this.editingBarberId = null;
-        await Promise.all([this.loadUsers(), this.loadServiciosCorte(), this.loadAdicionales()]);
+        await Promise.all([this.loadUsers(), this.loadServiciosCorte(), this.loadAdicionales(), this.loadSedes()]);
         this.showModal(null);
     };
 
     BarberManager.prototype.openEditBarberModal = async function (id) {
         this.editingBarberId = id;
-        await Promise.all([this.loadUsers(), this.loadServiciosCorte(), this.loadAdicionales()]);
+        await Promise.all([this.loadUsers(), this.loadServiciosCorte(), this.loadAdicionales(), this.loadSedes()]);
         const barber = this.barbers.find(b => b.id === id);
         if (!barber) {
             console.error('Barbero no encontrado:', id);
@@ -120,6 +120,12 @@
 
         const currentNivel = barberData?.nivel || '';
         const currentPrecio = barberData?.corte?.precio || '';
+        const currentSedeId = barberData?.sedeId || '';
+
+        const sedesOptions = (this.sedes || []).map(s => {
+            const selected = currentSedeId === s.id ? 'selected' : '';
+            return `<option value="${s.id}" ${selected}>${s.nombre}</option>`;
+        }).join('');
 
         const modalHTML = `
         <div id="barber-modal-overlay" class="barber-modal-overlay">
@@ -149,6 +155,18 @@
                             <option value="">Seleccionar usuario...</option>
                             ${usersOptions}
                         </select>
+                    </div>
+
+                    <div class="barber-form-section">
+                        <div class="barber-form-label">
+                            <span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1">storefront</span>
+                            <span>Sede</span>
+                        </div>
+                        <select id="barber-select-sede" class="barber-form-select">
+                            <option value="">Seleccionar sede...</option>
+                            ${sedesOptions}
+                        </select>
+                        <p class="text-white/30 text-[10px] mt-1.5 pl-1">Sucursal donde trabaja este barbero. El cliente verá solo barberos de la sede que elija.</p>
                     </div>
 
                     <div class="barber-form-section">
@@ -362,12 +380,20 @@
 
     BarberManager.prototype.handleSubmit = async function () {
         const userSelect = document.getElementById('barber-select-user');
+        const sedeSelect = document.getElementById('barber-select-sede');
         const precioInput = document.getElementById('barber-corte-precio');
 
         const userId = userSelect?.value;
         if (!userId && !this.editingBarberId) {
             this.showToast('Selecciona un usuario', 'error');
             userSelect?.focus();
+            return;
+        }
+
+        const sedeId = sedeSelect?.value;
+        if (!sedeId) {
+            this.showToast('Selecciona una sede', 'error');
+            sedeSelect?.focus();
             return;
         }
 
@@ -437,6 +463,7 @@
             userPhoto: userPhoto || currentBarber?.userPhoto || '',
             userEmail: userEmail || currentBarber?.userEmail || '',
             phone: phoneNormalized,
+            sedeId,
             nivel,
             corte: { servicios: serviciosSeleccionados, precio },
             adicionales: adicionalesSeleccionados,

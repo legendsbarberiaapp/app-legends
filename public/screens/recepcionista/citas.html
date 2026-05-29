@@ -1,0 +1,37 @@
+<div class="px-6 py-8 pb-28">
+    <!-- Header -->
+    <div class="mb-6">
+        <div class="flex items-center gap-3 mb-2">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-500/30 to-green-500/10 border border-green-500/25 flex items-center justify-center shadow-[0_0_20px_rgba(34,197,94,0.15)]">
+                <span class="material-symbols-outlined text-green-400 text-2xl" style="font-variation-settings: 'FILL' 1">event_available</span>
+            </div>
+            <div class="flex-1 min-w-0">
+                <h1 class="text-2xl font-black text-white leading-tight">Citas de Hoy</h1>
+                <p id="recep-sede-label" class="text-white/40 text-xs font-semibold uppercase tracking-wider truncate">Cargando...</p>
+            </div>
+            <button onclick="if(typeof initRecepcionistaCitas==='function')initRecepcionistaCitas()"
+                class="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/[0.06] text-white/50 hover:text-primary hover:border-primary/20 transition-all active:scale-95 flex items-center justify-center"
+                title="Recargar">
+                <span class="material-symbols-outlined text-lg">refresh</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Info banner: F1 read-only -->
+    <div class="mb-5 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+        <div class="flex items-start gap-2">
+            <span class="material-symbols-outlined text-amber-400/80 text-base shrink-0 mt-0.5" style="font-variation-settings: 'FILL' 1">info</span>
+            <p class="text-white/55 text-[11px] leading-relaxed">
+                Acá ves las citas del día en tu sede. Pronto vas a poder confirmar, cancelar, reagendar y registrar walk-ins.
+            </p>
+        </div>
+    </div>
+
+    <!-- Contenido dinámico -->
+    <div id="recep-citas-content" class="space-y-3">
+        <div class="flex flex-col items-center gap-3 py-12">
+            <div class="auth-checking-spinner"></div>
+            <p class="text-white/50 text-xs">Cargando citas...</p>
+        </div>
+    </div>
+</div>

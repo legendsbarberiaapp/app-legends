@@ -68,6 +68,18 @@
             : `https://ui-avatars.com/api/?name=${encodeURIComponent(barber.userName || 'B')}&background=c9a74a&color=000&bold=true`;
 
         const safeName = (barber.userName || '').replace(/'/g, "\\'");
+        const sedeNombre = (typeof SedesService !== 'undefined' && Array.isArray(this.sedes))
+            ? SedesService.nombreById(this.sedes, barber.sedeId)
+            : '';
+        const sedeBadge = sedeNombre
+            ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/5 text-white/70 border border-white/10">
+                  <span class="material-symbols-outlined text-[10px]" style="font-variation-settings: 'FILL' 1">storefront</span>
+                  ${sedeNombre}
+              </span>`
+            : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-400/90 border border-amber-500/20">
+                  <span class="material-symbols-outlined text-[10px]">error</span>
+                  Sin sede
+              </span>`;
 
         return `
         <div class="barber-card" data-nivel="${barber.nivel || 'Experto'}" style="animation-delay: ${index * 0.08}s; --nivel-rgb: ${nivel.rgb};">
@@ -83,11 +95,12 @@
                     </div>
                     <div class="flex-1 min-w-0">
                         <h3 class="text-white font-black text-base leading-tight truncate">${barber.userName || 'Sin nombre'}</h3>
-                        <div class="flex items-center gap-2 mt-1">
+                        <div class="flex items-center gap-1.5 mt-1 flex-wrap">
                             <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${nivel.bg} ${nivel.text} ${nivel.border} border">
                                 <span class="material-symbols-outlined text-[10px]" style="font-variation-settings: 'FILL' 1">${nivel.icon}</span>
                                 ${barber.nivel || 'Experto'}
                             </span>
+                            ${sedeBadge}
                         </div>
                     </div>
                     <div class="flex gap-1.5">
