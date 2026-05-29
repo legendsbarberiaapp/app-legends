@@ -92,7 +92,8 @@
         conCorte: null,      // true | false | null
         adicionales: [],     // [{id, nombre, precio}]  (precio recalculado si cambia conCorte)
         fecha: null,
-        hora: null
+        hora: null,
+        servicioFilter: null // {id, nombre} cuando viene preseleccionado desde "Servicios Populares" en home
     };
 
     // Preselección desde home (solo barbero; servicio legacy se ignora porque
@@ -220,33 +221,58 @@
     // RENDER: STEP 1 — BARBEROS
     // ==========================================================
 
+    /**
+     * Banner que aparece cuando el cliente tocó un servicio en "Servicios
+     * Populares" del home. Comunica el filtro activo y permite resetearlo.
+     */
+    function renderServicioFilterBanner() {
+        if (!state.servicioFilter) return '';
+        const nombre = state.servicioFilter.nombre || 'Servicio';
+        return `
+            <div class="mb-3 flex items-center gap-2 p-3 rounded-xl bg-primary/10 border border-primary/25 fade-in-soft">
+                <span class="material-symbols-outlined text-primary text-base" style="font-variation-settings: 'FILL' 1" aria-hidden="true">filter_alt</span>
+                <div class="flex-1 min-w-0">
+                    <p class="text-white/55 text-[10px] font-bold uppercase tracking-wider leading-none mb-0.5">Filtrando por servicio</p>
+                    <p class="text-white text-sm font-bold truncate">${nombre}</p>
+                </div>
+                <button onclick="window.clearServicioFilter()" aria-label="Ver todos los barberos"
+                    class="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-white text-[10px] font-bold uppercase tracking-wider transition-all active:scale-95">
+                    <span class="material-symbols-outlined text-sm" aria-hidden="true">close</span>
+                    <span>Ver todos</span>
+                </button>
+            </div>
+        `;
+    }
+
     async function renderBarberosStep() {
         const container = document.getElementById('booking-barberos');
         if (!container) return;
 
-        // Grid de 2 columnas (cards compactas)
-        container.className = 'grid grid-cols-2 gap-3';
+        // Contenedor pasa a ser flex-col para poder llevar banner + grid.
+        container.className = 'flex flex-col';
 
         if (!cachedBarberos) {
             container.innerHTML = `
-                <div class="skeleton-shimmer aspect-[3/4] rounded-2xl"></div>
-                <div class="skeleton-shimmer aspect-[3/4] rounded-2xl opacity-80"></div>
-                <div class="skeleton-shimmer aspect-[3/4] rounded-2xl opacity-60"></div>
-                <div class="skeleton-shimmer aspect-[3/4] rounded-2xl opacity-40"></div>
+                ${renderServicioFilterBanner()}
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="skeleton-shimmer aspect-[3/4] rounded-2xl"></div>
+                    <div class="skeleton-shimmer aspect-[3/4] rounded-2xl opacity-80"></div>
+                    <div class="skeleton-shimmer aspect-[3/4] rounded-2xl opacity-60"></div>
+                    <div class="skeleton-shimmer aspect-[3/4] rounded-2xl opacity-40"></div>
+                </div>
             `;
             try {
                 cachedBarberos = await BarbersService.list();
             } catch (error) {
                 console.error('❌ Error cargando barberos:', error);
-                container.className = 'flex flex-col gap-4';
-                container.innerHTML = renderEmptyError('Error al cargar barberos', 'initBooking()');
+                container.innerHTML = renderServicioFilterBanner() + renderEmptyError('Error al cargar barberos', 'initBooking()');
                 return;
             }
         }
 
         if (!cachedBarberos || cachedBarberos.length === 0) {
-            container.className = 'flex flex-col gap-4';
             container.innerHTML = `
+                ${renderServicioFilterBanner()}
                 <div class="empty-state-premium fade-in-soft">
                     <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/25 flex items-center justify-center">
                         <span class="material-symbols-outlined text-primary/60 text-4xl" style="font-variation-settings: 'FILL' 1" aria-hidden="true">person_off</span>
@@ -259,11 +285,32 @@
         }
 
         // Orden: Leyenda primero, luego Profesional, luego Experto
-        const ordenados = [...cachedBarberos].sort((a, b) => {
+        let ordenados = [...cachedBarberos].sort((a, b) => {
             return (NIVEL_ORDER[a.nivel] ?? 9) - (NIVEL_ORDER[b.nivel] ?? 9);
         });
 
-        container.innerHTML = ordenados.map((b, i) => renderBarberoCard(b, i)).join('');
+        // Si hay filtro de servicio, dejamos solo los barberos que lo ofrecen.
+        if (state.servicioFilter) {
+            const svcId = state.servicioFilter.id;
+            ordenados = ordenados.filter(b => b?.corte?.servicios?.some(s => s.id === svcId));
+        }
+
+        if (ordenados.length === 0) {
+            container.innerHTML = `
+                ${renderServicioFilterBanner()}
+                <div class="empty-state-premium fade-in-soft">
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/25 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-primary/60 text-4xl" style="font-variation-settings: 'FILL' 1" aria-hidden="true">person_search</span>
+                    </div>
+                    <p class="text-white/85 text-sm font-bold">Ningún barbero ofrece este servicio aún</p>
+                    <p class="text-white/50 text-xs">Tocá "Ver todos" para ver el listado completo</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = renderServicioFilterBanner()
+            + `<div class="grid grid-cols-2 gap-3">${ordenados.map((b, i) => renderBarberoCard(b, i)).join('')}</div>`;
 
         container.querySelectorAll('[data-barbero-doc-id]').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -272,6 +319,13 @@
                 selectBarbero(barbero);
             });
         });
+    }
+
+    function clearServicioFilter() {
+        state.servicioFilter = null;
+        if (state.step === 1) {
+            renderBarberosStep();
+        }
     }
 
     function renderBarberoCard(barbero, index) {
@@ -1198,7 +1252,8 @@
             nextBtn.dataset.wired = 'true';
         }
 
-        // Preselección desde home (solo barbero; el servicio legacy se ignora)
+        // Preselección desde home: barbero gana (lleva directo al step 2);
+        // si solo hay servicio, lo aplicamos como filtro del step 1.
         if (pendingPreselection.barbero) {
             try {
                 cachedBarberos = await BarbersService.list();
@@ -1208,6 +1263,7 @@
                 );
                 pendingPreselection.barbero = null;
                 pendingPreselection.servicio = null;
+                state.servicioFilter = null;
                 if (full) {
                     selectBarbero(full);
                     await goToStep(2);
@@ -1218,16 +1274,18 @@
                 pendingPreselection.barbero = null;
             }
         }
+
+        // Filtro por servicio (desde "Servicios Populares" en home).
+        state.servicioFilter = pendingPreselection.servicio || null;
         pendingPreselection.servicio = null;
 
         await goToStep(1);
     }
 
     /**
-     * Llamado desde home-ui (secciones de servicios y barberos) antes de
-     * switchTab('booking'). Guarda la selección para que initBooking la
-     * aplique cuando se abra el tab. El servicio legacy se ignora porque
-     * el flujo nuevo no tiene catálogo estático.
+     * Llamado desde home-ui antes de switchTab('booking').
+     * - barbero: salta directo al step 2 con ese barbero seleccionado.
+     * - servicio: { id, nombre } — filtra step 1 a los barberos que lo ofrecen.
      */
     function preselectBooking({ servicio = null, barbero = null } = {}) {
         if (servicio) pendingPreselection.servicio = servicio;
@@ -1237,5 +1295,6 @@
     window.initBooking = initBooking;
     window.confirmarReserva = confirmarReserva;
     window.preselectBooking = preselectBooking;
+    window.clearServicioFilter = clearServicioFilter;
     console.log('✓ BookingUI loaded (wizard 4 pasos)');
 })();

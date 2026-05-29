@@ -78,12 +78,20 @@
     }
 
     async function updateDescripcion(id, descripcion) {
+        return update(id, { descripcion });
+    }
+
+    /**
+     * Update genérico para cualquier campo del servicio.
+     * Usado para popular (bool) e icon (material symbol name).
+     */
+    async function update(id, fields) {
         const database = db();
-        if (!database) return false;
-        await database.collection(COLLECTION).doc(id).update({ descripcion });
+        if (!database || !id || !fields) return false;
+        await database.collection(COLLECTION).doc(id).update(fields);
         return true;
     }
 
-    window.ServiciosService = { list, create, remove, updateDescripcion, DEFAULTS };
+    window.ServiciosService = { list, create, remove, updateDescripcion, update, DEFAULTS };
     console.log('✓ ServiciosService loaded');
 })();

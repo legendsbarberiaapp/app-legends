@@ -157,17 +157,39 @@
         }
     };
 
+    /**
+     * Íconos curados para servicios del corte. El admin escoge uno de estos
+     * en el overlay "Gestionar Servicios" y se renderiza en la card del home
+     * "Servicios Populares". Si no se setea, default 'content_cut'.
+     */
+    const SERVICIO_ICONOS = [
+        'content_cut', 'face', 'waves', 'straighten',
+        'brush', 'spa', 'mood', 'auto_fix_high'
+    ];
+    BarberManager.prototype.SERVICIO_ICONOS = SERVICIO_ICONOS;
+
     BarberManager.prototype.openGestionarServicios = function () {
         const existing = document.getElementById('svc-manage-overlay');
         if (existing) existing.remove();
 
         const listHTML = this.serviciosCorte.map(svc => {
             const safeName = (svc.nombre || '').replace(/'/g, "\\'");
+            const icon = svc.icon || 'content_cut';
+            const isPopular = !!svc.popular;
             return `
             <div class="flex items-center gap-3 p-2.5 rounded-xl bg-white/3 hover:bg-white/5 transition-colors group">
-                <span class="material-symbols-outlined text-primary text-base" style="font-variation-settings: 'FILL' 1">spa</span>
+                <button onclick="barberManager.openIconPicker('${svc.id}', '${safeName}')"
+                    title="Cambiar ícono"
+                    class="w-8 h-8 rounded-lg bg-primary/10 hover:bg-primary/20 border border-primary/20 flex items-center justify-center transition-all active:scale-95">
+                    <span class="material-symbols-outlined text-primary text-base" style="font-variation-settings: 'FILL' 1">${icon}</span>
+                </button>
                 <span class="flex-1 text-white text-sm font-semibold">${svc.nombre}</span>
                 ${svc.descripcion ? '<span class="material-symbols-outlined text-white/20 text-sm" style="font-variation-settings: \'FILL\' 1">description</span>' : ''}
+                <button onclick="barberManager.toggleServicioPopular('${svc.id}', this)"
+                    title="${isPopular ? 'Quitar de Populares' : 'Marcar como Popular'}"
+                    class="w-7 h-7 rounded-lg ${isPopular ? 'bg-primary/20' : 'bg-transparent hover:bg-white/5'} flex items-center justify-center transition-all active:scale-95">
+                    <span class="material-symbols-outlined ${isPopular ? 'text-primary' : 'text-white/30'} text-base" style="font-variation-settings: 'FILL' ${isPopular ? 1 : 0}">star</span>
+                </button>
                 <button onclick="barberManager.confirmDeleteServicio('${svc.id}', '${safeName}')" class="w-7 h-7 rounded-lg bg-transparent hover:bg-red-500/20 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100">
                     <span class="material-symbols-outlined text-red-400 text-sm">close</span>
                 </button>
@@ -242,6 +264,89 @@
                 this.renderServiciosInModal(selectedIds);
                 this.openGestionarServicios();
             }
+        }
+    };
+
+    BarberManager.prototype.toggleServicioPopular = async function (svcId, btnEl) {
+        const svc = this.serviciosCorte.find(s => s.id === svcId);
+        if (!svc) return;
+        const nuevoValor = !svc.popular;
+        const ok = await this.updateServicio(svcId, { popular: nuevoValor });
+        if (!ok) {
+            this.showToast('Error guardando', 'error');
+            return;
+        }
+        const icon = btnEl?.querySelector('.material-symbols-outlined');
+        if (btnEl) {
+            btnEl.classList.toggle('bg-primary/20', nuevoValor);
+            btnEl.classList.toggle('bg-transparent', !nuevoValor);
+            btnEl.classList.toggle('hover:bg-white/5', !nuevoValor);
+            btnEl.title = nuevoValor ? 'Quitar de Populares' : 'Marcar como Popular';
+        }
+        if (icon) {
+            icon.classList.toggle('text-primary', nuevoValor);
+            icon.classList.toggle('text-white/30', !nuevoValor);
+            icon.style.fontVariationSettings = `'FILL' ${nuevoValor ? 1 : 0}`;
+        }
+        this.showToast(nuevoValor ? `"${svc.nombre}" marcado como popular ⭐` : `"${svc.nombre}" ya no es popular`, 'success');
+    };
+
+    BarberManager.prototype.openIconPicker = function (svcId, nombre) {
+        const svc = this.serviciosCorte.find(s => s.id === svcId);
+        const current = svc?.icon || 'content_cut';
+
+        const existing = document.getElementById('svc-icon-overlay');
+        if (existing) existing.remove();
+
+        const iconsHTML = SERVICIO_ICONOS.map(name => `
+            <button onclick="barberManager.selectIcon('${svcId}', '${name}')"
+                class="w-14 h-14 rounded-xl ${name === current ? 'bg-primary/25 border-2 border-primary' : 'bg-white/5 border border-white/10 hover:bg-white/10'} flex items-center justify-center transition-all active:scale-95">
+                <span class="material-symbols-outlined ${name === current ? 'text-primary' : 'text-white/70'} text-2xl" style="font-variation-settings: 'FILL' 1">${name}</span>
+            </button>
+        `).join('');
+
+        const html = `
+        <div id="svc-icon-overlay" class="barber-modal-overlay" style="z-index:170">
+            <div class="barber-confirm-dialog" style="max-width:380px">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-primary/15 border border-primary/25 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-primary text-lg" style="font-variation-settings: 'FILL' 1">palette</span>
+                    </div>
+                    <div>
+                        <h3 class="text-white font-black text-sm">${nombre}</h3>
+                        <p class="text-white/40 text-[10px] uppercase tracking-wider font-bold">Ícono del servicio</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-4 gap-2 mb-4">${iconsHTML}</div>
+                <button onclick="barberManager.closeIconPicker()" class="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-bold hover:bg-white/10 transition-all active:scale-[0.97]">
+                    Cerrar
+                </button>
+            </div>
+        </div>`;
+
+        document.body.insertAdjacentHTML('beforeend', html);
+        requestAnimationFrame(() => {
+            document.getElementById('svc-icon-overlay')?.classList.add('visible');
+        });
+    };
+
+    BarberManager.prototype.selectIcon = async function (svcId, iconName) {
+        const ok = await this.updateServicio(svcId, { icon: iconName });
+        if (!ok) {
+            this.showToast('Error guardando ícono', 'error');
+            return;
+        }
+        this.closeIconPicker();
+        this.closeGestionarServicios();
+        this.openGestionarServicios();
+        this.showToast('Ícono actualizado ✓', 'success');
+    };
+
+    BarberManager.prototype.closeIconPicker = function () {
+        const overlay = document.getElementById('svc-icon-overlay');
+        if (overlay) {
+            overlay.classList.remove('visible');
+            setTimeout(() => overlay.remove(), 300);
         }
     };
 

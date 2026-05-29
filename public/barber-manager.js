@@ -168,6 +168,20 @@ class BarberManager {
         }
     }
 
+    async updateServicio(id, fields) {
+        try {
+            const ok = await ServiciosService.update(id, fields);
+            if (ok) {
+                const svc = this.serviciosCorte.find(s => s.id === id);
+                if (svc) Object.assign(svc, fields);
+            }
+            return ok;
+        } catch (error) {
+            console.error('❌ Error actualizando servicio:', error);
+            return false;
+        }
+    }
+
     // Servicios del corte (UI picker + gestor) → admin/servicios-picker-ui.js
 
     // Lista de barberos y tarjetas → admin/barbers-list-ui.js

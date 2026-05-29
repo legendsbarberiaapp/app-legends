@@ -138,57 +138,94 @@
 
     /**
      * Renderiza la sección "Servicios Populares" en home.
-     * Scroll horizontal con hasta 5 servicios. Al tocar uno: preselect
-     * en booking y saltamos al tab booking (mismo flujo que antes tenía
-     * el tab /services, que ahora está fusionado dentro de home).
+     *
+     * MODELO REAL: los precios viven por barbero (barberos.{id}.corte.precio),
+     * NO por servicio. Por eso aquí mostramos "desde $X" calculado como el
+     * mínimo entre todos los barberos que ofrecen el servicio.
+     *
+     * Datos: `servicios_corte` (Firestore) + barberos para calcular precio min.
+     * Orden: populares primero (campo `popular: true`), después por `orden`.
+     * Tap: preselecciona el servicio y abre booking (filtra barberos en step 1).
      */
-    function renderServiciosPreview() {
+    async function renderServiciosPreview() {
         const container = document.getElementById('home-servicios-preview');
         if (!container) return;
 
-        const servicios = window.SERVICIOS_CATALOG || [];
-        if (servicios.length === 0) {
-            container.innerHTML = '';
-            return;
-        }
+        try {
+            const [servicios, barberos] = await Promise.all([
+                (typeof ServiciosService !== 'undefined') ? ServiciosService.list() : Promise.resolve([]),
+                (typeof BarbersService !== 'undefined') ? BarbersService.list() : Promise.resolve([])
+            ]);
 
-        // Priorizamos los marcados como `popular`; si no hay suficientes, completamos.
-        const ordenados = [
-            ...servicios.filter(s => s.popular),
-            ...servicios.filter(s => !s.popular)
-        ].slice(0, 6);
+            if (!servicios || servicios.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
 
-        container.innerHTML = ordenados.map((s, i) => `
-            <button data-servicio-id="${s.id}" aria-label="Reservar ${s.nombre} por ${window.formatCOP(s.precio)}"
-                style="--stagger-index: ${i};"
-                class="stagger-item tap-card flex-shrink-0 w-40 p-4 rounded-2xl bg-gradient-to-br from-card-dark to-surface-dark border border-white/10 hover:border-primary/40 transition-all text-left overflow-hidden relative group">
-                <div class="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                ${s.popular ? `
-                    <div class="absolute top-2 right-2 px-1.5 py-0.5 bg-primary/25 border border-primary/45 rounded-full backdrop-blur-sm">
-                        <span class="text-primary text-[8px] font-black uppercase tracking-wider">Popular</span>
-                    </div>` : ''}
-                <div class="relative w-10 h-10 rounded-xl bg-gradient-to-br from-primary/25 to-primary/10 border border-primary/25 flex items-center justify-center text-primary mb-3 group-hover:scale-110 transition-transform duration-300">
-                    <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 0, 'wght' 300" aria-hidden="true">${s.icon || 'content_cut'}</span>
-                </div>
-                <p class="relative text-white text-sm font-bold mb-1 truncate">${s.nombre}</p>
-                <div class="relative flex items-center gap-1 mb-2">
-                    <span class="material-symbols-outlined text-white/45 text-[10px]" aria-hidden="true">schedule</span>
-                    <p class="text-white/55 text-[10px] font-medium">${s.duracionMin || 45} min</p>
-                </div>
-                <p class="relative text-primary font-black text-base tabular-nums">${window.formatCOP(s.precio)}</p>
-            </button>
-        `).join('');
-
-        container.querySelectorAll('[data-servicio-id]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const servicio = servicios.find(s => s.id === btn.dataset.servicioId);
-                if (!servicio) return;
-                if (typeof window.preselectBooking === 'function') {
-                    window.preselectBooking({ servicio });
+            // "desde $X" por servicio = mínimo de corte.precio entre los barberos
+            // que ofrecen ese servicio (mirando barbero.corte.servicios[].id).
+            const desdePrecio = (svcId) => {
+                let min = null;
+                for (const b of barberos) {
+                    const ofrece = b?.corte?.servicios?.some(s => s.id === svcId);
+                    if (!ofrece) continue;
+                    const precio = Number(b?.corte?.precio) || 0;
+                    if (precio <= 0) continue;
+                    if (min === null || precio < min) min = precio;
                 }
-                switchTab('booking');
+                return min;
+            };
+
+            // Populares primero, luego por orden. Tope 6 para no saturar el carrusel.
+            const ordenados = [...servicios]
+                .sort((a, b) => {
+                    const pa = a.popular ? 1 : 0;
+                    const pb = b.popular ? 1 : 0;
+                    if (pa !== pb) return pb - pa;
+                    return (a.orden ?? 0) - (b.orden ?? 0);
+                })
+                .slice(0, 6);
+
+            container.innerHTML = ordenados.map((s, i) => {
+                const min = desdePrecio(s.id);
+                const precioLabel = min !== null ? `desde ${window.formatCOP(min)}` : 'Consultar';
+                const ariaPrecio = min !== null ? `desde ${window.formatCOP(min)}` : 'consulta precio';
+                const icon = s.icon || 'content_cut';
+                return `
+                <button data-servicio-id="${s.id}" aria-label="Reservar ${s.nombre}, ${ariaPrecio}"
+                    style="--stagger-index: ${i};"
+                    class="stagger-item tap-card flex-shrink-0 w-40 p-4 rounded-2xl bg-gradient-to-br from-card-dark to-surface-dark border border-white/10 hover:border-primary/40 transition-all text-left overflow-hidden relative group">
+                    <div class="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    ${s.popular ? `
+                        <div class="absolute top-2 right-2 px-1.5 py-0.5 bg-primary/25 border border-primary/45 rounded-full backdrop-blur-sm">
+                            <span class="text-primary text-[8px] font-black uppercase tracking-wider">Popular</span>
+                        </div>` : ''}
+                    <div class="relative w-10 h-10 rounded-xl bg-gradient-to-br from-primary/25 to-primary/10 border border-primary/25 flex items-center justify-center text-primary mb-3 group-hover:scale-110 transition-transform duration-300">
+                        <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 0, 'wght' 300" aria-hidden="true">${icon}</span>
+                    </div>
+                    <p class="relative text-white text-sm font-bold mb-1 truncate">${s.nombre}</p>
+                    <div class="relative text-white/45 text-[10px] font-medium mb-2 uppercase tracking-wider">
+                        ${min !== null ? 'Desde' : ' '}
+                    </div>
+                    <p class="relative ${min !== null ? 'text-primary' : 'text-white/50'} font-black text-base tabular-nums">${min !== null ? window.formatCOP(min) : 'Consultar'}</p>
+                </button>
+                `;
+            }).join('');
+
+            container.querySelectorAll('[data-servicio-id]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const servicio = servicios.find(s => s.id === btn.dataset.servicioId);
+                    if (!servicio) return;
+                    if (typeof window.preselectBooking === 'function') {
+                        window.preselectBooking({ servicio: { id: servicio.id, nombre: servicio.nombre } });
+                    }
+                    switchTab('booking');
+                });
             });
-        });
+        } catch (error) {
+            console.error('❌ Error cargando servicios preview:', error);
+            container.innerHTML = '';
+        }
     }
 
     /**

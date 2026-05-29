@@ -1,50 +1,19 @@
 /**
- * LEGENDS BARBERIA - CATÁLOGO DE SERVICIOS (FUENTE ÚNICA)
- * Los servicios principales que puede reservar el cliente.
- * Usado por booking-ui y home-ui (preview) — fuente única del catálogo.
+ * LEGENDS BARBERIA - UTILS DE PRECIO (CLIENTE)
  *
- * TODO: cuando el admin tenga UI de catálogo, migrar este array a Firestore
- * y cargar desde ahí. Mientras tanto, edita este archivo para agregar/quitar
- * servicios o ajustar precios.
+ * Originalmente este archivo contenía un catálogo hardcodeado de servicios
+ * con precios. Ese catálogo se eliminó: el modelo real es por-barbero
+ * (`barberos.{id}.corte.precio`) y los servicios viven en Firestore
+ * (`servicios_corte`). El home muestra "desde $X" calculado en home-ui.js.
+ *
+ * Este archivo se mantiene porque exporta utilidades de formato y captura
+ * de precio que se usan en booking y admin:
+ *   - window.formatCOP(valor)
+ *   - window.attachPriceInput(input)
+ *   - window.parsePriceInput(input)
  */
 
-window.SERVICIOS_CATALOG = [
-    {
-        id: 'corte-clasico',
-        nombre: 'Corte Clásico',
-        precio: 40,
-        duracionMin: 45,
-        icon: 'content_cut',
-        descripcion: 'Corte tradicional con acabado profesional'
-    },
-    {
-        id: 'corte-barba',
-        nombre: 'Corte + Barba',
-        precio: 60,
-        duracionMin: 75,
-        icon: 'face',
-        descripcion: 'Combo completo: corte y arreglo de barba',
-        popular: true
-    },
-    {
-        id: 'afeitado',
-        nombre: 'Afeitado Premium',
-        precio: 35,
-        duracionMin: 30,
-        icon: 'waves',
-        descripcion: 'Afeitado con navaja y toalla caliente'
-    },
-    {
-        id: 'degradado',
-        nombre: 'Degradado',
-        precio: 45,
-        duracionMin: 45,
-        icon: 'straighten',
-        descripcion: 'Fade limpio y preciso'
-    }
-];
-
-console.log('✓ ServiciosCatalog loaded');
+console.log('✓ Price utils loaded');
 
 /**
  * Formato de precio en pesos colombianos: $20.000 (punto como separador de miles).
