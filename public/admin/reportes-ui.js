@@ -23,11 +23,13 @@
     const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     const DIAS_SEMANA_LBL = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
+    // FIX F5-#5: dejamos solo 3 períodos sin overlap conceptual.
+    // "Mes" cubre el caso de "Últimos 30 días" para el dueño (visión de cierre
+    // mensual). Si en algún momento se necesita rolling 30, se agrega de nuevo.
     const PERIODOS = [
-        { id: 'hoy',     label: 'Hoy',      days: 1  },
-        { id: 'semana',  label: 'Semana',   days: 7  },
-        { id: 'mes',     label: 'Mes',      days: 30 },
-        { id: '30dias',  label: '30 días',  days: 30 }
+        { id: 'hoy',     label: 'Hoy',           days: 1  },
+        { id: 'semana',  label: 'Esta semana',   days: 7  },
+        { id: 'mes',     label: 'Este mes',      days: 30 }
     ];
 
     const METODO_META = {
@@ -47,7 +49,12 @@
         ventas: [],
         barberos: [],              // para resolver nombres + fotos
         productos: [],             // catálogo (todos) para resolver nombres
-        loading: false
+        loading: false,
+        // FIX F5-#1: counter de secuencia para evitar race condition entre
+        // taps rápidos de filtros. Cada llamada a init() incrementa el token;
+        // al volver del fetch, comparamos contra el token actual — si cambió
+        // (otro init más nuevo arrancó), descartamos el resultado.
+        fetchToken: 0
     };
 
     // ============================================
@@ -77,14 +84,28 @@
             d.setDate(d.getDate() + diffAlLunes);
             return { desde: toISO(d), hasta };
         }
-        if (periodo.id === 'mes') {
-            // Primer día del mes actual
-            const d = new Date();
-            d.setDate(1);
-            return { desde: toISO(d), hasta };
+        // mes: primer día del mes actual
+        const d = new Date();
+        d.setDate(1);
+        return { desde: toISO(d), hasta };
+    }
+
+    /**
+     * Abrevia montos COP para que entren arriba de barras chicas.
+     *   500 → $500   ·   15000 → $15K   ·   1_250_000 → $1.2M
+     * Usado solo en etiquetas visuales; los totales formales siguen con fmtCOP.
+     */
+    function fmtAbbrev(n) {
+        const v = Number(n) || 0;
+        if (v === 0) return '';
+        if (v >= 1_000_000) {
+            const m = v / 1_000_000;
+            return `$${m % 1 === 0 ? m.toFixed(0) : m.toFixed(1)}M`;
         }
-        // 30dias
-        return { desde: offsetISO(-29), hasta };
+        if (v >= 1000) {
+            return `$${Math.round(v / 1000)}K`;
+        }
+        return `$${v}`;
     }
 
     function fmtCOP(n) {
@@ -105,9 +126,14 @@
         const content = document.getElementById('rep-content');
         if (!content) return;
 
+        // FIX F5-#1: token de secuencia anti-race. Si el usuario tap rápido
+        // entre filtros, los fetches anteriores se descartan sin renderizar.
+        const myToken = ++state.fetchToken;
+        const isCurrent = () => state.fetchToken === myToken;
+
         renderFiltros();
 
-        if (!state.loading) state.loading = true;
+        state.loading = true;
         content.innerHTML = `
             <div class="flex flex-col items-center gap-3 py-12">
                 <div class="auth-checking-spinner"></div>
@@ -116,6 +142,7 @@
 
         try {
             const { desde, hasta } = rangoActual();
+            const sedesPrevias = state.sedes.length;
 
             // Carga en paralelo: sedes (para filtro), barberos (para nombres),
             // productos (para resolver nombres), y ventas según filtro de sede.
@@ -128,15 +155,25 @@
                     : VentasService.listBySedeRange(state.sedeFilter, desde, hasta)
             ]);
 
+            // Si mientras estábamos esperando llegó otro init() más nuevo,
+            // descartamos este resultado: el otro fetch va a renderizar.
+            if (!isCurrent()) return;
+
             state.sedes = sedes;
             state.barberos = barberos;
             state.productos = productos;
             state.ventas = ventas || [];
 
-            renderFiltros(); // re-render con sedes ya cargadas
+            // FIX F5-#3: re-render de filtros SOLO si cambió la cantidad de
+            // sedes (típicamente solo la primera vez). En navegaciones
+            // posteriores con sedes ya cacheadas, evitamos el doble work.
+            if (sedes.length !== sedesPrevias) {
+                renderFiltros();
+            }
             renderContenido();
         } catch (e) {
             console.error('❌ Error cargando reportes:', e);
+            if (!isCurrent()) return;
             content.innerHTML = `
                 <div class="text-center py-10 px-6 rounded-xl bg-red-500/5 border border-red-500/15">
                     <span class="material-symbols-outlined text-red-400 text-4xl mb-2">error</span>
@@ -146,7 +183,7 @@
                     </button>
                 </div>`;
         } finally {
-            state.loading = false;
+            if (isCurrent()) state.loading = false;
         }
     }
 
@@ -445,15 +482,21 @@
         });
 
         const max = Math.max(...Object.values(totals), 1);
+        // FIX F5-#4: etiquetas visibles arriba de barras no-cero (no solo en
+        // hover). Funciona en móvil táctil. Usamos fmtAbbrev para que entre.
         const bars = fechas.map(f => {
             const total = totals[f];
             const pct = max > 0 ? Math.round((total / max) * 100) : 0;
             const [y, m, d] = f.split('-').map(Number);
             const date = new Date(y, m - 1, d);
             const isHoy = f === todayISO();
+            const valorLabel = total > 0
+                ? `<span class="text-primary text-[8px] font-black tabular-nums leading-none">${fmtAbbrev(total)}</span>`
+                : `<span class="text-white/15 text-[8px] font-black leading-none">·</span>`;
             return `
             <div class="flex flex-col items-center gap-1 min-w-[36px]">
-                <div class="relative w-6 h-32 bg-white/[0.03] rounded-md overflow-hidden flex items-end" title="${fmtCOP(total)} el ${date.getDate()} ${MESES[date.getMonth()]}">
+                ${valorLabel}
+                <div class="relative w-6 h-28 bg-white/[0.03] rounded-md overflow-hidden flex items-end" title="${fmtCOP(total)} el ${date.getDate()} ${MESES[date.getMonth()]}">
                     <div class="w-full ${isHoy ? 'bg-primary' : 'bg-primary/40'} transition-all" style="height: ${pct}%"></div>
                 </div>
                 <span class="text-white/50 text-[9px] font-bold tabular-nums">${date.getDate()}</span>
