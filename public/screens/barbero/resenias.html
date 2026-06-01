@@ -1,0 +1,30 @@
+<div class="px-6 py-8 pb-28">
+    <!-- Header -->
+    <div class="mb-5">
+        <div class="flex items-center gap-3 mb-2">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/30 to-amber-500/10 border border-amber-500/25 flex items-center justify-center shadow-[0_0_20px_rgba(245,158,11,0.15)]">
+                <span class="material-symbols-outlined text-amber-400 text-2xl" style="font-variation-settings: 'FILL' 1">star</span>
+            </div>
+            <div class="flex-1 min-w-0">
+                <h1 class="text-2xl font-black text-white leading-tight">Mis Reseñas</h1>
+                <p class="text-white/40 text-xs font-semibold uppercase tracking-wider">Lo que dicen tus clientes</p>
+            </div>
+            <button onclick="if(typeof reloadBarberoResenias==='function')reloadBarberoResenias()"
+                class="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/[0.06] text-white/50 hover:text-amber-400 hover:border-amber-400/20 transition-all active:scale-95 flex items-center justify-center"
+                title="Recargar">
+                <span class="material-symbols-outlined text-lg">refresh</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats card -->
+    <div id="resenias-stats" class="mb-5"></div>
+
+    <!-- Lista de reseñas -->
+    <div id="resenias-list">
+        <div class="flex flex-col items-center gap-3 py-12">
+            <div class="auth-checking-spinner"></div>
+            <p class="text-white/50 text-xs">Cargando reseñas...</p>
+        </div>
+    </div>
+</div>

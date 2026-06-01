@@ -79,6 +79,22 @@
             </button>
         ` : '';
 
+        // F6: botón Calificar visible en citas completadas que el cliente aún
+        // no calificó. Tras enviar la reseña, onReseniaCreada actualiza la cita
+        // en memoria a reviewed=true y la card se re-renderiza sin el botón.
+        const rateBtn = (cita.estado === 'completada' && !cita.reviewed)
+            ? `<button onclick="abrirReseniaParaCita('${cita.id}')"
+                  class="mt-3 w-full px-3 py-2 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-400 text-[11px] font-black uppercase tracking-wide hover:bg-amber-500/25 transition-all active:scale-95 flex items-center justify-center gap-1.5">
+                  <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1">star</span>
+                  Calificar tu corte
+              </button>`
+            : (cita.estado === 'completada' && cita.reviewed)
+                ? `<p class="mt-3 text-center text-white/35 text-[10px] font-bold uppercase tracking-wider">
+                      <span class="material-symbols-outlined text-amber-400/70 text-xs align-middle mr-1" style="font-variation-settings: 'FILL' 1">star</span>
+                      Ya calificada
+                   </p>`
+                : '';
+
         const theme = (typeof window.nivelTheme === 'function') ? window.nivelTheme(cita.barberoNivel) : { textCls: 'text-primary/85', borderLeft: '' };
 
         return `
@@ -105,6 +121,7 @@
                     </div>
                 </div>
                 ${cancelBtn}
+                ${rateBtn}
             </div>
         `;
     }
@@ -200,6 +217,10 @@
         }
     }
 
+    // F6: cache local de las citas del cliente, para que el modal de reseña
+    // pueda encontrar una cita por id sin re-fetch.
+    let citasCache = [];
+
     async function initProfile() {
         const user = roleManager && roleManager.currentUser;
         if (!user || !user.uid) return;
@@ -216,6 +237,7 @@
 
         try {
             const citas = await CitasService.listByCliente(user.uid);
+            citasCache = citas;
             const completadasCount = renderStats(citas);
             renderTierBadge(calcularTier(completadasCount));
             renderReservas(citas);
@@ -264,8 +286,26 @@
         toggleNotificationsButton();
     }
 
+    // F6: handlers para el flujo de reseñas
+    function abrirReseniaParaCita(citaId) {
+        const cita = citasCache.find(c => c.id === citaId);
+        if (!cita) return;
+        if (typeof window.openReseniaModal === 'function') {
+            window.openReseniaModal(cita);
+        }
+    }
+
+    function onReseniaCreada(citaId) {
+        const cita = citasCache.find(c => c.id === citaId);
+        if (cita) cita.reviewed = true;
+        // Re-render solo la sección de reservas (stats no cambian)
+        renderReservas(citasCache);
+    }
+
     window.initProfile = initProfile;
     window.cancelarMiReserva = cancelarMiReserva;
     window.activarNotificaciones = activarNotificaciones;
+    window.abrirReseniaParaCita = abrirReseniaParaCita;
+    window.onReseniaCreada = onReseniaCreada;
     console.log('✓ ProfileUI loaded');
 })();

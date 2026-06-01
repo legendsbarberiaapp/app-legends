@@ -101,6 +101,9 @@ function autoLoadDataForTab(tabName) {
     if (tabName === 'barbero-citas' && typeof initBarberoCitas === 'function') {
         initBarberoCitas();
     }
+    if (tabName === 'barbero-resenias' && typeof initBarberoResenias === 'function') {
+        initBarberoResenias();
+    }
     if (tabName === 'recepcionista-citas' && typeof initRecepcionistaCitas === 'function') {
         initRecepcionistaCitas();
     }

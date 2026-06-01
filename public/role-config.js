@@ -26,8 +26,9 @@ const ROLE_CONFIGS = {
 
     barbero: {
         tabs: [
-            { id: 'barbero-dashboard', icon: 'dashboard', label: 'Dashboard', fill: true },
-            { id: 'barbero-citas', icon: 'calendar_today', label: 'Mis Citas', fill: false }
+            { id: 'barbero-dashboard', icon: 'dashboard',       label: 'Dashboard', fill: true  },
+            { id: 'barbero-citas',     icon: 'calendar_today',  label: 'Mis Citas', fill: false },
+            { id: 'barbero-resenias',  icon: 'star',            label: 'Reseñas',   fill: false }
         ],
         defaultTab: 'barbero-dashboard',
         showFAB: false

@@ -3,9 +3,13 @@ rules_version = '2';
 // Reglas para Legends Barbería
 // Pégalas en: Firebase Console -> Firestore Database -> Rules
 //
-// Última actualización: 2026-05-29
-// Último cambio: F4-fix — bloqueamos cambio de `minimo` del stock por
-//                recepcionista (umbral de alerta es decisión del dueño).
+// Última actualización: 2026-06-01
+// Último cambio: F6 — colección `resenias` (calificaciones post-corte).
+//                Cliente crea con estrellas válidas; lee solo el dueño/admin/
+//                barbero asignado. Update/delete: admin. Cita gana flag
+//                `reviewed`; barbero recibe `ratingPromedio` + `ratingCount`
+//                actualizados atomic vía transaction.
+//                F4-fix bloqueó cambio de `minimo` del stock por recepcionista.
 //                F4 trajo colecciones `stock` y `stock_movimientos`.
 //                F3-fix endureció ventas (total/subtotal >= 0).
 //                F3 trajo `productos` y `ventas`.
@@ -63,7 +67,18 @@ service cloud.firestore {
     // ============================================
     match /barberos/{barberoId} {
       allow read: if isSignedIn();                  // todos ven quién hay
-      allow create, update, delete: if isAdmin();   // solo admin administra
+      allow create, delete: if isAdmin();           // solo admin crea/borra
+
+      // Update:
+      // - Admin: cualquier campo
+      // - F6: cualquier usuario logeado, PERO solo si toca exclusivamente los
+      //   campos de rating (lo usa la transaction de ReseniasService al
+      //   actualizar el promedio).
+      allow update: if isAdmin() || (
+        isSignedIn()
+        && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['ratingPromedio', 'ratingCount'])
+      );
     }
 
     // ============================================
@@ -178,6 +193,28 @@ service cloud.firestore {
           && request.resource.data.sedeId == recepcionistaSedeId()
           && request.resource.data.creadoPor == request.auth.uid)
       );
+
+      allow update, delete: if isAdmin();
+    }
+
+    // ============================================
+    // RESEÑAS (calificaciones post-corte) — F6
+    // - Crear: solo el cliente dueño, estrellas 1..5 inclusive, citaId y
+    //   barberoId presentes. La transaction client-side ya valida que la
+    //   cita esté completada y no calificada — acá solo enforcement básico.
+    // - Read: todos los logeados (los rating son públicos en las cards).
+    // - Update/delete: solo admin (moderación).
+    // ============================================
+    match /resenias/{reseniaId} {
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn()
+                    && request.resource.data.clienteId == request.auth.uid
+                    && request.resource.data.estrellas is int
+                    && request.resource.data.estrellas >= 1
+                    && request.resource.data.estrellas <= 5
+                    && request.resource.data.barberoId is string
+                    && request.resource.data.citaId is string;
 
       allow update, delete: if isAdmin();
     }

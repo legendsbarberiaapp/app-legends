@@ -43,6 +43,22 @@
         ).join('');
     };
 
+    /**
+     * F6: badge de rating en el card del admin. Compacto: ⭐ 4.7 (12)
+     * Sin reseñas → no muestra nada (queda más limpio).
+     */
+    function renderRatingBadge(barber) {
+        const prom = Number(barber.ratingPromedio) || 0;
+        const count = Number(barber.ratingCount) || 0;
+        if (count === 0) return '';
+        return `
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black tracking-wider bg-amber-500/10 text-amber-300 border border-amber-500/25">
+                <span class="material-symbols-outlined text-[10px]" style="font-variation-settings: 'FILL' 1">star</span>
+                ${prom.toFixed(1)}
+                <span class="opacity-60">(${count})</span>
+            </span>`;
+    }
+
     BarberManager.prototype.renderBarberCard = function (barber, index) {
         const nivel = NIVEL_COLORS[barber.nivel] || NIVEL_COLORS['Experto'];
 
@@ -101,6 +117,7 @@
                                 ${barber.nivel || 'Experto'}
                             </span>
                             ${sedeBadge}
+                            ${renderRatingBadge(barber)}
                         </div>
                     </div>
                     <div class="flex gap-1.5">

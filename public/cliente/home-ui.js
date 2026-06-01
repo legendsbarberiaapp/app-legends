@@ -233,6 +233,23 @@
      * Scroll horizontal con avatar + nombre + nivel. Al tocar uno:
      * preselect en booking y saltamos al tab booking.
      */
+    /**
+     * F6: chip compacto de rating para las cards chicas del home.
+     * Si no tiene reseñas → texto sutil "Nuevo".
+     */
+    function ratingInline(barbero) {
+        const prom = Number(barbero.ratingPromedio) || 0;
+        const count = Number(barbero.ratingCount) || 0;
+        if (count === 0) {
+            return `<p class="text-white/30 text-[8px] font-bold uppercase tracking-wider mt-1">Nuevo</p>`;
+        }
+        return `
+            <div class="inline-flex items-center gap-0.5 mt-1">
+                <span class="material-symbols-outlined text-amber-400 text-[10px]" style="font-variation-settings: 'FILL' 1">star</span>
+                <span class="text-white/85 text-[9px] font-bold tabular-nums">${prom.toFixed(1)}</span>
+            </div>`;
+    }
+
     async function renderBarberosPreview() {
         const container = document.getElementById('home-barberos-preview');
         if (!container) return;
@@ -286,6 +303,7 @@
                         <div class="text-center w-full">
                             <p class="text-white text-xs font-bold leading-tight truncate">${nombre}</p>
                             <p class="${nivelTextCls(nivel)} text-[9px] font-semibold mt-0.5 truncate uppercase tracking-wider">${nivel}</p>
+                            ${ratingInline(b)}
                         </div>
                     </button>
                 `;

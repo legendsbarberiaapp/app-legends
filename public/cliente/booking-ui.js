@@ -408,6 +408,31 @@
         }
     }
 
+    /**
+     * F6: chip con rating del barbero. Vacío si no tiene reseñas todavía.
+     * Si ratingPromedio > 4.5 y al menos 5 reseñas → badge "Top Rated" en lugar.
+     */
+    function ratingChip(barbero) {
+        const prom = Number(barbero.ratingPromedio) || 0;
+        const count = Number(barbero.ratingCount) || 0;
+        if (count === 0) return '<p class="text-white/40 text-[10px] font-bold uppercase tracking-wider">Sin reseñas aún</p>';
+
+        const topRated = prom >= 4.5 && count >= 5;
+        if (topRated) {
+            return `
+                <div class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/20 border border-amber-500/40 backdrop-blur-sm">
+                    <span class="material-symbols-outlined text-amber-300 text-[10px]" style="font-variation-settings: 'FILL' 1">verified</span>
+                    <span class="text-amber-200 text-[9px] font-black uppercase tracking-wider">Top · ${prom.toFixed(1)} (${count})</span>
+                </div>`;
+        }
+        return `
+            <div class="inline-flex items-center gap-1">
+                <span class="material-symbols-outlined text-amber-400 text-xs" style="font-variation-settings: 'FILL' 1">star</span>
+                <span class="text-white text-[10px] font-bold tabular-nums">${prom.toFixed(1)}</span>
+                <span class="text-white/45 text-[10px]">(${count})</span>
+            </div>`;
+    }
+
     function renderBarberoCard(barbero, index) {
         const theme = getTheme(barbero.nivel);
         const nombre = barbero.userName || barbero.nombre || barbero.displayName || 'Barbero';
@@ -457,10 +482,11 @@
 
                     ${checkMark}
 
-                    <!-- Nombre + precio abajo -->
+                    <!-- Nombre + rating + precio abajo -->
                     <div class="absolute bottom-0 left-0 right-0 p-3">
-                        <h3 class="text-white text-lg font-black leading-none tracking-tight mb-1.5 drop-shadow-lg truncate">${nombre}</h3>
-                        <div class="flex items-center justify-between gap-1">
+                        <h3 class="text-white text-lg font-black leading-none tracking-tight mb-1 drop-shadow-lg truncate">${nombre}</h3>
+                        ${ratingChip(barbero)}
+                        <div class="flex items-center justify-between gap-1 mt-1">
                             <span class="text-white/75 text-[10px] font-bold uppercase tracking-wider">Desde</span>
                             <span class="text-primary text-sm font-black tabular-nums drop-shadow">${window.formatCOP(precio)}</span>
                         </div>

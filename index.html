@@ -89,6 +89,7 @@
     <script src="services/productos-service.js"></script>
     <script src="services/ventas-service.js"></script>
     <script src="services/stock-service.js"></script>
+    <script src="services/resenias-service.js"></script>
     <!-- Loader de pantallas (partials) -->
     <script src="screen-loader.js"></script>
     <!-- Coordinador de UI de administración -->
@@ -114,9 +115,11 @@
     <script src="cliente/home-ui.js"></script>
     <script src="cliente/booking-ui.js"></script>
     <script src="cliente/profile-ui.js"></script>
+    <script src="cliente/resenia-modal-ui.js"></script>
     <script src="cliente/cita-listener.js"></script>
-    <!-- UI del barbero (citas) -->
+    <!-- UI del barbero (citas + reseñas F6) -->
     <script src="barbero/citas-ui.js"></script>
+    <script src="barbero/resenias-ui.js"></script>
     <!-- UI de la recepcionista (F2: opera citas/walkin/reagendar · F3: cobro + caja · F4: inventario) -->
     <script src="recepcionista/citas-ui.js"></script>
     <script src="recepcionista/walkin-ui.js"></script>
@@ -310,6 +313,10 @@
         <!-- BARBERO CITAS TAB (partial) -->
         <div id="barbero-citas-tab" class="tab-content hidden h-[100dvh] w-full overflow-y-auto bg-background-dark"
             data-partial="screens/barbero/citas.html"></div>
+
+        <!-- BARBERO RESEÑAS TAB (partial — F6) -->
+        <div id="barbero-resenias-tab" class="tab-content hidden h-[100dvh] w-full overflow-y-auto bg-background-dark"
+            data-partial="screens/barbero/resenias.html"></div>
 
         <!-- ============================================
              RECEPCIONISTA TABS (F1: 1 tab read-only)
