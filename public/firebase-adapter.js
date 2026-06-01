@@ -266,11 +266,23 @@ class FirebaseAuthAdapter {
                 roleManager.renderForRole();
 
                 // Arrancar listeners real-time según rol
-                if (userData.role === 'cliente' && typeof window.startClienteCitasListener === 'function') {
-                    window.startClienteCitasListener(userData.uid);
+                if (userData.role === 'cliente') {
+                    if (typeof window.startClienteCitasListener === 'function') {
+                        window.startClienteCitasListener(userData.uid);
+                    }
+                    // F7: recordatorios "tu cita es en 2h" (mientras app abierta)
+                    if (typeof window.refrescarRecordatoriosCitas === 'function') {
+                        window.refrescarRecordatoriosCitas(userData.uid);
+                    }
                 }
                 if (userData.role === 'admin' && typeof window.startAdminPendingListener === 'function') {
                     window.startAdminPendingListener();
+                }
+                // F7: recepcionista también recibe ping de nuevas citas pendientes
+                // — filtradas por su sede.
+                if (userData.role === 'recepcionista' && userData.sedeId
+                    && typeof window.startRecepcionistaPendingListener === 'function') {
+                    window.startRecepcionistaPendingListener(userData.sedeId);
                 }
 
                 // Mostrar app directamente (sin mostrar botones de login)
@@ -297,6 +309,13 @@ class FirebaseAuthAdapter {
                 }
                 if (typeof window.stopAdminPendingListener === 'function') {
                     window.stopAdminPendingListener();
+                }
+                // F7
+                if (typeof window.stopRecepcionistaPendingListener === 'function') {
+                    window.stopRecepcionistaPendingListener();
+                }
+                if (typeof window.stopRecordatoriosCitas === 'function') {
+                    window.stopRecordatoriosCitas();
                 }
 
                 // Ocultar spinner y mostrar botones de login

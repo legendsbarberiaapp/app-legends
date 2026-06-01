@@ -12,7 +12,9 @@
     'use strict';
 
     let unsubscribe = null;
-    const previousStates = new Map(); // citaId -> estado anterior
+    // F7: además del estado guardamos también fecha+hora para detectar
+    // reagendamientos (la cita cambia sin que cambie el estado).
+    const previousSnapshots = new Map(); // citaId -> { estado, fecha, hora }
     let isFirstSnapshot = true;
 
     /**
@@ -56,6 +58,35 @@
         }
     }
 
+    /**
+     * F7: notificar reagendamiento (fecha y/o hora cambiaron sin cambio de
+     * estado). Solo aplica a citas activas — si la recep reagenda algo ya
+     * cancelado o completado no tiene sentido avisar.
+     */
+    const MESES_LBL = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    function formatFechaCorta(iso) {
+        if (!iso) return '';
+        const [y, m, d] = iso.split('-').map(Number);
+        const date = new Date(y, m - 1, d);
+        return `${date.getDate()} ${MESES_LBL[date.getMonth()]}`;
+    }
+    function notifyReagendamiento(cita) {
+        const fechaTxt = formatFechaCorta(cita.fecha);
+        const horaTxt = cita.hora || '';
+        const title = 'Tu cita fue reagendada';
+        const body = `Nueva fecha: ${fechaTxt} a las ${horaTxt} con ${cita.barberoNombre || 'tu barbero'}`;
+        if (typeof window.showToast === 'function') {
+            window.showToast(body, 'info');
+        }
+        if (window.Notifications) {
+            window.Notifications.show(title, body);
+        }
+    }
+
+    function snapOf(data) {
+        return { estado: data.estado, fecha: data.fecha, hora: data.hora };
+    }
+
     function start(uid) {
         stop();
         if (!window.firebaseAdapter || !firebaseAdapter.db) return;
@@ -65,9 +96,9 @@
             .onSnapshot(
                 snapshot => {
                     if (isFirstSnapshot) {
-                        // Primer snapshot: guardar estados actuales sin notificar
+                        // Primer snapshot: guardar snapshots actuales sin notificar
                         snapshot.docs.forEach(doc => {
-                            previousStates.set(doc.id, doc.data().estado);
+                            previousSnapshots.set(doc.id, snapOf(doc.data()));
                         });
                         isFirstSnapshot = false;
                         return;
@@ -76,19 +107,32 @@
                     snapshot.docChanges().forEach(change => {
                         const id = change.doc.id;
                         const data = change.doc.data();
+                        const prev = previousSnapshots.get(id);
 
-                        if (change.type === 'modified') {
-                            const prev = previousStates.get(id);
-                            if (prev && prev !== data.estado) {
-                                notifyTransition(data, prev, data.estado);
+                        if (change.type === 'modified' && prev) {
+                            // 1) Cambio de estado → notif transición
+                            if (prev.estado !== data.estado) {
+                                notifyTransition(data, prev.estado, data.estado);
                             }
-                            previousStates.set(id, data.estado);
+                            // 2) F7: reagendamiento (fecha o hora cambiaron) en cita activa
+                            const sigueActiva = data.estado === 'pendiente' || data.estado === 'confirmada';
+                            const cambioFecha = prev.fecha !== data.fecha || prev.hora !== data.hora;
+                            if (sigueActiva && cambioFecha && prev.estado === data.estado) {
+                                notifyReagendamiento(data);
+                            }
+                            previousSnapshots.set(id, snapOf(data));
                         } else if (change.type === 'added') {
-                            previousStates.set(id, data.estado);
+                            previousSnapshots.set(id, snapOf(data));
                         } else if (change.type === 'removed') {
-                            previousStates.delete(id);
+                            previousSnapshots.delete(id);
                         }
                     });
+
+                    // F7: refrescar los recordatorios programados al haber cambios
+                    // (reagendar, cancelar, etc. afectan qué citas necesitan reminder).
+                    if (typeof window.refrescarRecordatoriosCitas === 'function') {
+                        window.refrescarRecordatoriosCitas(uid);
+                    }
                 },
                 error => console.error('❌ Cliente listener error:', error)
             );
@@ -100,7 +144,7 @@
         if (unsubscribe) {
             unsubscribe();
             unsubscribe = null;
-            previousStates.clear();
+            previousSnapshots.clear();
             isFirstSnapshot = true;
             console.log('✓ Cliente citas listener detenido');
         }
