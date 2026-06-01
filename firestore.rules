@@ -4,11 +4,14 @@ rules_version = '2';
 // Pégalas en: Firebase Console -> Firestore Database -> Rules
 //
 // Última actualización: 2026-06-01
-// Último cambio: F6 — colección `resenias` (calificaciones post-corte).
-//                Cliente crea con estrellas válidas; lee solo el dueño/admin/
-//                barbero asignado. Update/delete: admin. Cita gana flag
-//                `reviewed`; barbero recibe `ratingPromedio` + `ratingCount`
-//                actualizados atomic vía transaction.
+// Último cambio: F6-fix — endurecemos rules de F6 contra vandalismo:
+//   1. barberos.ratingPromedio en [0,5] + ratingCount entero solo creciente
+//      por 1 (evita "rating=5.0 (9999)" desde DevTools).
+//   2. resenias.create lee la cita via get() y valida que sea del cliente,
+//      esté completada y no haya sido calificada (evita spam y suplantación).
+//   3. comentario máx 500 chars server-side (antes solo client-side).
+//
+//                F6 trajo colección `resenias` y campos rating en barberos.
 //                F4-fix bloqueó cambio de `minimo` del stock por recepcionista.
 //                F4 trajo colecciones `stock` y `stock_movimientos`.
 //                F3-fix endureció ventas (total/subtotal >= 0).
@@ -70,14 +73,26 @@ service cloud.firestore {
       allow create, delete: if isAdmin();           // solo admin crea/borra
 
       // Update:
-      // - Admin: cualquier campo
-      // - F6: cualquier usuario logeado, PERO solo si toca exclusivamente los
-      //   campos de rating (lo usa la transaction de ReseniasService al
-      //   actualizar el promedio).
+      // - Admin: cualquier campo.
+      // - F6 + F6-fix: cualquier usuario logeado, pero SOLO si:
+      //     * Toca exclusivamente {ratingPromedio, ratingCount}
+      //     * ratingPromedio queda en [0, 5] (un atacante no puede dejarlo en 9999)
+      //     * ratingCount es entero positivo y SOLO crece de a 1
+      //       (una sola reseña por update — replica la transaction del service).
+      //   La clave del fix es el delta = prev + 1: aunque un atacante haga 100
+      //   updates seguidos, cada uno solo suma 1 al count, así no puede inflar
+      //   reputación con una sola llamada. El promedio sigue acotado a [0,5].
       allow update: if isAdmin() || (
         isSignedIn()
         && request.resource.data.diff(resource.data).affectedKeys()
               .hasOnly(['ratingPromedio', 'ratingCount'])
+        && request.resource.data.ratingPromedio is number
+        && request.resource.data.ratingPromedio >= 0
+        && request.resource.data.ratingPromedio <= 5
+        && request.resource.data.ratingCount is int
+        && request.resource.data.ratingCount > 0
+        && request.resource.data.ratingCount
+             == resource.data.get('ratingCount', 0) + 1
       );
     }
 
@@ -198,11 +213,16 @@ service cloud.firestore {
     }
 
     // ============================================
-    // RESEÑAS (calificaciones post-corte) — F6
-    // - Crear: solo el cliente dueño, estrellas 1..5 inclusive, citaId y
-    //   barberoId presentes. La transaction client-side ya valida que la
-    //   cita esté completada y no calificada — acá solo enforcement básico.
-    // - Read: todos los logeados (los rating son públicos en las cards).
+    // RESEÑAS (calificaciones post-corte) — F6 + F6-fix
+    // - Crear: solo el cliente dueño con estrellas 1..5, comentario <=500
+    //   chars, y la CITA referenciada debe:
+    //     * pertenecerle (cita.clienteId == auth.uid)
+    //     * estar completada
+    //     * no haber sido calificada antes (reviewed != true)
+    //   Esto evita spam, suplantación y reviews sobre citas pendientes.
+    //   (La transaction del service también valida; aquí lo enforcearmos
+    //    server-side para que un atacante con SDK no pueda saltarse.)
+    // - Read: todos los logeados (los ratings son públicos en las cards).
     // - Update/delete: solo admin (moderación).
     // ============================================
     match /resenias/{reseniaId} {
@@ -214,7 +234,17 @@ service cloud.firestore {
                     && request.resource.data.estrellas >= 1
                     && request.resource.data.estrellas <= 5
                     && request.resource.data.barberoId is string
-                    && request.resource.data.citaId is string;
+                    && request.resource.data.citaId is string
+                    && request.resource.data.get('comentario', '').size() <= 500
+                    // Validación cruzada con la cita: 1 get() (cacheado por el
+                    // engine si se repite). Si el doc no existe, los accesos
+                    // de campo evalúan a null/error y la rule falla — deseado.
+                    && get(/databases/$(database)/documents/citas/$(request.resource.data.citaId))
+                         .data.clienteId == request.auth.uid
+                    && get(/databases/$(database)/documents/citas/$(request.resource.data.citaId))
+                         .data.estado == 'completada'
+                    && get(/databases/$(database)/documents/citas/$(request.resource.data.citaId))
+                         .data.get('reviewed', false) != true;
 
       allow update, delete: if isAdmin();
     }
