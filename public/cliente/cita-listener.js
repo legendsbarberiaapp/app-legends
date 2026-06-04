@@ -81,6 +81,11 @@
         if (window.Notifications) {
             window.Notifications.show(title, body);
         }
+        // F7-fix #2: limpiar el flag "ya notificada" en sessionStorage para
+        // que el nuevo recordatorio pueda dispararse para la fecha nueva.
+        if (typeof window.limpiarFlagRecordatorioCita === 'function') {
+            window.limpiarFlagRecordatorioCita(cita.id);
+        }
     }
 
     function snapOf(data) {
@@ -104,33 +109,51 @@
                         return;
                     }
 
+                    // F7-fix #3: solo refrescamos recordatorios si hubo un
+                    // cambio relevante (estado, fecha, hora o cita borrada).
+                    // Cambios cosméticos (ej. denormalizar barberoNombre) no
+                    // gastan una query Firestore extra.
+                    let cambioRelevante = false;
+
                     snapshot.docChanges().forEach(change => {
                         const id = change.doc.id;
                         const data = change.doc.data();
+                        const dataConId = { ...data, id }; // helpers necesitan el id
                         const prev = previousSnapshots.get(id);
 
                         if (change.type === 'modified' && prev) {
-                            // 1) Cambio de estado → notif transición
-                            if (prev.estado !== data.estado) {
-                                notifyTransition(data, prev.estado, data.estado);
-                            }
-                            // 2) F7: reagendamiento (fecha o hora cambiaron) en cita activa
+                            const cambioEstado = prev.estado !== data.estado;
                             const sigueActiva = data.estado === 'pendiente' || data.estado === 'confirmada';
                             const cambioFecha = prev.fecha !== data.fecha || prev.hora !== data.hora;
-                            if (sigueActiva && cambioFecha && prev.estado === data.estado) {
-                                notifyReagendamiento(data);
+
+                            // 1) Cambio de estado → notif transición
+                            if (cambioEstado) {
+                                notifyTransition(dataConId, prev.estado, data.estado);
                             }
+                            // 2) F7: reagendamiento (fecha o hora cambiaron) en cita activa.
+                            // F7-fix #7: aún si hubo cambio de estado simultáneo, si el
+                            // resultado sigue siendo una cita activa (ej. pendiente→
+                            // confirmada + reagendada), avisamos también del cambio de
+                            // fecha — el cliente necesita saber la hora nueva.
+                            if (sigueActiva && cambioFecha) {
+                                notifyReagendamiento(dataConId);
+                            }
+
+                            if (cambioEstado || cambioFecha) cambioRelevante = true;
                             previousSnapshots.set(id, snapOf(data));
                         } else if (change.type === 'added') {
                             previousSnapshots.set(id, snapOf(data));
+                            // Una cita nueva confirmada (vía recepcionista walk-in)
+                            // también requiere programar recordatorio.
+                            if (data.estado === 'confirmada') cambioRelevante = true;
                         } else if (change.type === 'removed') {
                             previousSnapshots.delete(id);
+                            cambioRelevante = true;
                         }
                     });
 
-                    // F7: refrescar los recordatorios programados al haber cambios
-                    // (reagendar, cancelar, etc. afectan qué citas necesitan reminder).
-                    if (typeof window.refrescarRecordatoriosCitas === 'function') {
+                    // F7-fix #3: refresh solo si vale la pena (ver arriba).
+                    if (cambioRelevante && typeof window.refrescarRecordatoriosCitas === 'function') {
                         window.refrescarRecordatoriosCitas(uid);
                     }
                 },

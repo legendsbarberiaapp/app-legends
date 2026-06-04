@@ -26,11 +26,17 @@
 
     // Constantes
     const HORAS_ANTES = 2;
-    const VENTANA_MS = 26 * 3600 * 1000; // miramos citas en las próximas 26h
+    const VENTANA_MS = 26 * 3600 * 1000; // ventana de trigger: solo programamos si el trigger (2h antes) cae dentro de 26h
     const STORAGE_KEY_PREFIX = 'legends.recordatorio.';
 
     // Estado en memoria: citaId → timeoutId
     const timeouts = new Map();
+
+    // F7-fix #1: token de secuencia anti-race. Si dos refresh corren en
+    // paralelo (cita-listener + login + refresh manual), el que termina
+    // último se descarta. Evita doble notif por programar dos timeouts del
+    // mismo cita-id.
+    let refreshToken = 0;
 
     function alreadyNotified(citaId) {
         try {
@@ -100,7 +106,9 @@
         const triggerAt = fechaHora.getTime() - HORAS_ANTES * 3600 * 1000;
         const delay = triggerAt - ahora;
 
-        // Si la cita ya pasó o falta más de 24h, no programamos.
+        // No programamos si la cita ya pasó, o si el trigger (2h antes) está
+        // más allá de nuestra ventana de 26h. En ese caso el próximo login/
+        // refresh dentro de ventana eventualmente la recogerá.
         if (fechaHora.getTime() <= ahora) return;
         if (delay > VENTANA_MS) return;
 
@@ -121,9 +129,18 @@
     async function refresh(uid) {
         if (!uid || typeof CitasService === 'undefined') return;
 
+        // F7-fix #1: capturar el token de esta llamada para descartar este
+        // refresh si otro más nuevo arranca antes de que termine el await.
+        const myToken = ++refreshToken;
+
         cancelAll();
         try {
             const citas = await CitasService.listByCliente(uid);
+
+            // Si otro refresh corrió mientras esperábamos, descartamos: él
+            // ya hizo su propio cancelAll + scheduleOne con datos más frescos.
+            if (myToken !== refreshToken) return;
+
             const activas = citas.filter(c => c.estado === 'confirmada');
             activas.forEach(scheduleOne);
             if (activas.length > 0) {
@@ -134,6 +151,20 @@
         }
     }
 
+    /**
+     * F7-fix #2: limpia el flag "ya notificada" de una cita. Usado por el
+     * cita-listener cuando detecta un reagendamiento: la cita cambió de
+     * fecha/hora, así que el recordatorio debe volver a dispararse para
+     * la nueva fecha.
+     */
+    function clearNotifiedFlag(citaId) {
+        try {
+            sessionStorage.removeItem(STORAGE_KEY_PREFIX + citaId);
+        } catch (e) {
+            // Silencioso
+        }
+    }
+
     function stop() {
         cancelAll();
         console.log('✓ Recordatorios de cita detenidos');
@@ -141,5 +172,6 @@
 
     window.refrescarRecordatoriosCitas = refresh;
     window.stopRecordatoriosCitas = stop;
+    window.limpiarFlagRecordatorioCita = clearNotifiedFlag;
     console.log('✓ RecordatorioCita (F7) loaded');
 })();

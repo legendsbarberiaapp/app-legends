@@ -18,6 +18,10 @@
     let unsubscribe = null;
     const knownIds = new Set();
     let isFirstSnapshot = true;
+    // F7-fix #4: debounce del re-render para evitar N init() en paralelo si
+    // llegan varias citas en ráfaga.
+    let reRenderTimer = null;
+    const RE_RENDER_DEBOUNCE_MS = 250;
 
     function playPing() {
         try {
@@ -82,10 +86,16 @@
                         }
                     });
 
-                    // Re-render del listado de citas si la pantalla está activa
+                    // F7-fix #4: re-render con debounce. Si llegan N changes
+                    // en ráfaga (raro pero posible), solo hacemos 1 init() al
+                    // final en vez de N en paralelo.
                     const tab = document.getElementById('recepcionista-citas-tab');
                     if (tab && tab.classList.contains('active') && typeof window.initRecepcionistaCitas === 'function') {
-                        window.initRecepcionistaCitas();
+                        if (reRenderTimer) clearTimeout(reRenderTimer);
+                        reRenderTimer = setTimeout(() => {
+                            reRenderTimer = null;
+                            window.initRecepcionistaCitas();
+                        }, RE_RENDER_DEBOUNCE_MS);
                     }
 
                     if (nuevas > 0) playPing();
@@ -102,6 +112,7 @@
             unsubscribe = null;
             knownIds.clear();
             isFirstSnapshot = true;
+            if (reRenderTimer) { clearTimeout(reRenderTimer); reRenderTimer = null; }
             console.log('✓ Recepcionista pending listener detenido');
         }
     }
