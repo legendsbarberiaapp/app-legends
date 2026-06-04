@@ -61,7 +61,8 @@
                 (typeof SedesService !== 'undefined') ? SedesService.list() : Promise.resolve([]),
                 // FIX F4-#6: traemos TODOS (no soloActivos) para que el historial
                 // de movimientos pueda resolver nombres de productos desactivados.
-                (typeof ProductosService !== 'undefined') ? ProductosService.list() : Promise.resolve([]),
+                // F9: solo los productos DE su sede.
+                (typeof ProductosService !== 'undefined') ? ProductosService.listBySede(state.sedeId) : Promise.resolve([]),
                 (typeof StockService !== 'undefined') ? StockService.listBySede(state.sedeId) : Promise.resolve([]),
                 (typeof StockService !== 'undefined') ? StockService.listMovimientos(state.sedeId, 20) : Promise.resolve([])
             ]);

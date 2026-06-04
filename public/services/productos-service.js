@@ -1,23 +1,26 @@
 /**
- * LEGENDS BARBERIA - PRODUCTOS SERVICE (F3)
+ * LEGENDS BARBERIA - PRODUCTOS SERVICE (F3 + F9)
  *
  * Capa de datos para la colección `productos` (para vender por la recepcionista
  * al cobrar — geles, ceras, shampoos, etc.).
  *
- * Modelo:
+ * Modelo (F9):
  *   productos/{id} = {
  *     nombre: string,
  *     precio: number,
+ *     sedeId: string,     // F9: cada producto pertenece a UNA sede
  *     activo: boolean,    // false = catálogo oculto en POS pero no perdemos historia
  *     orden: number,
  *     createdAt: timestamp,
  *     updatedAt: timestamp
  *   }
  *
- * Decisiones F3:
- *  - El catálogo es GLOBAL (no por sede). El stock por sede llega en F4.
- *  - La venta guarda la "foto" del producto (nombre + precio) al momento, así
- *    cambiar el precio no afecta ventas históricas.
+ * Decisiones:
+ *  - F3: la venta guarda la "foto" del producto (nombre + precio) al momento,
+ *    así cambiar el precio no afecta ventas históricas.
+ *  - F9: cada sede maneja SU PROPIO catálogo. Si el mismo producto físico
+ *    se vende en ambas, se crean 2 docs (1 por sede) — refleja el modelo
+ *    real de inventarios separados.
  */
 (function () {
     'use strict';
@@ -47,19 +50,42 @@
         }
     }
 
-    async function create({ nombre, precio, ordenActual }) {
+    async function create({ nombre, precio, sedeId, ordenActual }) {
         const database = db();
-        if (!database) return false;
-        if (!nombre || !nombre.trim()) return false;
-        await database.collection(COLLECTION).add({
+        if (!database) return null;
+        if (!nombre || !nombre.trim()) return null;
+        if (!sedeId) return null; // F9: sede obligatoria
+        const docRef = await database.collection(COLLECTION).add({
             nombre: nombre.trim(),
             precio: Number(precio) || 0,
+            sedeId: sedeId,
             activo: true,
             orden: ordenActual || 0,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
         });
-        return true;
+        return docRef.id;
+    }
+
+    /**
+     * F9: lista productos de UNA sede específica. Es el modo de uso normal:
+     * admin filtra por sede, recepcionista ve los de su sede al cobrar.
+     */
+    async function listBySede(sedeId, { soloActivos = false } = {}) {
+        const database = db();
+        if (!database || !sedeId) return [];
+        try {
+            const snapshot = await database.collection(COLLECTION)
+                .where('sedeId', '==', sedeId)
+                .get();
+            const result = [];
+            snapshot.forEach(doc => result.push({ id: doc.id, ...doc.data() }));
+            result.sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
+            return soloActivos ? result.filter(p => p.activo !== false) : result;
+        } catch (e) {
+            console.error('❌ Error listando productos por sede:', e);
+            return [];
+        }
     }
 
     async function update(id, fields) {
@@ -79,6 +105,6 @@
         return true;
     }
 
-    window.ProductosService = { list, create, update, remove };
+    window.ProductosService = { list, listBySede, create, update, remove };
     console.log('✓ ProductosService loaded');
 })();

@@ -129,16 +129,20 @@
     }
 
     /**
-     * F4: carga productos activos + el stock de la sede actual. Si StockService
-     * no está cargado o falla, dejamos stockCache vacío y todos los productos
-     * se ven con "stock desconocido" (no se bloquea el flujo del cobro).
+     * F4 + F9: carga productos activos DE LA SEDE de la recepcionista + el
+     * stock de esa sede. En F9, cada sede tiene su propio catálogo, así que
+     * solo cargamos los suyos (no los de la otra sede).
+     *
+     * Si StockService no está cargado o falla, dejamos stockCache vacío y
+     * todos los productos se ven con "stock desconocido" (no se bloquea el
+     * flujo del cobro).
      */
     async function loadProductosYStock() {
         const sedeId = getSedeId();
         try {
             const [productos, stockRows] = await Promise.all([
-                (typeof ProductosService !== 'undefined')
-                    ? ProductosService.list({ soloActivos: true })
+                (sedeId && typeof ProductosService !== 'undefined')
+                    ? ProductosService.listBySede(sedeId, { soloActivos: true })
                     : Promise.resolve([]),
                 (sedeId && typeof StockService !== 'undefined')
                     ? StockService.listBySede(sedeId)

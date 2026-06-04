@@ -21,11 +21,13 @@
     'use strict';
 
     const state = {
-        productos: [],
+        productos: [],       // F9: solo los de la sede seleccionada
         sedes: [],
         // Map<productoId, Map<sedeId, {cantidad, minimo}>>
         stockByProductoSede: new Map(),
-        sedeFilter: 'all',   // 'all' | sedeId
+        // F9: sede activa. SIN opción "Todas" — cada sede maneja su propio
+        // catálogo separado (el admin decidió que es el modelo real).
+        sedeFilter: null,    // sedeId (se setea a primera sede al cargar)
         loading: false,
         fetchToken: 0        // anti-race (mismo patrón que F5)
     };
@@ -60,35 +62,46 @@
             </div>`;
 
         try {
-            const [productos, sedes] = await Promise.all([
-                (typeof ProductosService !== 'undefined') ? ProductosService.list() : Promise.resolve([]),
-                (typeof SedesService !== 'undefined') ? SedesService.list() : Promise.resolve([])
+            // F9: primero cargo sedes y aseguro que haya una seleccionada.
+            // Después cargo productos SOLO de esa sede.
+            if (state.sedes.length === 0 && typeof SedesService !== 'undefined') {
+                state.sedes = (await SedesService.list()) || [];
+            }
+            if (!isCurrent()) return;
+
+            // Auto-seleccionar primera sede si no hay una seteada
+            if (!state.sedeFilter && state.sedes.length > 0) {
+                state.sedeFilter = state.sedes[0].id;
+            }
+
+            if (!state.sedeFilter) {
+                if (!isCurrent()) return;
+                list.innerHTML = renderError('No hay sedes configuradas todavía');
+                return;
+            }
+
+            // Cargar productos de la sede seleccionada + stock de esa sede
+            const [productos, stockRows] = await Promise.all([
+                (typeof ProductosService !== 'undefined')
+                    ? ProductosService.listBySede(state.sedeFilter)
+                    : Promise.resolve([]),
+                (typeof StockService !== 'undefined')
+                    ? StockService.listBySede(state.sedeFilter)
+                    : Promise.resolve([])
             ]);
             if (!isCurrent()) return;
 
             state.productos = productos || [];
-            state.sedes = sedes || [];
 
-            // Cargar stock de TODAS las sedes para todos los productos en paralelo
-            const allRows = await Promise.all(
-                state.sedes.map(s =>
-                    (typeof StockService !== 'undefined')
-                        ? StockService.listBySede(s.id)
-                        : Promise.resolve([])
-                )
-            );
-            if (!isCurrent()) return;
-
+            // Indexar stock por producto (solo de esta sede)
             state.stockByProductoSede = new Map();
-            state.sedes.forEach((s, i) => {
-                (allRows[i] || []).forEach(row => {
-                    if (!state.stockByProductoSede.has(row.productoId)) {
-                        state.stockByProductoSede.set(row.productoId, new Map());
-                    }
-                    state.stockByProductoSede.get(row.productoId).set(s.id, {
-                        cantidad: Number(row.cantidad) || 0,
-                        minimo: Number(row.minimo) || 0
-                    });
+            (stockRows || []).forEach(row => {
+                if (!state.stockByProductoSede.has(row.productoId)) {
+                    state.stockByProductoSede.set(row.productoId, new Map());
+                }
+                state.stockByProductoSede.get(row.productoId).set(state.sedeFilter, {
+                    cantidad: Number(row.cantidad) || 0,
+                    minimo: Number(row.minimo) || 0
                 });
             });
 
@@ -120,6 +133,7 @@
     function renderFiltro() {
         const container = document.getElementById('inv-admin-sede-filter');
         if (!container) return;
+        // F9: SIN opción "Todas" — cada sede tiene su propio catálogo.
         const pill = (label, value, icon) => {
             const active = state.sedeFilter === value;
             return `
@@ -130,18 +144,15 @@
                     <span class="truncate">${label}</span>
                 </button>`;
         };
-        const pills = [pill('Todas las sedes', 'all', 'select_all')]
-            .concat((state.sedes || []).map(s => pill(s.nombre, s.id, 'storefront')))
-            .join('');
+        const pills = (state.sedes || []).map(s => pill(s.nombre, s.id, 'storefront')).join('');
         container.innerHTML = pills;
     }
 
     function setSedeFilter(value) {
         if (state.sedeFilter === value) return;
         state.sedeFilter = value;
-        renderFiltro();
-        renderAlertas();
-        renderLista();
+        // F9: cambiar de sede = reload completo (productos son por sede).
+        init();
     }
 
     // ============================================
@@ -157,19 +168,14 @@
 
     function alertasCount() {
         let agotados = 0, bajos = 0, neg = 0;
-        const sedesIter = state.sedeFilter === 'all'
-            ? state.sedes
-            : state.sedes.filter(s => s.id === state.sedeFilter);
-
+        // F9: el filtro es siempre 1 sede específica.
         state.productos.forEach(p => {
-            sedesIter.forEach(s => {
-                const data = state.stockByProductoSede.get(p.id)?.get(s.id);
-                if (!data) return;
-                const e = getEstado(data.cantidad, data.minimo);
-                if (e === 'negativo') neg++;
-                else if (e === 'agotado') agotados++;
-                else if (e === 'bajo') bajos++;
-            });
+            const data = state.stockByProductoSede.get(p.id)?.get(state.sedeFilter);
+            if (!data) return;
+            const e = getEstado(data.cantidad, data.minimo);
+            if (e === 'negativo') neg++;
+            else if (e === 'agotado') agotados++;
+            else if (e === 'bajo') bajos++;
         });
         return { agotados, bajos, neg };
     }
@@ -226,9 +232,8 @@
 
     function productoCard(p) {
         const activo = p.activo !== false;
-        const sedesVisibles = state.sedeFilter === 'all'
-            ? state.sedes
-            : state.sedes.filter(s => s.id === state.sedeFilter);
+        // F9: solo la sede del filtro (siempre 1).
+        const sedesVisibles = state.sedes.filter(s => s.id === state.sedeFilter);
 
         const safeName = (p.nombre || '').replace(/"/g, '&quot;');
         const headerActions = `
@@ -366,20 +371,11 @@
     }
 
     async function confirmDelete(id, nombre) {
-        // Chequeo previo: stock > 0 en alguna sede bloquea
-        const map = state.stockByProductoSede.get(id);
-        if (map) {
-            const conStock = [];
-            map.forEach((data, sedeId) => {
-                if ((data.cantidad || 0) > 0) {
-                    const sede = state.sedes.find(s => s.id === sedeId);
-                    if (sede) conStock.push(sede.nombre);
-                }
-            });
-            if (conStock.length > 0) {
-                alert(`No se puede eliminar "${nombre}" porque tiene stock en: ${conStock.join(', ')}.\n\nPoné las cantidades en 0 primero, o desactivá el producto en vez de borrarlo.`);
-                return;
-            }
+        // F9: el producto pertenece a 1 sola sede, chequeamos solo esa.
+        const data = state.stockByProductoSede.get(id)?.get(state.sedeFilter);
+        if (data && (data.cantidad || 0) > 0) {
+            alert(`No se puede eliminar "${nombre}" porque tiene ${data.cantidad} en stock.\n\nPoné la cantidad en 0 primero, o desactivá el producto en vez de borrarlo.`);
+            return;
         }
         if (!confirm(`¿Eliminar "${nombre}"? Las ventas históricas se conservan.`)) return;
         const ok = await ProductosService.remove(id);
@@ -393,23 +389,40 @@
     // ============================================
 
     function openAgregar() {
+        if (!state.sedeFilter || state.sedes.length === 0) {
+            toast('No hay sedes configuradas', 'error');
+            return;
+        }
         const existing = document.getElementById('inv-agregar-overlay');
         if (existing) existing.remove();
 
+        // F9: selector de sede (default = sede actualmente filtrada).
+        const sedesOptions = state.sedes.map(s => {
+            const selected = s.id === state.sedeFilter ? 'selected' : '';
+            return `<option value="${s.id}" ${selected}>${s.nombre}</option>`;
+        }).join('');
+
         const html = `
         <div id="inv-agregar-overlay" class="barber-modal-overlay" style="z-index:160">
-            <div class="barber-confirm-dialog" style="max-width:440px">
+            <div class="barber-confirm-dialog" style="max-width:460px">
                 <div class="flex items-center gap-3 mb-4">
                     <div class="w-10 h-10 rounded-xl bg-primary/15 border border-primary/25 flex items-center justify-center">
                         <span class="material-symbols-outlined text-primary text-lg" style="font-variation-settings: 'FILL' 1">add_box</span>
                     </div>
                     <div>
                         <h3 class="text-white font-black text-base">Agregar Producto</h3>
-                        <p class="text-white/40 text-[10px] uppercase tracking-wider font-bold">Catálogo + alerta inicial</p>
+                        <p class="text-white/40 text-[10px] uppercase tracking-wider font-bold">Para una sede específica</p>
                     </div>
                 </div>
 
                 <div class="space-y-3 mb-4">
+                    <div>
+                        <p class="text-white/45 text-[10px] font-bold uppercase tracking-wider mb-1.5 pl-1">Sede</p>
+                        <select id="inv-new-sede" class="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-bold outline-none focus:border-primary/50 transition-colors">
+                            ${sedesOptions}
+                        </select>
+                        <p class="text-white/35 text-[10px] mt-1.5 pl-1">El producto se crea solo en esta sede. Si lo querés también en la otra, lo agregás aparte (cada sede maneja su propio inventario).</p>
+                    </div>
                     <div>
                         <p class="text-white/45 text-[10px] font-bold uppercase tracking-wider mb-1.5 pl-1">Nombre</p>
                         <input id="inv-new-nombre" type="text" maxlength="40" placeholder="Ej: Cera mate"
@@ -423,14 +436,17 @@
                                 class="price-input w-full px-3 py-2.5 pl-7 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-bold outline-none focus:border-primary/50 transition-colors">
                         </div>
                     </div>
-                    <div>
-                        <p class="text-white/45 text-[10px] font-bold uppercase tracking-wider mb-1.5 pl-1">Avisarme cuando queden ≤</p>
-                        <div class="relative">
-                            <input id="inv-new-minimo" type="number" inputmode="numeric" min="0" placeholder="5" value="5"
-                                class="w-full px-3 py-2.5 pr-16 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-black tabular-nums outline-none focus:border-primary/50 transition-colors">
-                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-white/35 text-[10px] font-bold uppercase tracking-wider pointer-events-none">unidades</span>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <p class="text-white/45 text-[10px] font-bold uppercase tracking-wider mb-1.5 pl-1">Cantidad inicial</p>
+                            <input id="inv-new-cantidad" type="number" inputmode="numeric" min="0" placeholder="0" value="0"
+                                class="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-black tabular-nums outline-none focus:border-primary/50 transition-colors">
                         </div>
-                        <p class="text-white/35 text-[10px] mt-1.5 pl-1">Cuando la cantidad llegue o baje de este número, te aparece alerta. Aplica a todas las sedes (podés ajustarlo por sede después).</p>
+                        <div>
+                            <p class="text-white/45 text-[10px] font-bold uppercase tracking-wider mb-1.5 pl-1">Avisar si quedan ≤</p>
+                            <input id="inv-new-minimo" type="number" inputmode="numeric" min="0" placeholder="5" value="5"
+                                class="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-black tabular-nums outline-none focus:border-primary/50 transition-colors">
+                        </div>
                     </div>
                 </div>
 
@@ -464,49 +480,85 @@
     }
 
     async function submitAgregar() {
+        const sedeSelect = document.getElementById('inv-new-sede');
         const nombreInput = document.getElementById('inv-new-nombre');
         const precioInput = document.getElementById('inv-new-precio');
+        const cantInput = document.getElementById('inv-new-cantidad');
         const minInput = document.getElementById('inv-new-minimo');
         const submitBtn = document.getElementById('inv-new-submit');
 
+        const sedeId = sedeSelect?.value || '';
         const nombre = (nombreInput?.value || '').trim();
         const precio = (typeof window.parsePriceInput === 'function')
             ? window.parsePriceInput(precioInput)
             : (parseFloat(precioInput?.value) || 0);
+        const cantidad = parseInt(cantInput?.value || '0', 10);
         const minimo = parseInt(minInput?.value || '0', 10);
 
+        if (!sedeId) { toast('Elegí una sede', 'error'); sedeSelect?.focus(); return; }
         if (!nombre) { toast('Ingresá un nombre', 'error'); nombreInput?.focus(); return; }
         if (!precio || precio <= 0) { toast('Precio inválido', 'error'); precioInput?.focus(); return; }
+        if (isNaN(cantidad) || cantidad < 0) { toast('Cantidad inválida', 'error'); cantInput?.focus(); return; }
         if (isNaN(minimo) || minimo < 0) { toast('Mínimo inválido', 'error'); minInput?.focus(); return; }
-        if (state.productos.some(p => p.nombre.toLowerCase() === nombre.toLowerCase())) {
-            toast('Ya existe un producto con ese nombre', 'error');
+
+        // F9: chequear duplicado SOLO en la sede destino (puede existir el
+        // mismo nombre en otra sede sin conflicto — son inventarios separados).
+        if (state.sedeFilter === sedeId
+            && state.productos.some(p => p.nombre.toLowerCase() === nombre.toLowerCase())) {
+            toast('Ya existe ese producto en esta sede', 'error');
             return;
+        }
+        if (state.sedeFilter !== sedeId && typeof ProductosService !== 'undefined') {
+            const existentesEnSede = await ProductosService.listBySede(sedeId);
+            if (existentesEnSede.some(p => p.nombre.toLowerCase() === nombre.toLowerCase())) {
+                toast(`Ya existe ese producto en esa sede`, 'error');
+                return;
+            }
         }
 
         const orig = submitBtn?.innerHTML;
         if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '...'; }
 
-        // 1. Crear producto
-        const ok = await ProductosService.create({ nombre, precio, ordenActual: state.productos.length });
-        if (!ok) {
+        // 1. Crear producto con sede asignada
+        const productoId = await ProductosService.create({
+            nombre, precio, sedeId,
+            ordenActual: state.productos.length
+        });
+        if (!productoId) {
             toast('Error al crear', 'error');
             if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = orig; }
             return;
         }
 
-        // 2. Recargar productos para obtener el id del nuevo
-        const productosNuevos = await ProductosService.list();
-        const creado = productosNuevos.find(p => p.nombre.toLowerCase() === nombre.toLowerCase());
-        if (creado && minimo > 0 && typeof StockService !== 'undefined') {
-            // 3. Setear el mínimo en todas las sedes
-            await Promise.all(
-                state.sedes.map(s => StockService.setMinimo({ productoId: creado.id, sedeId: s.id, minimo }))
-            );
+        // 2. Setear cantidad inicial + mínimo en esa sede (única sede ahora)
+        if (typeof StockService !== 'undefined') {
+            const user = getCurrentUser();
+            if (cantidad > 0) {
+                await StockService.ajustar({
+                    productoId, sedeId, nuevaCantidad: cantidad,
+                    notas: 'Cantidad inicial al crear producto',
+                    creadoPor: user?.uid || null,
+                    creadoPorNombre: user?.displayName || ''
+                });
+            }
+            if (minimo > 0) {
+                await StockService.setMinimo({ productoId, sedeId, minimo });
+            }
         }
 
-        toast(`"${nombre}" agregado ✓`, 'success');
+        toast(`"${nombre}" agregado a ${sedeNombrePorId(sedeId)} ✓`, 'success');
         closeAgregar();
+
+        // Si lo creó en otra sede, cambiamos el filtro para que lo vea
+        if (sedeId !== state.sedeFilter) {
+            state.sedeFilter = sedeId;
+        }
         init();
+    }
+
+    function sedeNombrePorId(sedeId) {
+        const s = (state.sedes || []).find(x => x.id === sedeId);
+        return s?.nombre || '';
     }
 
     // ============================================
