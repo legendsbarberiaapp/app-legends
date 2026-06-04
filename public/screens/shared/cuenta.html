@@ -1,0 +1,38 @@
+<div class="px-6 py-8 pb-28">
+    <!-- Header -->
+    <div class="mb-6">
+        <div class="flex items-center gap-3 mb-2">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/25 flex items-center justify-center shadow-[0_0_20px_rgba(201,167,74,0.15)]">
+                <span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings: 'FILL' 1">account_circle</span>
+            </div>
+            <div class="flex-1 min-w-0">
+                <h1 class="text-2xl font-black text-white leading-tight">Mi Cuenta</h1>
+                <p class="text-white/40 text-xs font-semibold uppercase tracking-wider">Tu información</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card de perfil -->
+    <div class="p-5 rounded-2xl bg-gradient-to-br from-surface-dark to-card-dark border border-white/10 mb-5">
+        <div class="flex flex-col items-center text-center">
+            <img id="cuenta-avatar" src="https://ui-avatars.com/api/?name=Usuario&background=c9a74a&color=000&size=200&bold=true"
+                alt="Avatar" referrerpolicy="no-referrer"
+                class="w-24 h-24 rounded-full border-4 border-primary/40 shadow-[0_0_30px_rgba(201,167,74,0.25)] mb-4 object-cover">
+            <h2 id="cuenta-nombre" class="text-white text-xl font-black mb-1">—</h2>
+            <p id="cuenta-email" class="text-white/55 text-sm font-medium mb-3">—</p>
+            <div id="cuenta-badges" class="flex items-center gap-2 flex-wrap justify-center"></div>
+        </div>
+    </div>
+
+    <!-- Card de detalles (sede/nivel/etc según rol) -->
+    <div id="cuenta-detalles" class="space-y-2 mb-5"></div>
+
+    <!-- Botón cerrar sesión -->
+    <button onclick="handleSignOut()"
+        class="w-full flex items-center justify-center gap-3 px-5 py-4 rounded-2xl bg-red-500/10 border border-red-500/25 text-red-400 font-black text-sm uppercase tracking-wider hover:bg-red-500/20 transition-all active:scale-[0.97]">
+        <span class="material-symbols-outlined text-lg">logout</span>
+        Cerrar sesión
+    </button>
+
+    <p class="text-center text-white/30 text-[10px] mt-6">Legends Barbería · Powered by Firebase</p>
+</div>

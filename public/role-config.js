@@ -27,8 +27,9 @@ const ROLE_CONFIGS = {
     barbero: {
         tabs: [
             { id: 'barbero-dashboard', icon: 'dashboard',       label: 'Dashboard', fill: true  },
-            { id: 'barbero-citas',     icon: 'calendar_today',  label: 'Mis Citas', fill: false },
-            { id: 'barbero-resenias',  icon: 'star',            label: 'Reseñas',   fill: false }
+            { id: 'barbero-citas',     icon: 'calendar_today',  label: 'Citas',     fill: false },
+            { id: 'barbero-resenias',  icon: 'star',            label: 'Reseñas',   fill: false },
+            { id: 'barbero-cuenta',    icon: 'account_circle',  label: 'Cuenta',    fill: false }
         ],
         defaultTab: 'barbero-dashboard',
         showFAB: false
@@ -44,7 +45,8 @@ const ROLE_CONFIGS = {
         tabs: [
             { id: 'recepcionista-citas',      icon: 'event_available', label: 'Citas',      fill: true  },
             { id: 'recepcionista-caja',       icon: 'point_of_sale',   label: 'Caja',       fill: false },
-            { id: 'recepcionista-inventario', icon: 'inventory_2',     label: 'Stock',      fill: false }
+            { id: 'recepcionista-inventario', icon: 'inventory_2',     label: 'Stock',      fill: false },
+            { id: 'recepcionista-cuenta',     icon: 'account_circle',  label: 'Cuenta',     fill: false }
         ],
         defaultTab: 'recepcionista-citas',
         showFAB: false
