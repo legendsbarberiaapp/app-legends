@@ -116,7 +116,7 @@ function autoLoadDataForTab(tabName) {
     if (tabName === 'recepcionista-inventario' && typeof initRecepcionistaInventario === 'function') {
         initRecepcionistaInventario();
     }
-    if ((tabName === 'recepcionista-cuenta' || tabName === 'barbero-cuenta')
+    if ((tabName === 'recepcionista-cuenta' || tabName === 'barbero-cuenta' || tabName === 'admin-cuenta')
         && typeof initCuenta === 'function') {
         initCuenta();
     }

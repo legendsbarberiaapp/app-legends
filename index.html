@@ -275,7 +275,10 @@
             <!-- Nav (populated by roleManager.renderNavigation) -->
             <nav class="desktop-sidebar-nav"></nav>
 
-            <!-- User card (populated by roleManager.updateProfileUI) -->
+            <!-- User card (populated by roleManager.updateProfileUI).
+                 El botón logout vivía aquí; se movió a la pestaña "Cuenta"
+                 (compartida para admin/barbero/recepcionista) para que el
+                 acceso sea consistente y disponible también en móvil. -->
             <div class="desktop-sidebar-user">
                 <img id="desktop-sidebar-avatar" src="https://ui-avatars.com/api/?name=Usuario&background=c9a74a&color=000&size=200&bold=true"
                     alt="Avatar" referrerpolicy="no-referrer"
@@ -284,10 +287,6 @@
                     <p id="desktop-sidebar-name" class="desktop-sidebar-user-name">Usuario</p>
                     <p id="desktop-sidebar-role" class="desktop-sidebar-user-role">Cliente</p>
                 </div>
-                <button onclick="handleSignOut()" aria-label="Cerrar sesión"
-                    class="desktop-sidebar-logout" title="Cerrar sesión">
-                    <span class="material-symbols-outlined text-lg">logout</span>
-                </button>
             </div>
         </aside>
 
@@ -365,6 +364,10 @@
         <!-- ADMIN INVENTARIO TAB (partial — F8) -->
         <div id="admin-inventario-tab" class="tab-content hidden h-[100dvh] w-full overflow-y-auto bg-background-dark"
             data-partial="screens/admin/inventario.html"></div>
+
+        <!-- ADMIN CUENTA TAB (partial compartido) -->
+        <div id="admin-cuenta-tab" class="tab-content hidden h-[100dvh] w-full overflow-y-auto bg-background-dark"
+            data-partial="screens/shared/cuenta.html"></div>
 
         <!-- ADMIN USUARIOS TAB (partial) -->
         <div id="admin-usuarios-tab" class="tab-content hidden h-[100dvh] w-full overflow-y-auto bg-background-dark"
