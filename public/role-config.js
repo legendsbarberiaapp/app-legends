@@ -52,11 +52,12 @@ const ROLE_CONFIGS = {
 
     admin: {
         tabs: [
-            { id: 'admin-dashboard', icon: 'admin_panel_settings', label: 'Admin',    fill: true  },
-            { id: 'admin-agenda',    icon: 'event_note',           label: 'Agenda',   fill: false },
-            { id: 'admin-reportes',  icon: 'analytics',            label: 'Reportes', fill: false },
-            { id: 'admin-usuarios',  icon: 'group',                label: 'Usuarios', fill: false },
-            { id: 'admin-barberos',  icon: 'content_cut',          label: 'Barberos', fill: false }
+            { id: 'admin-dashboard',   icon: 'admin_panel_settings', label: 'Admin',      fill: true  },
+            { id: 'admin-agenda',      icon: 'event_note',           label: 'Agenda',     fill: false },
+            { id: 'admin-reportes',    icon: 'analytics',            label: 'Reportes',   fill: false },
+            { id: 'admin-inventario',  icon: 'inventory_2',          label: 'Inventario', fill: false },
+            { id: 'admin-usuarios',    icon: 'group',                label: 'Usuarios',   fill: false },
+            { id: 'admin-barberos',    icon: 'content_cut',          label: 'Barberos',   fill: false }
         ],
         defaultTab: 'admin-dashboard',
         showFAB: false
