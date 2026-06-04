@@ -121,10 +121,25 @@ class RoleManager {
             return;
         }
 
+        // Adaptar el container según cantidad de tabs:
+        // - Hasta 5 tabs (cliente / barbero / recepcionista): centrado con flex-1
+        //   en cada item (estética histórica, llena el ancho cómodamente).
+        // - 6+ tabs (admin con Inventario en F8): scroll horizontal con ancho
+        //   fijo por item para que TODOS sean alcanzables sin romper la UX.
+        const muchosTabs = tabs.length > 5;
+
+        if (muchosTabs) {
+            navContainer.className = 'bottom-nav-container flex items-center gap-1 overflow-x-auto no-scrollbar -mx-2 px-2';
+        } else {
+            navContainer.className = 'bottom-nav-container flex items-center justify-around max-w-md mx-auto gap-2';
+        }
+
+        const itemSizeCls = muchosTabs ? 'shrink-0 min-w-[64px]' : 'flex-1';
+
         // Generar HTML de navegación (móvil / bottom-nav)
         const navHTML = tabs.map((tab, index) => `
             <a onclick="switchTab('${tab.id}')"
-               class="nav-item relative flex flex-1 flex-col items-center justify-center gap-1.5 p-2 rounded-2xl ${index === 0 ? 'text-primary' : 'text-gray-500'} hover:text-gray-300 transition-all duration-300 cursor-pointer active:scale-95"
+               class="nav-item relative flex ${itemSizeCls} flex-col items-center justify-center gap-1.5 p-2 rounded-2xl ${index === 0 ? 'text-primary' : 'text-gray-500'} hover:text-gray-300 transition-all duration-300 cursor-pointer active:scale-95"
                data-tab="${tab.id}">
                 ${index === 0 ? '<div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 w-10 h-1 bg-primary rounded-full shadow-[0_0_10px_rgba(201,167,74,0.8)]"></div>' : ''}
                 <div class="relative">
@@ -132,7 +147,7 @@ class RoleManager {
                           style="font-variation-settings: 'FILL' ${tab.fill || index === 0 ? 1 : 0}, 'wght' 400, 'GRAD' 0, 'opsz' 24">${tab.icon}</span>
                     ${index === 0 ? '<div class="absolute inset-0 bg-primary/30 blur-xl rounded-full"></div>' : ''}
                 </div>
-                <p class="text-[11px] ${index === 0 ? 'font-black' : 'font-medium'} leading-none tracking-wide">${tab.label}</p>
+                <p class="text-[11px] ${index === 0 ? 'font-black' : 'font-medium'} leading-none tracking-wide whitespace-nowrap">${tab.label}</p>
             </a>
         `).join('');
 
