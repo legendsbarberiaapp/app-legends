@@ -73,6 +73,16 @@
                 servicioNombre: data.servicioNombre || '',
                 servicioPrecio: Number(data.servicioPrecio) || 0,
 
+                // Schema rico (desglose real de la reserva). Antes el booking lo
+                // enviaba pero create() lo descartaba; ahora se persiste para que
+                // caja/recepcionista/reportes puedan leer el detalle. Los campos
+                // legacy de arriba se conservan para retrocompat.
+                conCorte: data.conCorte === true,
+                cortePrecio: Number(data.cortePrecio) || 0,
+                corteServicios: Array.isArray(data.corteServicios) ? data.corteServicios : [],
+                adicionales: Array.isArray(data.adicionales) ? data.adicionales : [],
+                total: Number(data.total) || Number(data.servicioPrecio) || 0,
+
                 fecha: data.fecha,
                 hora: data.hora,
                 fechaHora: buildFechaHora(data.fecha, data.hora),
@@ -319,16 +329,27 @@
      */
     async function getOccupiedSlots(barberoId, fecha) {
         const database = db();
-        if (!database) return [];
+        if (!database || !barberoId || !fecha) return [];
         try {
-            const snapshot = await database.collection(COLLECTION)
+            // IMPORTANTE: filtramos por estado en la query (dos queries, no una
+            // sola sin filtrar). Una query barberoId+fecha SIN filtro de estado
+            // incluye citas canceladas/completadas ajenas, que el cliente no
+            // puede leer por reglas → Firestore rechaza TODA la query con
+            // permission-denied y `getOccupiedSlots` devolvía [] siempre (ningún
+            // slot se marcaba ocupado → riesgo de doble reserva). Filtrando a
+            // pendiente/confirmada, la query solo toca docs que cualquier
+            // logueado puede leer. Son equality-only → sin índice compuesto.
+            const base = database.collection(COLLECTION)
                 .where('barberoId', '==', barberoId)
-                .where('fecha', '==', fecha)
-                .get();
-            return snapshot.docs
-                .map(doc => doc.data())
-                .filter(c => c.estado === ESTADOS.PENDIENTE || c.estado === ESTADOS.CONFIRMADA)
-                .map(c => c.hora);
+                .where('fecha', '==', fecha);
+            const [pend, conf] = await Promise.all([
+                base.where('estado', '==', ESTADOS.PENDIENTE).get(),
+                base.where('estado', '==', ESTADOS.CONFIRMADA).get()
+            ]);
+            const horas = [];
+            pend.forEach(d => horas.push(d.data().hora));
+            conf.forEach(d => horas.push(d.data().hora));
+            return horas;
         } catch (error) {
             console.error('❌ Error obteniendo slots ocupados:', error);
             return [];

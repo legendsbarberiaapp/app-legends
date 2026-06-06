@@ -205,7 +205,7 @@
                     </div>
                     <p class="relative text-white text-sm font-bold mb-1 truncate">${s.nombre}</p>
                     <div class="relative text-white/45 text-[10px] font-medium mb-2 uppercase tracking-wider">
-                        ${min !== null ? 'Desde' : ' '}
+                        ${min !== null ? 'En el corte desde' : ' '}
                     </div>
                     <p class="relative ${min !== null ? 'text-primary' : 'text-white/50'} font-black text-base tabular-nums">${min !== null ? window.formatCOP(min) : 'Consultar'}</p>
                 </button>

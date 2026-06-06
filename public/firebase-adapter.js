@@ -122,11 +122,19 @@ class FirebaseAuthAdapter {
 
         const existingData = doc.data();
 
-        // Si es admin pero en Firestore no tiene rol admin, actualizarlo
+        // Si es admin pero en Firestore no tiene rol admin, intentar actualizarlo.
+        // Las reglas de Firestore bloquean que un usuario cambie su propio `role`
+        // (anti escalación de privilegios), así que este self-heal puede fallar;
+        // lo envolvemos para no romper el login. En la práctica los emails admin
+        // se crean ya con rol admin, así que esta rama casi nunca se ejecuta.
         if (isAdmin && existingData.role !== 'admin') {
-            await userRef.update({ role: 'admin' });
-            existingData.role = 'admin';
-            console.log('✓ Rol actualizado a admin para:', firebaseUser.email);
+            try {
+                await userRef.update({ role: 'admin' });
+                existingData.role = 'admin';
+                console.log('✓ Rol actualizado a admin para:', firebaseUser.email);
+            } catch (e) {
+                console.warn('⚠ No se pudo auto-promover a admin (ajustar rol en consola):', e.code || e.message);
+            }
         }
 
         return existingData;

@@ -41,7 +41,10 @@
 
     function renderStats(citas) {
         const completadas = citas.filter(c => c.estado === 'completada');
-        const proximas = citas.filter(c => c.estado === 'confirmada');
+        // "Próximas" = lo que el usuario tiene por delante: confirmadas Y
+        // pendientes (las pendientes también aparecen listadas abajo, así que
+        // el contador debe incluirlas para no mostrar 0 con una reserva activa).
+        const proximas = citas.filter(c => c.estado === 'confirmada' || c.estado === 'pendiente');
         // Si la recepcionista agregó productos al cobrar, totalCobrado refleja
         // el monto real (corte + productos). Fallback al precio agendado para
         // citas viejas pre-F3 que no tienen el campo.
@@ -262,16 +265,67 @@
         }
     }
 
+    /**
+     * Modal de confirmación on-brand (reemplaza el confirm() nativo).
+     * Devuelve Promise<boolean>: true si el usuario confirma.
+     */
+    function pedirConfirmacion({ title, message, confirmText = 'Confirmar', danger = false }) {
+        return new Promise((resolve) => {
+            const existing = document.getElementById('profile-confirm-overlay');
+            if (existing) existing.remove();
+
+            const accent = danger ? 'red' : 'primary';
+            const confirmCls = danger
+                ? 'bg-red-500/20 border-red-500/30 text-red-400 hover:bg-red-500/30'
+                : 'bg-gradient-to-r from-primary to-primary-light text-black';
+
+            const overlay = document.createElement('div');
+            overlay.id = 'profile-confirm-overlay';
+            overlay.className = 'fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-end md:items-center justify-center p-4 animate-[fadeIn_0.2s_ease-out]';
+            overlay.innerHTML = `
+                <div class="w-full max-w-md bg-gradient-to-br from-surface-dark to-card-dark border border-${accent}/30 rounded-3xl p-6 shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+                    <div class="w-14 h-14 rounded-2xl bg-${accent}-500/15 border border-${accent}-500/30 flex items-center justify-center mx-auto mb-4">
+                        <span class="material-symbols-outlined text-${accent === 'red' ? 'red-400' : 'primary'} text-3xl" style="font-variation-settings: 'FILL' 1" aria-hidden="true">${danger ? 'event_busy' : 'help'}</span>
+                    </div>
+                    <h3 class="text-white font-black text-lg text-center mb-2">${title}</h3>
+                    <p class="text-white/60 text-sm text-center mb-6 leading-relaxed">${message}</p>
+                    <div class="flex gap-3">
+                        <button id="profile-confirm-cancel" class="flex-1 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-bold hover:bg-white/10 transition-all active:scale-[0.97]">
+                            Volver
+                        </button>
+                        <button id="profile-confirm-ok" class="flex-1 px-4 py-3 rounded-xl ${confirmCls} text-sm font-black uppercase tracking-wide transition-all active:scale-[0.97]">
+                            ${confirmText}
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            const close = (val) => { overlay.remove(); resolve(val); };
+            overlay.querySelector('#profile-confirm-cancel').addEventListener('click', () => close(false));
+            overlay.querySelector('#profile-confirm-ok').addEventListener('click', () => close(true));
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) close(false); });
+        });
+    }
+
     async function cancelarMiReserva(citaId) {
-        if (!confirm('¿Cancelar esta reserva? No podrás deshacer esta acción.')) return;
-        const ok = await CitasService.cancelar(citaId);
-        if (ok) {
+        const ok = await pedirConfirmacion({
+            title: '¿Cancelar esta reserva?',
+            message: 'No podrás deshacer esta acción.',
+            confirmText: 'Sí, cancelar',
+            danger: true
+        });
+        if (!ok) return;
+        const exito = await CitasService.cancelar(citaId);
+        if (exito) {
             if (typeof window.showToast === 'function') {
                 window.showToast('Reserva cancelada', 'success');
             }
             await initProfile();
         } else {
-            alert('No se pudo cancelar. Intenta de nuevo.');
+            if (typeof window.showToast === 'function') {
+                window.showToast('No se pudo cancelar. Intenta de nuevo.', 'error');
+            }
         }
     }
 

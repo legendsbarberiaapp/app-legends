@@ -1170,10 +1170,11 @@
             });
             overlay.querySelector('#phone-save').addEventListener('click', () => {
                 const digits = input.value.replace(/\D/g, '');
-                // Aceptamos: 10 dígitos (locales CO) o 12 con 57 al frente
+                // Aceptamos solo móviles colombianos: 10 dígitos empezando por 3,
+                // o 12 con 57 delante (573…). Un fijo o número basura se rechaza.
                 let normalized = null;
-                if (digits.length === 10) normalized = '57' + digits;
-                else if (digits.length === 12 && digits.startsWith('57')) normalized = digits;
+                if (digits.length === 10 && digits[0] === '3') normalized = '57' + digits;
+                else if (digits.length === 12 && digits.startsWith('573')) normalized = digits;
                 if (!normalized) {
                     input.classList.add('border-red-500/60');
                     input.focus();
@@ -1194,7 +1195,7 @@
 
         const user = roleManager && roleManager.currentUser;
         if (!user) {
-            alert('Necesitas iniciar sesión para reservar.');
+            if (window.showToast) showToast('Necesitas iniciar sesión para reservar.', 'error');
             return;
         }
 
@@ -1205,6 +1206,17 @@
             if (!phone) return;
             const ok = await firebaseAdapter.updateUserPhone(user.uid, phone);
             if (ok) user.phone = phone;
+        }
+
+        // H4: revalidar que el horario siga libre justo antes de crear. Otro
+        // cliente pudo tomarlo mientras este completaba el formulario/teléfono.
+        await refreshOccupiedSlots();
+        if (slotEstaOcupado(state.hora)) {
+            if (window.showToast) showToast('Ese horario se acaba de ocupar. Elegí otro, por favor.', 'error');
+            state.hora = null;
+            renderHorarios();
+            renderFooter();
+            return;
         }
 
         const nextBtn = document.getElementById('booking-next-btn');
@@ -1252,13 +1264,11 @@
         if (citaId) {
             if (typeof window.showToast === 'function') {
                 window.showToast('¡Reserva enviada! El admin la confirmará pronto.', 'success');
-            } else {
-                alert('¡Reserva enviada! El admin la confirmará pronto.');
             }
             resetState();
             switchTab('profile');
         } else {
-            alert('No se pudo crear la reserva. Intenta de nuevo.');
+            if (window.showToast) showToast('No se pudo crear la reserva. Intenta de nuevo.', 'error');
             if (nextBtn) {
                 nextBtn.disabled = false;
                 if (labelEl) labelEl.textContent = 'Confirmar Reserva';
