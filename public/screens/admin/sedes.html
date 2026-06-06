@@ -1,0 +1,36 @@
+<div class="px-6 py-8 pb-28">
+    <!-- Header -->
+    <div class="mb-6">
+        <div class="flex items-center justify-between mb-2">
+            <div>
+                <h1 class="text-3xl font-black text-white mb-1">Sedes</h1>
+                <p class="text-white/60 text-sm">Nombre y WhatsApp de cada local</p>
+            </div>
+            <button onclick="initAdminSedes()"
+                title="Recargar"
+                class="p-3 rounded-xl bg-white/5 border border-white/10 hover:border-primary/30 transition-all active:scale-95">
+                <span class="material-symbols-outlined text-primary">refresh</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Nota -->
+    <div class="p-3 rounded-xl bg-white/[0.03] border border-white/[0.05] mb-5">
+        <div class="flex items-start gap-2">
+            <span class="material-symbols-outlined text-amber-400/80 text-base shrink-0 mt-0.5" style="font-variation-settings: 'FILL' 1">info</span>
+            <p class="text-white/55 text-[11px] leading-relaxed">
+                El <b class="text-white/80">nombre</b> cambia al instante en todas las pantallas (reservar, agenda, recepción).
+                El <b class="text-white/80">WhatsApp</b> es el número al que escribe el cliente desde el botón <b class="text-white/80">Comprar</b> de la Tienda.
+                Ponelo con código de país (Colombia = 57), ej. <span class="text-white/70">573001234567</span>.
+            </p>
+        </div>
+    </div>
+
+    <!-- Contenedor dinámico de sedes -->
+    <div id="admin-sedes-list" class="space-y-3">
+        <div class="text-center py-12">
+            <span class="material-symbols-outlined text-primary/30 text-5xl">storefront</span>
+            <p class="text-white/40 text-sm mt-2">Cargando sedes…</p>
+        </div>
+    </div>
+</div>

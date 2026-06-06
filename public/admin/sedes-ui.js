@@ -151,5 +151,83 @@
         }
     };
 
+    /**
+     * Render de la pestaña "Sedes" (reemplaza al viejo botón/modal del header
+     * de Barberos). Pinta una tarjeta por sede con nombre + WhatsApp editables,
+     * reutilizando saveSedeNombre() que ya persiste ambos campos.
+     */
+    BarberManager.prototype.renderSedesTab = function () {
+        const cont = document.getElementById('admin-sedes-list');
+        if (!cont) return;
+        const sedes = this.sedes || [];
+        if (!sedes.length) {
+            cont.innerHTML = `
+                <div class="text-center py-12">
+                    <span class="material-symbols-outlined text-primary/30 text-5xl">storefront</span>
+                    <p class="text-white/40 text-sm mt-2">No hay sedes. Recargá la app.</p>
+                </div>`;
+            return;
+        }
+        cont.innerHTML = sedes.map(s => {
+            const safeName = (s.nombre || '').replace(/"/g, '&quot;');
+            const safeWa = (s.whatsapp || '').replace(/"/g, '&quot;');
+            return `
+            <div class="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] space-y-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-primary/15 border border-primary/25 flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-primary text-lg" style="font-variation-settings: 'FILL' 1">storefront</span>
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-black uppercase tracking-wider text-white/40 mb-1">Nombre de la sede</label>
+                        <input type="text" id="sede-name-input-${s.id}" data-sede-id="${s.id}" value="${safeName}"
+                            maxlength="40" placeholder="Nombre de la sede"
+                            class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm font-bold outline-none focus:border-primary/50 transition-colors">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black uppercase tracking-wider text-white/40 mb-1">WhatsApp de la tienda</label>
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-green-400 text-lg shrink-0" style="font-variation-settings: 'FILL' 1">chat</span>
+                        <input type="tel" id="sede-wa-input-${s.id}" value="${safeWa}" maxlength="15" inputmode="tel"
+                            placeholder="ej: 573001234567"
+                            class="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm outline-none focus:border-primary/50 transition-colors placeholder:text-white/20">
+                        <button onclick="barberManager.saveSedeNombre('${s.id}', this)"
+                            class="px-4 py-2 rounded-lg bg-primary/15 border border-primary/25 text-primary text-[11px] font-black uppercase tracking-wider hover:bg-primary/25 transition-all active:scale-95">
+                            Guardar
+                        </button>
+                    </div>
+                </div>
+                <button onclick="verCajaSede('${s.id}')"
+                    class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-white/80 text-[12px] font-bold hover:bg-white/[0.08] hover:border-primary/30 transition-all active:scale-[0.98]">
+                    <span class="material-symbols-outlined text-primary text-base">point_of_sale</span>
+                    Ver caja de esta sede
+                </button>
+            </div>`;
+        }).join('');
+    };
+
+    /** Abre la caja del admin enfocada en la sede elegida (desde la pestaña Sedes). */
+    window.verCajaSede = function (sedeId) {
+        window.__cajaPreferSede = sedeId || null;
+        if (typeof window.switchTab === 'function') window.switchTab('recepcionista-caja');
+    };
+
+    // Init de la pestaña Sedes (lo llama switchTab al abrir admin-sedes).
+    window.initAdminSedes = async function () {
+        if (typeof barberManager === 'undefined' || !barberManager) return;
+        const cont = document.getElementById('admin-sedes-list');
+        try {
+            await barberManager.loadSedes();
+            barberManager.renderSedesTab();
+        } catch (e) {
+            console.error('❌ initAdminSedes:', e);
+            if (cont) cont.innerHTML = `
+                <div class="text-center py-12">
+                    <span class="material-symbols-outlined text-red-400 text-5xl">error</span>
+                    <p class="text-red-400 text-sm mt-2">No se pudieron cargar las sedes</p>
+                </div>`;
+        }
+    };
+
     console.log('✓ admin/sedes-ui loaded');
 })();

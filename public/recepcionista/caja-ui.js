@@ -75,6 +75,12 @@
         cajaState.sedes = sedes;
 
         if (isAdmin) {
+            // Si se pidió abrir la caja de una sede concreta (botón "Ver caja" en
+            // la pestaña Sedes del admin), respetarla.
+            if (window.__cajaPreferSede && sedes.some(s => s.id === window.__cajaPreferSede)) {
+                cajaState.sedeId = window.__cajaPreferSede;
+            }
+            window.__cajaPreferSede = null;
             // El admin elige la sede; default la que ya tenía o la primera.
             if (!cajaState.sedeId || !sedes.some(s => s.id === cajaState.sedeId)) {
                 cajaState.sedeId = sedes.length ? sedes[0].id : null;

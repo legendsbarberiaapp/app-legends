@@ -4,7 +4,11 @@ rules_version = '2';
 // Pégalas en: Firebase Console -> Firestore Database -> Rules
 //
 // Última actualización: 2026-06-06
-// Último cambio: FIX /stock update — la comparación de `minimo` ahora es null-safe
+// Último cambio: /citas create — el admin (dueño) ahora puede registrar walk-ins
+//   en cualquier sede, con la MISMA restricción que la recepcionista: solo puede
+//   crear citas 'confirmada' o 'pendiente' (no 'completada'). No suma poderes:
+//   editar/borrar citas ya los tenía. Habilita el walk-in del admin.
+// Cambio previo: FIX /stock update — la comparación de `minimo` ahora es null-safe
 //   (get('minimo',0)). Una ficha de stock creada por una VENTA no trae `minimo`, y
 //   acceder a un campo inexistente en reglas lanzaba error y denegaba TODO, por lo
 //   que la recepcionista no podía registrar entradas en productos sobrevendidos.
@@ -444,6 +448,14 @@ service cloud.firestore {
         ||
         (isRecepcionista()
           && request.resource.data.sedeId == recepcionistaSedeId()
+          && (request.resource.data.estado == 'confirmada'
+              || request.resource.data.estado == 'pendiente'))
+        ||
+        // El admin (dueño) puede registrar walk-ins en CUALQUIER sede. Mismo
+        // límite que la recepcionista: SOLO puede nacer 'confirmada' o 'pendiente'
+        // (no puede fabricar una 'completada' para saltarse el cobro). No le
+        // agrega ningún poder extra: editar/borrar citas ya lo tenía el admin.
+        (isAdmin()
           && (request.resource.data.estado == 'confirmada'
               || request.resource.data.estado == 'pendiente'))
       );

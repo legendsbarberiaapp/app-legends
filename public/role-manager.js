@@ -223,11 +223,16 @@ class RoleManager {
                                     <span class="material-symbols-outlined text-xs text-primary" style="font-variation-settings: 'FILL' 1">visibility</span>
                                     Previsualizar como
                                 </p>
-                                <div class="grid grid-cols-3 gap-2">
+                                <div class="grid grid-cols-2 gap-2">
                                     <button onclick="roleManager.switchViewTo('admin')"
                                         class="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-red-500/15 border border-red-500/25 text-center transition-all active:scale-95 hover:bg-red-500/25">
                                         <span class="material-symbols-outlined text-red-400 text-base" style="font-variation-settings: 'FILL' 1">admin_panel_settings</span>
                                         <span class="text-red-400 text-[10px] font-black uppercase">Admin</span>
+                                    </button>
+                                    <button onclick="roleManager.switchViewTo('recepcionista')"
+                                        class="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-green-500/15 border border-green-500/25 text-center transition-all active:scale-95 hover:bg-green-500/25">
+                                        <span class="material-symbols-outlined text-green-400 text-base" style="font-variation-settings: 'FILL' 1">point_of_sale</span>
+                                        <span class="text-green-400 text-[10px] font-black uppercase">Cajera</span>
                                     </button>
                                     <button onclick="roleManager.switchViewTo('barbero')"
                                         class="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-primary/15 border border-primary/25 text-center transition-all active:scale-95 hover:bg-primary/25">

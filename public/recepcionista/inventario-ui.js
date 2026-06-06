@@ -44,14 +44,28 @@
         const movs = document.getElementById('inv-movimientos-list');
 
         const user = getCurrentUser();
-        if (!user || user.role !== 'recepcionista') {
-            if (list) list.innerHTML = renderError('Pantalla solo para recepcionistas');
+        const isAdmin = !!(user && user.role === 'admin');
+        state.isAdmin = isAdmin;
+        if (!user || (user.role !== 'recepcionista' && !isAdmin)) {
+            if (list) list.innerHTML = renderError('Pantalla solo para personal interno');
             return;
         }
-        state.sedeId = user.sedeId || null;
+        if (isAdmin) {
+            // El admin elige la sede (misma que opera en Citas/Caja). Default: la
+            // recordada, o la primera. Pre-cargamos sedes para resolver la sede.
+            let sedesPre = [];
+            try { sedesPre = (typeof SedesService !== 'undefined') ? await SedesService.list() : []; } catch (e) { sedesPre = []; }
+            let pref = state.sedeId;
+            if (window.__adminSedeOperar && sedesPre.some(s => s.id === window.__adminSedeOperar)) pref = window.__adminSedeOperar;
+            if (!pref || !sedesPre.some(s => s.id === pref)) pref = sedesPre.length ? sedesPre[0].id : null;
+            state.sedeId = pref;
+            window.__adminSedeOperar = state.sedeId;
+        } else {
+            state.sedeId = user.sedeId || null;
+        }
         if (!state.sedeId) {
-            if (sub) sub.textContent = 'Sin sede asignada';
-            if (list) list.innerHTML = renderError('No tenés sede asignada');
+            if (sub) sub.textContent = isAdmin ? 'Sin sedes' : 'Sin sede asignada';
+            if (list) list.innerHTML = renderError(isAdmin ? 'No hay sedes configuradas' : 'No tenés sede asignada');
             return;
         }
 
@@ -86,11 +100,13 @@
                 };
             });
             state.movimientos = movimientos || [];
+            state.sedes = sedes || [];
 
             if (sub) {
                 sub.textContent = state.sedeNombre ? `Sede ${state.sedeNombre}` : 'Sin sede';
             }
 
+            renderAdminSedeSelector();
             renderAlertas();
             renderProductos();
             renderMovimientos();
@@ -99,6 +115,33 @@
             if (list) list.innerHTML = renderError('No se pudo cargar el inventario');
         }
     }
+
+    /** Selector de sede — SOLO admin. Para la recepcionista queda vacío (sede fija). */
+    function renderAdminSedeSelector() {
+        const cont = document.getElementById('inv-admin-sede');
+        if (!cont) return;
+        if (!state.isAdmin || (state.sedes || []).length <= 1) { cont.innerHTML = ''; return; }
+        cont.innerHTML = `
+            <p class="text-white/45 text-[10px] font-black uppercase tracking-[0.3em] mb-2 pl-1">Stock de la sede</p>
+            <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                ${state.sedes.map(s => {
+                    const active = s.id === state.sedeId;
+                    return `<button onclick="recepStockSwitchSede('${s.id}')"
+                        class="shrink-0 px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all active:scale-95
+                            ${active ? 'bg-primary text-black shadow-[0_4px_15px_rgba(201,167,74,0.25)]' : 'bg-white/[0.04] border border-white/[0.08] text-white/60 hover:bg-white/[0.08]'}">
+                        ${esc(s.nombre || 'Sede')}
+                    </button>`;
+                }).join('')}
+            </div>`;
+    }
+
+    // Cambiar la sede de stock que ve el admin (recarga productos + stock de esa sede).
+    window.recepStockSwitchSede = function (sedeId) {
+        if (!sedeId || sedeId === state.sedeId) return;
+        window.__adminSedeOperar = sedeId;
+        state.sedeId = sedeId;
+        init();
+    };
 
     // ============================================
     // RENDER: ALERTAS

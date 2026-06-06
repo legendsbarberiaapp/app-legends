@@ -87,12 +87,29 @@
 
         const user = getCurrentUser();
         if (!user || !user.uid) return renderFatal('No hay sesión activa');
-        if (user.role !== 'recepcionista') return renderFatal('Esta pantalla es solo para recepcionistas');
+        const isAdmin = (user.role === 'admin');
+        state.isAdmin = isAdmin;
+        if (user.role !== 'recepcionista' && !isAdmin) {
+            return renderFatal('Esta pantalla es solo para personal interno');
+        }
 
-        state.sedeId = user.sedeId || null;
+        if (isAdmin) {
+            // El admin (dueño) no tiene sede propia: elige una. Tomamos la que ya
+            // venía operando, un hint desde "Ver caja de esta sede", o la primera.
+            // Necesitamos las sedes ANTES de cargar citas/barberos.
+            let sedesPre = [];
+            try { sedesPre = (typeof SedesService !== 'undefined') ? await SedesService.list() : []; } catch (e) { sedesPre = []; }
+            let pref = state.sedeId;
+            if (window.__adminSedeOperar && sedesPre.some(s => s.id === window.__adminSedeOperar)) pref = window.__adminSedeOperar;
+            if (!pref || !sedesPre.some(s => s.id === pref)) pref = sedesPre.length ? sedesPre[0].id : null;
+            state.sedeId = pref;
+            window.__adminSedeOperar = state.sedeId; // recordar para Caja/Stock
+        } else {
+            state.sedeId = user.sedeId || null;
+        }
         if (!state.sedeId) {
-            if (sedeLabel) sedeLabel.textContent = 'Sin sede asignada';
-            return renderFatal('No tenés sede asignada. Pedile al admin que te la asigne.');
+            if (sedeLabel) sedeLabel.textContent = isAdmin ? 'Sin sedes' : 'Sin sede asignada';
+            return renderFatal(isAdmin ? 'No hay sedes configuradas' : 'No tenés sede asignada. Pedile al admin que te la asigne.');
         }
 
         // Skeleton inicial
@@ -151,8 +168,36 @@
 
     function render() {
         renderHeader();
+        renderAdminSedeSelector();
         renderBody();
     }
+
+    /** Selector de sede — SOLO admin. Para la recepcionista queda vacío (sede fija). */
+    function renderAdminSedeSelector() {
+        const cont = document.getElementById('recep-citas-admin-sede');
+        if (!cont) return;
+        if (!state.isAdmin || (state.sedes || []).length <= 1) { cont.innerHTML = ''; return; }
+        cont.innerHTML = `
+            <p class="text-white/45 text-[10px] font-black uppercase tracking-[0.3em] mb-2 pl-1">Operar la sede</p>
+            <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                ${state.sedes.map(s => {
+                    const active = s.id === state.sedeId;
+                    return `<button onclick="recepCitasSwitchSede('${s.id}')"
+                        class="shrink-0 px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all active:scale-95
+                            ${active ? 'bg-primary text-black shadow-[0_4px_15px_rgba(201,167,74,0.25)]' : 'bg-white/[0.04] border border-white/[0.08] text-white/60 hover:bg-white/[0.08]'}">
+                        ${esc(s.nombre || 'Sede')}
+                    </button>`;
+                }).join('')}
+            </div>`;
+    }
+
+    // Cambiar la sede que opera el admin (recarga citas + barberos de esa sede).
+    window.recepCitasSwitchSede = function (sedeId) {
+        if (!sedeId || sedeId === state.sedeId) return;
+        window.__adminSedeOperar = sedeId;
+        state.sedeId = sedeId;
+        init();
+    };
 
     function renderHeader() {
         const sedeLabel = document.getElementById('recep-sede-label');

@@ -61,6 +61,7 @@ const ROLE_CONFIGS = {
             { id: 'admin-inventario',  icon: 'inventory_2',          label: 'Inventario', fill: false },
             { id: 'admin-usuarios',    icon: 'group',                label: 'Usuarios',   fill: false },
             { id: 'admin-barberos',    icon: 'content_cut',          label: 'Barberos',   fill: false },
+            { id: 'admin-sedes',       icon: 'storefront',           label: 'Sedes',      fill: false },
             { id: 'admin-cuenta',      icon: 'account_circle',       label: 'Cuenta',     fill: false }
         ],
         defaultTab: 'admin-dashboard',

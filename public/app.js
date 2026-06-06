@@ -94,6 +94,9 @@ function autoLoadDataForTab(tabName) {
     if (tabName === 'admin-inventario' && typeof initInventarioAdmin === 'function') {
         initInventarioAdmin();
     }
+    if (tabName === 'admin-sedes' && typeof initAdminSedes === 'function') {
+        initAdminSedes();
+    }
     if (tabName === 'home' && typeof initHome === 'function') {
         initHome();
     }
