@@ -274,12 +274,16 @@
                    </span>`;
         }
 
+        // Pestaña Usuarios = DIRECTORIO informativo (solo lectura). No se cambian
+        // roles desde acá: barberos se crean en la pestaña Barberos y recepcionistas
+        // en la pestaña Sedes. Los admins se gestionan por la lista de correos del
+        // dueño (ADMIN_EMAILS). Único badge: "Dueño" para los admins.
         const actions = isProtected
             ? `<span class="px-2.5 py-1 rounded-lg bg-red-500/20 text-red-400 text-[10px] font-black uppercase border border-red-500/30 flex items-center gap-1">
-                <span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1">lock</span>
-                Protegido
+                <span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1">verified_user</span>
+                Dueño
                </span>`
-            : renderRoleActions(uid, currentRole);
+            : '';
 
         return `
             <div class="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-colors border border-white/[0.05]" data-uid="${uid}">

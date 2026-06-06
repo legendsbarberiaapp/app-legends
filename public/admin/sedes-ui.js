@@ -168,9 +168,26 @@
                 </div>`;
             return;
         }
+        const allUsers = this._allUsers || [];
+        const escH = (x) => String(x == null ? '' : x)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         cont.innerHTML = sedes.map(s => {
             const safeName = (s.nombre || '').replace(/"/g, '&quot;');
             const safeWa = (s.whatsapp || '').replace(/"/g, '&quot;');
+            const recepsDe = allUsers.filter(u => u.role === 'recepcionista' && u.sedeId === s.id);
+            const recepListHtml = recepsDe.length
+                ? recepsDe.map(u => `
+                    <div class="flex items-center gap-2 p-2 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                        <span class="material-symbols-outlined text-green-400 text-base shrink-0" style="font-variation-settings:'FILL' 1">support_agent</span>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-white text-xs font-bold truncate">${escH(u.displayName || 'Sin nombre')}</p>
+                            <p class="text-white/40 text-[10px] truncate">${escH(u.email || '')}</p>
+                        </div>
+                        <button onclick="sedeQuitarRecep('${u.uid}')"
+                            class="px-2.5 py-1 rounded-lg bg-red-500/10 border border-red-500/25 text-red-400 text-[10px] font-black uppercase tracking-wider hover:bg-red-500/20 active:scale-95 transition-all">Quitar</button>
+                    </div>`).join('')
+                : `<p class="text-white/30 text-[11px] py-1 pl-1">Sin recepcionistas en esta sede</p>`;
             return `
             <div class="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] space-y-3">
                 <div class="flex items-center gap-3">
@@ -197,6 +214,15 @@
                         </button>
                     </div>
                 </div>
+                <div class="pt-1">
+                    <label class="block text-[10px] font-black uppercase tracking-wider text-white/40 mb-2">Recepcionistas de esta sede</label>
+                    <div class="space-y-2">${recepListHtml}</div>
+                    <button onclick="sedeAgregarRecep('${s.id}')"
+                        class="mt-2 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-green-500/[0.08] border border-green-500/20 text-green-300 text-[12px] font-bold hover:bg-green-500/[0.14] transition-all active:scale-[0.98]">
+                        <span class="material-symbols-outlined text-base">person_add</span>
+                        Agregar recepcionista
+                    </button>
+                </div>
                 <button onclick="verCajaSede('${s.id}')"
                     class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-white/80 text-[12px] font-bold hover:bg-white/[0.08] hover:border-primary/30 transition-all active:scale-[0.98]">
                     <span class="material-symbols-outlined text-primary text-base">point_of_sale</span>
@@ -212,12 +238,90 @@
         if (typeof window.switchTab === 'function') window.switchTab('recepcionista-caja');
     };
 
+    const _escRecep = (x) => String(x == null ? '' : x)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+    /** Abre el selector de usuario para asignarlo como recepcionista de la sede. */
+    window.sedeAgregarRecep = function (sedeId) {
+        const users = (typeof barberManager !== 'undefined' && barberManager._allUsers) || [];
+        // Candidatos: clientes (no admins, no ya recepcionistas/barberos).
+        const candidatos = users.filter(u => u.role === 'cliente');
+        document.getElementById('recep-picker-overlay')?.remove();
+        const listHtml = candidatos.length
+            ? candidatos.map(u => `
+                <button onclick="sedeAsignarRecep('${u.uid}','${sedeId}', this)"
+                    class="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.07] hover:border-green-500/30 transition-all active:scale-[0.98] text-left">
+                    <span class="material-symbols-outlined text-white/40 text-lg shrink-0">person</span>
+                    <span class="min-w-0 flex-1">
+                        <span class="block text-white text-sm font-bold truncate">${_escRecep(u.displayName || 'Sin nombre')}</span>
+                        <span class="block text-white/40 text-[11px] truncate">${_escRecep(u.email || '')}</span>
+                    </span>
+                    <span class="material-symbols-outlined text-green-400 text-lg shrink-0">add_circle</span>
+                </button>`).join('')
+            : `<p class="text-white/40 text-xs text-center py-6">No hay clientes registrados para asignar.<br>La persona debe entrar una vez con su Google primero.</p>`;
+        const html = `
+        <div id="recep-picker-overlay" class="barber-modal-overlay" style="z-index:170">
+            <div class="barber-confirm-dialog" style="max-width:460px">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-green-500/15 border border-green-500/25 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-green-400 text-lg" style="font-variation-settings:'FILL' 1">support_agent</span>
+                    </div>
+                    <div>
+                        <h3 class="text-white font-black text-base">Agregar recepcionista</h3>
+                        <p class="text-white/40 text-[10px] uppercase tracking-wider font-bold">Elegí un cliente registrado</p>
+                    </div>
+                </div>
+                <div class="space-y-2 mb-4 max-h-[50vh] overflow-y-auto no-scrollbar">${listHtml}</div>
+                <button onclick="document.getElementById('recep-picker-overlay')?.remove()"
+                    class="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-bold hover:bg-white/10 transition-all active:scale-[0.97]">Cancelar</button>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', html);
+        requestAnimationFrame(() => document.getElementById('recep-picker-overlay')?.classList.add('visible'));
+    };
+
+    /** Asigna a un usuario como recepcionista de la sede (rol + sedeId). */
+    window.sedeAsignarRecep = async function (uid, sedeId, btnEl) {
+        if (btnEl) { btnEl.disabled = true; btnEl.style.opacity = '0.6'; }
+        const ok = await firebaseAdapter.setUserRole(uid, 'recepcionista', { sedeId });
+        if (!ok) {
+            if (window.showToast) window.showToast('No se pudo asignar (¿es admin protegido?)', 'error');
+            if (btnEl) { btnEl.disabled = false; btnEl.style.opacity = '1'; }
+            return;
+        }
+        const u = (barberManager._allUsers || []).find(x => x.uid === uid);
+        if (u) { u.role = 'recepcionista'; u.sedeId = sedeId; }
+        if (window.showToast) window.showToast('Recepcionista asignada ✓', 'success');
+        document.getElementById('recep-picker-overlay')?.remove();
+        barberManager.renderSedesTab();
+    };
+
+    /** Quita a una recepcionista (vuelve a cliente). */
+    window.sedeQuitarRecep = async function (uid) {
+        const go = (typeof window.uiConfirm === 'function')
+            ? await window.uiConfirm({ title: 'Quitar recepcionista', message: 'Esta persona dejará de ser recepcionista y volverá a ser cliente.', confirmText: 'Sí, quitar' })
+            : confirm('¿Quitar recepcionista?');
+        if (!go) return;
+        const ok = await firebaseAdapter.setUserRole(uid, 'cliente');
+        if (!ok) { if (window.showToast) window.showToast('No se pudo quitar', 'error'); return; }
+        const u = (barberManager._allUsers || []).find(x => x.uid === uid);
+        if (u) { u.role = 'cliente'; delete u.sedeId; }
+        if (window.showToast) window.showToast('Recepcionista quitada ✓', 'success');
+        barberManager.renderSedesTab();
+    };
+
     // Init de la pestaña Sedes (lo llama switchTab al abrir admin-sedes).
     window.initAdminSedes = async function () {
         if (typeof barberManager === 'undefined' || !barberManager) return;
         const cont = document.getElementById('admin-sedes-list');
         try {
-            await barberManager.loadSedes();
+            const [, users] = await Promise.all([
+                barberManager.loadSedes(),
+                (typeof firebaseAdapter !== 'undefined' && firebaseAdapter.getAllUsers)
+                    ? firebaseAdapter.getAllUsers() : Promise.resolve([])
+            ]);
+            barberManager._allUsers = users || [];
             barberManager.renderSedesTab();
         } catch (e) {
             console.error('❌ initAdminSedes:', e);

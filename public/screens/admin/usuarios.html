@@ -2,13 +2,25 @@
     <div class="mb-6">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-3xl font-black text-white mb-2">Gestión de Usuarios</h1>
-                <p class="text-white/60 text-sm">Administra usuarios y asigna roles</p>
+                <h1 class="text-3xl font-black text-white mb-2">Directorio de usuarios</h1>
+                <p class="text-white/60 text-sm">Quiénes están registrados, agrupados por rol</p>
             </div>
             <button onclick="loadUsersForAdmin()"
                 class="p-3 rounded-xl bg-white/5 border border-white/10 hover:border-primary/30 transition-all active:scale-95">
                 <span class="material-symbols-outlined text-primary">refresh</span>
             </button>
+        </div>
+
+        <!-- Nota: dónde se crean los roles (esta pestaña es solo informativa) -->
+        <div class="mt-4 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+            <div class="flex items-start gap-2">
+                <span class="material-symbols-outlined text-primary/80 text-base shrink-0 mt-0.5" style="font-variation-settings: 'FILL' 1">info</span>
+                <p class="text-white/55 text-[11px] leading-relaxed">
+                    Esta lista es <b class="text-white/80">solo informativa</b>. Para dar de alta un
+                    <b class="text-white/80">barbero</b>, usá la pestaña <b class="text-white/80">Barberos</b>;
+                    para una <b class="text-white/80">recepcionista</b>, la pestaña <b class="text-white/80">Sedes</b>.
+                </p>
+            </div>
         </div>
     </div>
 
