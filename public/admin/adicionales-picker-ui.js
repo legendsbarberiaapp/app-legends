@@ -257,7 +257,7 @@
     };
 
     BarberManager.prototype.confirmDeleteAdicional = async function (id, nombre) {
-        if (confirm(`¿Eliminar "${nombre}"?`)) {
+        if (await window.uiConfirm({ title: `¿Eliminar "${nombre}"?`, confirmText: 'Sí, eliminar', danger: true, icon: 'delete' })) {
             const success = await this.deleteAdicional(id);
             if (success) {
                 this.showToast(`"${nombre}" eliminado`, 'success');

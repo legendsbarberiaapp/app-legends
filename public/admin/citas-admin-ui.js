@@ -26,6 +26,13 @@
         return barberosCache.find(b => b.userId === citaBarberoId) || null;
     }
 
+    /** Escapa texto para HTML (clienteNombre llega de fuente no confiable). */
+    function esc(str) {
+        return String(str == null ? '' : str)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
     function formatearFecha(isoDate) {
         if (!isoDate) return '';
         const [y, m, d] = isoDate.split('-').map(Number);
@@ -53,12 +60,12 @@
             src = src.replace(/=s\d+(-c)?/g, '=s96-c').replace(/\/s\d+-c\//g, '/s96-c/');
         }
         const imgTag = src
-            ? `<img src="${src}" alt="" referrerpolicy="no-referrer" loading="eager" decoding="async"
+            ? `<img src="${esc(src)}" alt="" referrerpolicy="no-referrer" loading="eager" decoding="async"
                  class="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300"
                  onload="this.style.opacity=1" onerror="this.remove()">`
             : '';
         return `<div class="relative w-10 h-10 rounded-full border-2 border-primary/30 shrink-0 overflow-hidden bg-gradient-to-br from-primary/60 to-primary/20 flex items-center justify-center">
-            <span class="text-black text-sm font-black">${initial}</span>
+            <span class="text-black text-sm font-black">${esc(initial)}</span>
             ${imgTag}
         </div>`;
     }
@@ -227,10 +234,10 @@
                     ${avatar}
                     <div class="flex-1 min-w-0">
                         <div class="flex items-start justify-between gap-2 mb-1">
-                            <p class="text-white text-xs font-black truncate">${cita.clienteNombre || 'Cliente'}</p>
+                            <p class="text-white text-xs font-black truncate">${esc(cita.clienteNombre || 'Cliente')}</p>
                             <span class="text-primary text-xs font-black shrink-0">${typeof window.formatCOP === 'function' ? window.formatCOP(cita.servicioPrecio || 0) : '$' + (cita.servicioPrecio || 0)}</span>
                         </div>
-                        <p class="text-white/50 text-[11px] truncate">${cita.servicioNombre || 'Servicio'} con <span class="${theme.textCls} font-bold">${cita.barberoNombre || 'Barbero'}</span></p>
+                        <p class="text-white/50 text-[11px] truncate">${esc(cita.servicioNombre || 'Servicio')} con <span class="${theme.textCls} font-bold">${esc(cita.barberoNombre || 'Barbero')}</span></p>
                         <div class="flex items-center gap-1.5 mt-1.5">
                             <span class="material-symbols-outlined text-white/30 text-xs">event</span>
                             <span class="text-white/60 text-[10px] font-semibold">${formatearFecha(cita.fecha)} • ${cita.hora || ''}</span>
@@ -400,11 +407,12 @@
     async function adminConfirmarCita(citaId) {
         const adminUid = roleManager && roleManager.currentUser && roleManager.currentUser.uid;
         if (!adminUid) {
-            alert('No se pudo identificar tu sesión admin.');
+            if (typeof window.showToast === 'function') window.showToast('No se pudo identificar tu sesión admin.', 'error');
             return;
         }
 
-        if (!confirm('¿Confirmar esta cita? El barbero y el cliente la verán como confirmada.')) return;
+        const ok0 = await window.uiConfirm({ title: '¿Confirmar esta cita?', message: 'El barbero y el cliente la verán como confirmada.', confirmText: 'Sí, confirmar', icon: 'check_circle' });
+        if (!ok0) return;
 
         const ok = await CitasService.confirmar(citaId, adminUid);
         if (ok) {
@@ -412,13 +420,14 @@
                 window.showToast('Cita confirmada ✓', 'success');
             }
             await initCitasPendientes();
-        } else {
-            alert('No se pudo confirmar. Intenta de nuevo.');
+        } else if (typeof window.showToast === 'function') {
+            window.showToast('No se pudo confirmar. Intenta de nuevo.', 'error');
         }
     }
 
     async function adminRechazarCita(citaId) {
-        if (!confirm('¿Rechazar esta cita? El cliente verá la reserva como cancelada.')) return;
+        const ok0 = await window.uiConfirm({ title: '¿Rechazar esta cita?', message: 'El cliente verá la reserva como cancelada.', confirmText: 'Sí, rechazar', danger: true, icon: 'cancel' });
+        if (!ok0) return;
 
         const ok = await CitasService.cancelar(citaId);
         if (ok) {
@@ -426,8 +435,8 @@
                 window.showToast('Cita rechazada', 'success');
             }
             await initCitasPendientes();
-        } else {
-            alert('No se pudo rechazar. Intenta de nuevo.');
+        } else if (typeof window.showToast === 'function') {
+            window.showToast('No se pudo rechazar. Intenta de nuevo.', 'error');
         }
     }
 

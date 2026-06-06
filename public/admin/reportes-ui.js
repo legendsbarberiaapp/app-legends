@@ -826,7 +826,7 @@
                     onerror="this.onerror=null;this.src='${fallbackFoto}';"
                     class="w-9 h-9 rounded-full object-cover border border-white/10 shrink-0">
                 <div class="flex-1 min-w-0">
-                    <p class="text-white text-sm font-bold truncate">${nombre}</p>
+                    <p class="text-white text-sm font-bold truncate">${esc(nombre)}</p>
                     <div class="h-1.5 mt-1 rounded-full bg-white/[0.05] overflow-hidden">
                         <div class="h-full bg-primary/70 rounded-full" style="width:${pct}%"></div>
                     </div>
@@ -883,7 +883,7 @@
                     <span class="material-symbols-outlined text-primary text-base" style="font-variation-settings: 'FILL' 1">shopping_bag</span>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-white text-sm font-bold truncate">${nombre}</p>
+                    <p class="text-white text-sm font-bold truncate">${esc(nombre)}</p>
                     <div class="h-1.5 mt-1 rounded-full bg-white/[0.05] overflow-hidden">
                         <div class="h-full bg-primary/70 rounded-full" style="width:${pct}%"></div>
                     </div>

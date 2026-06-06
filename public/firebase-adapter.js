@@ -24,6 +24,20 @@ function isAdminEmail(email) {
     return ADMIN_EMAILS.some(e => e.toLowerCase() === lower);
 }
 
+/**
+ * Detecta si la app corre como PWA instalada en iOS. En iOS standalone WebKit
+ * bloquea los popups de OAuth, así que ahí vamos directo a redirect. En el
+ * resto (escritorio, web móvil, Android PWA) el popup funciona bien.
+ */
+function isIOSPWA() {
+    const ua = navigator.userAgent || '';
+    const isIOS = /iPad|iPhone|iPod/.test(ua) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const standalone = window.navigator.standalone === true ||
+        (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+    return isIOS && standalone;
+}
+
 class FirebaseAuthAdapter {
     constructor() {
         this.auth = null;
@@ -62,25 +76,34 @@ class FirebaseAuthAdapter {
     async signInWithGoogle() {
         if (!this.initialized) await this.initFirebase();
         const provider = new firebase.auth.GoogleAuthProvider();
-        try {
-            const result = await this.auth.signInWithPopup(provider);
-            return await this.ensureUserDocument(result.user);
-        } catch (error) {
-            console.error('Error in Google Sign-In:', error);
-            alert('Error al iniciar sesión con Google: ' + error.message);
-            throw error;
-        }
-    }
 
-    async signInWithApple() {
-        if (!this.initialized) await this.initFirebase();
-        const provider = new firebase.auth.OAuthProvider('apple.com');
+        // iOS PWA instalada: el popup está bloqueado por WebKit → redirect directo.
+        // (Tras el redirect, onAuthStateChanged crea/recupera el doc del usuario.)
+        if (isIOSPWA()) {
+            return await this.auth.signInWithRedirect(provider);
+        }
+
         try {
             const result = await this.auth.signInWithPopup(provider);
             return await this.ensureUserDocument(result.user);
         } catch (error) {
-            console.error('Error in Apple Sign-In:', error);
-            alert('Error al iniciar sesión con Apple: ' + error.message);
+            // Cerrar el popup o cancelarlo es una acción NORMAL del usuario:
+            // no es un error que haya que mostrar. Lo dejamos pasar en silencio.
+            if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+                throw error;
+            }
+            // Popup bloqueado o no soportado (PWA/navegadores restrictivos):
+            // caemos a redirect, que es más robusto en móvil instalado.
+            if (error.code === 'auth/popup-blocked'
+                || error.code === 'auth/operation-not-supported-in-this-environment'
+                || error.code === 'auth/internal-error') {
+                console.warn('Popup falló (' + error.code + '), reintentando con redirect…');
+                return await this.auth.signInWithRedirect(provider);
+            }
+            console.error('Error in Google Sign-In:', error);
+            if (typeof window.showToast === 'function') {
+                window.showToast('No se pudo iniciar sesión con Google. Intenta de nuevo.', 'error');
+            }
             throw error;
         }
     }
@@ -259,6 +282,7 @@ class FirebaseAuthAdapter {
         if (!this.initialized) this.initFirebase();
 
         this.auth.onAuthStateChanged(async (firebaseUser) => {
+            authStateResolved = true; // Firebase respondió → desactiva el safety-net.
             const loadingState = document.getElementById('auth-loading-state');
             const loginButtons = document.getElementById('auth-login-buttons');
 
@@ -375,6 +399,22 @@ const firebaseAdapter = new FirebaseAuthAdapter();
 // Protección contra doble clic en login
 let isLoginInProgress = false;
 
+// Safety-net del splash: se pone true en cuanto onAuthStateChanged responde
+// (con o sin usuario). Si Firebase se cuelga y nunca responde, un timeout
+// revela igual los botones de login para no dejar el spinner eterno.
+let authStateResolved = false;
+
+/** Oculta el spinner "Verificando sesión…" y muestra los botones de login. */
+function revealLoginButtons() {
+    const loadingState = document.getElementById('auth-loading-state');
+    const loginButtons = document.getElementById('auth-login-buttons');
+    if (loadingState) loadingState.style.display = 'none';
+    if (loginButtons) {
+        loginButtons.style.display = 'block';
+        loginButtons.style.animation = 'fadeIn 0.5s ease-out';
+    }
+}
+
 // Exponer en la ventana para botones de interfaz
 window.handleGoogleLogin = async () => {
     if (isLoginInProgress) {
@@ -407,15 +447,41 @@ window.handleGoogleLogin = async () => {
     }
 };
 
-window.handleAppleLogin = () => firebaseAdapter.signInWithApple();
 window.handleSignOut = () => firebaseAdapter.signOut();
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Safety-net: si Firebase no responde en 8s (init colgada o mala red),
+    // mostramos igual los botones de login para no dejar el spinner
+    // "Verificando sesión…" eterno.
+    setTimeout(() => {
+        if (!authStateResolved) {
+            console.warn('⚠ Auth no respondió en 8s — mostrando login (safety-net)');
+            revealLoginButtons();
+        }
+    }, 8000);
+
     // Inicializar Firebase tan pronto carga la página
     firebaseAdapter.initFirebase().then(() => {
         // Enlazar onAuthStateChanged con roleManager
         if (typeof roleManager !== 'undefined') {
             firebaseAdapter.integrateWithRoleManager(roleManager);
         }
+        // Consumir el resultado de un posible login por redirect (PWA/iOS).
+        // Al usuario lo maneja onAuthStateChanged; aquí solo capturamos errores
+        // del redirect para avisar con un toast sin romper el splash.
+        if (firebaseAdapter.auth) {
+            firebaseAdapter.auth.getRedirectResult().catch((err) => {
+                console.error('Error al volver del redirect de login:', err);
+                if (typeof window.showToast === 'function') {
+                    window.showToast('No se pudo completar el inicio de sesión. Intenta de nuevo.', 'error');
+                }
+            });
+        }
+    }).catch((e) => {
+        // Si la init de Firebase falla, no dejamos al usuario en el spinner:
+        // mostramos los botones para que al menos pueda intentar entrar.
+        console.error('Error inicializando Firebase:', e);
+        authStateResolved = true;
+        revealLoginButtons();
     });
 });

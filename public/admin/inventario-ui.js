@@ -374,10 +374,11 @@
         // F9: el producto pertenece a 1 sola sede, chequeamos solo esa.
         const data = state.stockByProductoSede.get(id)?.get(state.sedeFilter);
         if (data && (data.cantidad || 0) > 0) {
-            alert(`No se puede eliminar "${nombre}" porque tiene ${data.cantidad} en stock.\n\nPoné la cantidad en 0 primero, o desactivá el producto en vez de borrarlo.`);
+            toast(`No se puede eliminar "${nombre}": tiene ${data.cantidad} en stock. Ponelo en 0 o desactivá el producto.`, 'error');
             return;
         }
-        if (!confirm(`¿Eliminar "${nombre}"? Las ventas históricas se conservan.`)) return;
+        const ok0 = await window.uiConfirm({ title: `¿Eliminar "${nombre}"?`, message: 'Las ventas históricas se conservan.', confirmText: 'Sí, eliminar', danger: true, icon: 'delete' });
+        if (!ok0) return;
         const ok = await ProductosService.remove(id);
         if (!ok) { toast('Error eliminando', 'error'); return; }
         toast(`"${nombre}" eliminado`, 'success');

@@ -294,9 +294,7 @@
             const sub = fmtCOP(it.subtotal);
             const unit = it.cantidad > 1 ? ` <span class="text-white/35 text-[10px]">(${it.cantidad} × ${fmtCOP(it.precioUnit)})</span>` : '';
             const iconTipo = it.tipo === 'producto' ? 'shopping_bag' : (it.tipo === 'adicional' ? 'spa' : 'content_cut');
-            const closeBtn = it.protegido
-                ? ''
-                : `<button onclick="cobrarRemoveItem(${i})" class="w-6 h-6 rounded-md bg-white/5 hover:bg-red-500/20 flex items-center justify-center transition-all active:scale-90">
+            const closeBtn = `<button onclick="cobrarRemoveItem(${i})" class="w-6 h-6 rounded-md bg-white/5 hover:bg-red-500/20 flex items-center justify-center transition-all active:scale-90">
                       <span class="material-symbols-outlined text-red-400 text-xs">close</span>
                    </button>`;
             return `
@@ -553,7 +551,7 @@
             barberoId: ctx.cita?.barberoId || null,
             barberoNombre: ctx.cita?.barberoNombre || '',
 
-            items: ctx.items.map(({ protegido, ...rest }) => rest), // limpiar flag UI legacy si quedaba
+            items: ctx.items.map(it => ({ ...it })),
             subtotal: total,
             total,
             metodoPago: ctx.metodoPago,

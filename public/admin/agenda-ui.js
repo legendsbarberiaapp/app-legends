@@ -29,6 +29,13 @@
     const BUFFER_COMPLETADA_MIN = 90; // tras esos minutos desde la hora, se pregunta "¿se completó?"
     const BUFFER_EN_CURSO_MIN = 30;   // antes+despues de la hora se considera "en curso"
 
+    /** Escapa texto para HTML (clienteNombre llega de fuente no confiable). */
+    function esc(str) {
+        return String(str == null ? '' : str)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
     // Estado en memoria
     let citasDelRango = [];          // dataset cacheado
     let citasPorFecha = new Map();   // "YYYY-MM-DD" -> array de citas de ese día
@@ -64,8 +71,6 @@
 
     function esHoy(isoDate) { return isoDate === todayISO(); }
 
-    function esAnterior(isoDate) { return isoDate < todayISO(); }
-
     function diasDesdeHoy(isoDate) {
         const today = new Date(); today.setHours(0, 0, 0, 0);
         const [y, m, d] = isoDate.split('-').map(Number);
@@ -91,12 +96,12 @@
             src = src.replace(/=s\d+(-c)?/g, '=s96-c').replace(/\/s\d+-c\//g, '/s96-c/');
         }
         const imgTag = src
-            ? `<img src="${src}" alt="" referrerpolicy="no-referrer" loading="eager" decoding="async"
+            ? `<img src="${esc(src)}" alt="" referrerpolicy="no-referrer" loading="eager" decoding="async"
                  class="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300"
                  onload="this.style.opacity=1" onerror="this.remove()">`
             : '';
         return `<div class="relative w-10 h-10 rounded-full border-2 border-primary/30 shrink-0 overflow-hidden bg-gradient-to-br from-primary/60 to-primary/20 flex items-center justify-center">
-            <span class="text-black text-sm font-black">${initial}</span>
+            <span class="text-black text-sm font-black">${esc(initial)}</span>
             ${imgTag}
         </div>`;
     }
@@ -396,13 +401,13 @@
                     ${avatar}
                     <div class="flex-1 min-w-0">
                         <div class="flex items-start justify-between gap-2 mb-0.5">
-                            <p class="text-white text-xs font-black truncate">${cita.clienteNombre || 'Cliente'}</p>
+                            <p class="text-white text-xs font-black truncate">${esc(cita.clienteNombre || 'Cliente')}</p>
                             <div class="flex items-center gap-1.5 shrink-0">
                                 <span class="w-1.5 h-1.5 rounded-full ${s.dot}"></span>
                                 <span class="${s.labelCls} text-[9px] font-black uppercase tracking-wider">${s.label}</span>
                             </div>
                         </div>
-                        <p class="text-white/50 text-[11px] truncate">${cita.servicioNombre || 'Servicio'} · <span class="${theme.textCls} font-bold">${cita.barberoNombre || '—'}</span></p>
+                        <p class="text-white/50 text-[11px] truncate">${esc(cita.servicioNombre || 'Servicio')} · <span class="${theme.textCls} font-bold">${esc(cita.barberoNombre || '—')}</span></p>
                         <div class="flex items-center gap-3 mt-1.5">
                             <div class="flex items-center gap-1">
                                 <span class="material-symbols-outlined text-white/30 text-xs">schedule</span>
@@ -514,7 +519,8 @@
     // ---- Acciones sobre citas ----
 
     async function agendaMarcarCompletada(citaId) {
-        if (!confirm('Marcar esta cita como completada?')) return;
+        const ok0 = await window.uiConfirm({ title: '¿Marcar como completada?', message: 'Confirma que el servicio se realizó.', confirmText: 'Sí, completada', icon: 'check_circle' });
+        if (!ok0) return;
         const ok = await CitasService.completar(citaId);
         if (ok) {
             if (typeof window.showToast === 'function') window.showToast('Cita completada ✓', 'success');
@@ -522,15 +528,16 @@
             const cita = citasDelRango.find(c => c.id === citaId);
             if (cita) cita.estado = 'completada';
             render();
-        } else {
-            alert('No se pudo completar. Intentá de nuevo.');
+        } else if (typeof window.showToast === 'function') {
+            window.showToast('No se pudo completar. Intentá de nuevo.', 'error');
         }
     }
 
     async function agendaMarcarNoShow(citaId) {
         const cita = citasDelRango.find(c => c.id === citaId);
         if (!cita) return;
-        if (!confirm('Marcar que el cliente no llegó a la cita?')) return;
+        const ok0 = await window.uiConfirm({ title: '¿El cliente no llegó?', message: 'Se marcará la cita como "no llegó".', confirmText: 'Sí, no llegó', icon: 'person_off' });
+        if (!ok0) return;
 
         const ok = await CitasService.markNoShow(citaId);
         if (ok) {
@@ -542,21 +549,22 @@
             if (waHref) window.open(waHref, '_blank', 'noopener');
 
             render();
-        } else {
-            alert('No se pudo marcar. Intentá de nuevo.');
+        } else if (typeof window.showToast === 'function') {
+            window.showToast('No se pudo marcar. Intentá de nuevo.', 'error');
         }
     }
 
     async function agendaCancelar(citaId) {
-        if (!confirm('Cancelar esta cita?')) return;
+        const ok0 = await window.uiConfirm({ title: '¿Cancelar esta cita?', message: 'El cliente la verá como cancelada.', confirmText: 'Sí, cancelar', danger: true, icon: 'cancel' });
+        if (!ok0) return;
         const ok = await CitasService.cancelar(citaId);
         if (ok) {
             if (typeof window.showToast === 'function') window.showToast('Cita cancelada', 'info');
             const cita = citasDelRango.find(c => c.id === citaId);
             if (cita) cita.estado = 'cancelada';
             render();
-        } else {
-            alert('No se pudo cancelar. Intentá de nuevo.');
+        } else if (typeof window.showToast === 'function') {
+            window.showToast('No se pudo cancelar. Intentá de nuevo.', 'error');
         }
     }
 

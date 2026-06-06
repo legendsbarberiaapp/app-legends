@@ -152,6 +152,5 @@
     }
 
     window.initBarberoDashboard = init;
-    window.reloadBarberoDashboard = init;
     console.log('✓ BarberoDashboardUI (P4+P10) loaded');
 })();

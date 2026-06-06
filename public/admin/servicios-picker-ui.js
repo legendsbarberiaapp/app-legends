@@ -255,7 +255,7 @@
     };
 
     BarberManager.prototype.confirmDeleteServicio = async function (id, nombre) {
-        if (confirm(`¿Eliminar el servicio "${nombre}"? Se quitará de todos los barberos.`)) {
+        if (await window.uiConfirm({ title: `¿Eliminar "${nombre}"?`, message: 'Se quitará de todos los barberos.', confirmText: 'Sí, eliminar', danger: true, icon: 'delete' })) {
             const success = await this.deleteServicioCorte(id);
             if (success) {
                 this.showToast(`"${nombre}" eliminado`, 'success');

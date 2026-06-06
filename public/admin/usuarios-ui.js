@@ -13,6 +13,13 @@
 (function () {
     'use strict';
 
+    /** Escapa texto para HTML (displayName/email del usuario, fuente no confiable). */
+    function esc(str) {
+        return String(str == null ? '' : str)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
     const ROLE_ORDER = ['admin', 'barbero', 'recepcionista', 'cliente'];
 
     const ROLE_META = {
@@ -276,12 +283,12 @@
 
         return `
             <div class="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-colors border border-white/[0.05]" data-uid="${uid}">
-                <img src="${foto}" alt="" loading="lazy" referrerpolicy="no-referrer"
+                <img src="${esc(foto)}" alt="" loading="lazy" referrerpolicy="no-referrer"
                     onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(nombre)}&background=c9a74a&color=000&size=80';"
                     class="w-10 h-10 rounded-full object-cover border-2 ${c.ring} flex-shrink-0">
                 <div class="min-w-0 flex-1">
-                    <p class="text-white font-bold text-sm truncate">${nombre}</p>
-                    <p class="text-white/40 text-[11px] truncate">${email}</p>
+                    <p class="text-white font-bold text-sm truncate">${esc(nombre)}</p>
+                    <p class="text-white/40 text-[11px] truncate">${esc(email)}</p>
                     ${sedeBadge ? `<div class="mt-1">${sedeBadge}</div>` : ''}
                 </div>
                 <div class="flex items-center gap-2 flex-wrap justify-end">
@@ -329,10 +336,11 @@
             return;
         }
 
-        const confirmed = window.confirm(
-            `¿Cambiar este usuario a ${metaNew.titulo.toUpperCase().replace('ES','').trim()}?\n` +
-            `El cambio es inmediato.`
-        );
+        const confirmed = await window.uiConfirm({
+            title: '¿Cambiar el rol?',
+            message: `El usuario pasará a ${metaNew.titulo}. El cambio es inmediato.`,
+            confirmText: 'Sí, cambiar'
+        });
         if (!confirmed) return;
 
         await applyRoleChange(uid, newRole, fromRole, null);
@@ -407,9 +415,7 @@
             const ok = await firebaseAdapter.setUserRole(uid, newRole, extraFields);
             if (!ok) {
                 if (typeof window.showToast === 'function') {
-                    window.showToast('No se pudo cambiar el rol', 'error');
-                } else {
-                    alert('No se pudo cambiar el rol (¿es admin protegido?).');
+                    window.showToast('No se pudo cambiar el rol (¿es admin protegido?)', 'error');
                 }
                 if (card) { card.style.opacity = '1'; card.style.pointerEvents = 'auto'; }
                 return;
@@ -444,7 +450,7 @@
             }
         } catch (error) {
             console.error('❌ Error cambiando rol:', error);
-            alert('Error al cambiar el rol: ' + error.message);
+            if (typeof window.showToast === 'function') window.showToast('Error al cambiar el rol: ' + (error.message || ''), 'error');
             if (card) { card.style.opacity = '1'; card.style.pointerEvents = 'auto'; }
         }
     }

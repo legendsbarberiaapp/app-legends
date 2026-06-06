@@ -149,7 +149,6 @@
     }
 
     window.initTienda = init;
-    window.reloadTienda = init;
     window.tiendaSelectSede = selectSede;
     window.tiendaComprar = comprar;
     console.log('✓ ClienteTiendaUI (P3) loaded');

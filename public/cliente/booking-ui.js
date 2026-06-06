@@ -163,11 +163,6 @@
         return slots;
     }
 
-    function diasActivosCount(horario) {
-        if (!horario) return 0;
-        return Object.values(horario).filter(d => d && d.activo).length;
-    }
-
     /** Recalcula precio de cada adicional según conCorte actual y filtra los no permitidos. */
     function recomputarAdicionalesSegunCorte() {
         if (!state.barbero) return;
