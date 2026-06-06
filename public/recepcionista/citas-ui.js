@@ -20,6 +20,14 @@
     const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
+    /** Escapa texto para insertarlo seguro en HTML. El clienteNombre llega del
+     *  displayName del cliente (reservas online) — fuente no confiable. */
+    function esc(str) {
+        return String(str == null ? '' : str)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
     // Estado compartido (lo leen walkin-ui y reagendar-ui)
     const state = {
         sedeId: null,
@@ -238,7 +246,7 @@
         const initial = (cliente.trim().charAt(0) || 'C').toUpperCase();
         const photo = cita.clientePhotoURL || '';
         const photoEl = photo
-            ? `<img src="${photo.replace(/=s\d+(-c)?/g, '=s96-c')}" alt="" referrerpolicy="no-referrer"
+            ? `<img src="${esc(photo.replace(/=s\d+(-c)?/g, '=s96-c'))}" alt="" referrerpolicy="no-referrer"
                   class="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300"
                   onload="this.style.opacity=1" onerror="this.remove()">`
             : '';
@@ -252,15 +260,15 @@
                     <p class="text-primary text-lg font-black leading-none tabular-nums">${hora}</p>
                 </div>
                 <div class="relative w-11 h-11 rounded-full border-2 border-white/10 overflow-hidden bg-gradient-to-br from-primary/40 to-primary/10 flex items-center justify-center shrink-0">
-                    <span class="text-black text-sm font-black">${initial}</span>
+                    <span class="text-black text-sm font-black">${esc(initial)}</span>
                     ${photoEl}
                 </div>
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 mb-0.5">
-                        <p class="text-white font-bold text-sm truncate">${cliente}</p>
+                        <p class="text-white font-bold text-sm truncate">${esc(cliente)}</p>
                         ${walkinBadge}
                     </div>
-                    <p class="text-white/45 text-[11px] truncate">${servicio} · con ${barbero}</p>
+                    <p class="text-white/45 text-[11px] truncate">${esc(servicio)} · con ${esc(barbero)}</p>
                 </div>
                 <div class="flex flex-col items-end gap-1 shrink-0">
                     <span class="text-primary text-sm font-black tabular-nums">${precio}</span>
@@ -347,8 +355,49 @@
         if (typeof window.showToast === 'function') window.showToast(msg, type || 'success');
     }
 
+    /**
+     * Modal de confirmación on-brand (reemplaza window.confirm()).
+     * Reusa .barber-modal-overlay / .barber-confirm-dialog. Devuelve Promise<bool>.
+     * accent: 'green' (confirmar) | 'red' (cancelar) | 'white' (no-show).
+     */
+    function pedirConfirmacion({ title, message, confirmText = 'Confirmar', icon = 'help', accent = 'primary' }) {
+        return new Promise((resolve) => {
+            const existing = document.getElementById('recep-citas-confirm');
+            if (existing) existing.remove();
+            const accentMap = {
+                green: { ic: 'text-green-400', box: 'bg-green-500/15 border-green-500/30', btn: 'bg-green-500/20 border-green-500/30 text-green-400 hover:bg-green-500/30' },
+                red:   { ic: 'text-red-400',   box: 'bg-red-500/15 border-red-500/30',     btn: 'bg-red-500/20 border-red-500/30 text-red-400 hover:bg-red-500/30' },
+                white: { ic: 'text-white/70',  box: 'bg-white/10 border-white/15',         btn: 'bg-white/10 border-white/15 text-white hover:bg-white/15' },
+                primary:{ ic: 'text-primary',  box: 'bg-primary/15 border-primary/30',     btn: 'bg-primary text-black' }
+            };
+            const a = accentMap[accent] || accentMap.primary;
+            const overlay = document.createElement('div');
+            overlay.id = 'recep-citas-confirm';
+            overlay.className = 'barber-modal-overlay';
+            overlay.innerHTML = `
+                <div class="barber-confirm-dialog" style="max-width:400px">
+                    <div class="w-16 h-16 rounded-2xl ${a.box} border flex items-center justify-center mx-auto mb-4">
+                        <span class="material-symbols-outlined ${a.ic} text-3xl" style="font-variation-settings: 'FILL' 1">${icon}</span>
+                    </div>
+                    <h3 class="text-white font-black text-lg text-center mb-2">${esc(title)}</h3>
+                    <p class="text-white/50 text-sm text-center mb-6">${esc(message)}</p>
+                    <div class="flex gap-3">
+                        <button data-act="cancel" class="flex-1 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-bold hover:bg-white/10 transition-all active:scale-[0.97]">Volver</button>
+                        <button data-act="ok" class="flex-1 px-4 py-3 rounded-xl border ${a.btn} text-sm font-black uppercase tracking-wide transition-all active:scale-[0.97]">${esc(confirmText)}</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(overlay);
+            setTimeout(() => overlay.classList.add('visible'), 10);
+            const close = (val) => { overlay.classList.remove('visible'); setTimeout(() => overlay.remove(), 250); resolve(val); };
+            overlay.querySelector('[data-act="cancel"]').addEventListener('click', () => close(false));
+            overlay.querySelector('[data-act="ok"]').addEventListener('click', () => close(true));
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) close(false); });
+        });
+    }
+
     async function recepConfirmar(citaId) {
-        if (!window.confirm('¿Confirmar esta cita?')) return;
+        const ok0 = await pedirConfirmacion({ title: '¿Confirmar esta cita?', message: 'El barbero y el cliente la verán como confirmada.', confirmText: 'Sí, confirmar', icon: 'check_circle', accent: 'green' });
+        if (!ok0) return;
         const user = getCurrentUser();
         const ok = await CitasService.confirmar(citaId, user?.uid || 'recepcionista');
         if (ok) {
@@ -360,7 +409,8 @@
     }
 
     async function recepCancelar(citaId) {
-        if (!window.confirm('¿Cancelar esta cita?')) return;
+        const ok0 = await pedirConfirmacion({ title: '¿Cancelar esta cita?', message: 'El cliente la verá como cancelada. No se puede deshacer.', confirmText: 'Sí, cancelar', icon: 'cancel', accent: 'red' });
+        if (!ok0) return;
         const ok = await CitasService.cancelar(citaId);
         if (ok) {
             localUpdate(citaId, { estado: 'cancelada' });
@@ -401,7 +451,8 @@
     }
 
     async function recepNoShow(citaId) {
-        if (!window.confirm('¿Marcar que el cliente no llegó?')) return;
+        const ok0 = await pedirConfirmacion({ title: '¿El cliente no llegó?', message: 'Se marcará como "no llegó".', confirmText: 'Sí, no llegó', icon: 'person_off', accent: 'white' });
+        if (!ok0) return;
         const ok = await CitasService.markNoShow(citaId);
         if (ok) {
             localUpdate(citaId, { estado: 'no_show' });

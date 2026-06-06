@@ -8,6 +8,15 @@
 (function () {
     'use strict';
 
+    /** Escapa texto para insertarlo seguro en HTML (evita XSS desde datos del
+     *  cliente: clienteNombre/servicioNombre/photoURL llegan de fuentes no
+     *  confiables — displayName del cliente o nombre de walk-in). */
+    function esc(str) {
+        return String(str == null ? '' : str)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
     const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
@@ -32,12 +41,12 @@
             src = src.replace(/=s\d+(-c)?/g, '=s96-c').replace(/\/s\d+-c\//g, '/s96-c/');
         }
         const imgTag = src
-            ? `<img src="${src}" alt="" referrerpolicy="no-referrer" loading="eager" decoding="async"
+            ? `<img src="${esc(src)}" alt="" referrerpolicy="no-referrer" loading="eager" decoding="async"
                  class="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300"
                  onload="this.style.opacity=1" onerror="this.remove()">`
             : '';
         return `<div class="relative ${sizeCls} rounded-full border-2 border-primary/30 shrink-0 overflow-hidden bg-gradient-to-br from-primary/60 to-primary/20 flex items-center justify-center">
-            <span class="text-black ${textCls} font-black">${initial}</span>
+            <span class="text-black ${textCls} font-black">${esc(initial)}</span>
             ${imgTag}
         </div>`;
     }
@@ -57,8 +66,9 @@
         ` : '';
 
         // Si la recepcionista cobró con productos extra, totalCobrado tiene
-        // el monto final. Fallback al precio agendado para citas pre-F3.
-        const monto = cita.totalCobrado || cita.servicioPrecio || 0;
+        // el monto final. Antes del cobro usamos cita.total (incluye adicionales
+        // de la reserva online); fallback al precio base para citas pre-F3.
+        const monto = cita.totalCobrado || cita.total || cita.servicioPrecio || 0;
         const precioStr = typeof window.formatCOP === 'function'
             ? window.formatCOP(monto)
             : `$${monto}`;
@@ -68,8 +78,8 @@
                 <div class="flex items-start gap-3">
                     ${avatarHTML(cita.clienteNombre, cita.clientePhotoURL)}
                     <div class="flex-1 min-w-0">
-                        <p class="text-white font-bold text-sm truncate">${cita.clienteNombre || 'Cliente'}</p>
-                        <p class="text-white/50 text-xs mt-0.5">${cita.servicioNombre || 'Servicio'} • ${precioStr}</p>
+                        <p class="text-white font-bold text-sm truncate">${esc(cita.clienteNombre || 'Cliente')}</p>
+                        <p class="text-white/50 text-xs mt-0.5">${esc(cita.servicioNombre || 'Servicio')} • ${precioStr}</p>
                         <div class="flex items-center gap-2 mt-2">
                             <span class="material-symbols-outlined text-primary text-sm">event</span>
                             <span class="text-white/80 text-xs font-semibold">${formatearFecha(cita.fecha)} • ${cita.hora || ''}</span>
@@ -155,16 +165,66 @@
         }
     }
 
+    /**
+     * Modal de confirmación on-brand (reemplaza el confirm() nativo).
+     * Reusa las clases .barber-modal-overlay / .barber-confirm-dialog de la app.
+     * Devuelve Promise<boolean>: true si el barbero confirma.
+     */
+    function pedirConfirmacion({ title, message, confirmText = 'Confirmar' }) {
+        return new Promise((resolve) => {
+            const existing = document.getElementById('barbero-citas-confirm');
+            if (existing) existing.remove();
+
+            const overlay = document.createElement('div');
+            overlay.id = 'barbero-citas-confirm';
+            overlay.className = 'barber-modal-overlay';
+            overlay.innerHTML = `
+                <div class="barber-confirm-dialog" style="max-width:400px">
+                    <div class="w-16 h-16 rounded-2xl bg-green-500/15 border border-green-500/30 flex items-center justify-center mx-auto mb-4">
+                        <span class="material-symbols-outlined text-green-400 text-3xl" style="font-variation-settings: 'FILL' 1">check_circle</span>
+                    </div>
+                    <h3 class="text-white font-black text-lg text-center mb-2">${esc(title)}</h3>
+                    <p class="text-white/50 text-sm text-center mb-6">${esc(message)}</p>
+                    <div class="flex gap-3">
+                        <button data-act="cancel" class="flex-1 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-bold hover:bg-white/10 transition-all active:scale-[0.97]">
+                            Volver
+                        </button>
+                        <button data-act="ok" class="flex-1 px-4 py-3 rounded-xl bg-green-500/20 border border-green-500/30 text-green-400 text-sm font-black uppercase tracking-wide hover:bg-green-500/30 transition-all active:scale-[0.97]">
+                            ${esc(confirmText)}
+                        </button>
+                    </div>
+                </div>`;
+            document.body.appendChild(overlay);
+            // setTimeout (no requestAnimationFrame): la animación de entrada debe
+            // dispararse aunque la pestaña esté en segundo plano (rAF se pausa).
+            setTimeout(() => overlay.classList.add('visible'), 10);
+
+            const close = (val) => {
+                overlay.classList.remove('visible');
+                setTimeout(() => overlay.remove(), 300);
+                resolve(val);
+            };
+            overlay.querySelector('[data-act="cancel"]').addEventListener('click', () => close(false));
+            overlay.querySelector('[data-act="ok"]').addEventListener('click', () => close(true));
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) close(false); });
+        });
+    }
+
     async function completarCita(citaId) {
-        if (!confirm('¿Marcar esta cita como completada?')) return;
+        const confirmar = await pedirConfirmacion({
+            title: '¿Marcar como completada?',
+            message: 'Confirma que ya terminaste este servicio.',
+            confirmText: 'Sí, completar'
+        });
+        if (!confirmar) return;
         const ok = await CitasService.completar(citaId);
         if (ok) {
             if (typeof window.showToast === 'function') {
                 window.showToast('Cita completada', 'success');
             }
             await initBarberoCitas();
-        } else {
-            alert('No se pudo marcar como completada. Intenta de nuevo.');
+        } else if (typeof window.showToast === 'function') {
+            window.showToast('No se pudo marcar como completada. Intenta de nuevo.', 'error');
         }
     }
 

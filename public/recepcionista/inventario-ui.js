@@ -19,6 +19,12 @@
         return (typeof roleManager !== 'undefined') ? roleManager.currentUser : null;
     }
     function fmtCantidad(n) { return String(Number(n) || 0); }
+    /** Escapa texto para HTML (consistencia con la Caja; defensa en profundidad). */
+    function esc(str) {
+        return String(str == null ? '' : str)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
 
     const state = {
         sedeId: null,
@@ -130,7 +136,7 @@
                 : (e.nivel === 'negativo' ? `Sobrevendido (${e.cantidad})` : `Bajo: ${e.cantidad} / mín ${e.minimo}`);
             return `
                 <div class="flex items-center justify-between gap-3 py-1.5">
-                    <p class="text-white text-sm font-bold truncate flex-1">${p.nombre}</p>
+                    <p class="text-white text-sm font-bold truncate flex-1">${esc(p.nombre)}</p>
                     <span class="${cls} text-[10px] font-black uppercase tracking-wider shrink-0">${label}</span>
                 </div>`;
         }).join('');
@@ -194,7 +200,7 @@
                         <span class="material-symbols-outlined text-primary text-base" style="font-variation-settings: 'FILL' 1">shopping_bag</span>
                     </div>
                     <div class="flex-1 min-w-0">
-                        <p class="text-white text-sm font-bold truncate">${p.nombre}</p>
+                        <p class="text-white text-sm font-bold truncate">${esc(p.nombre)}</p>
                         <p class="text-white/45 text-[11px]">${mintxt}</p>
                     </div>
                     <div class="text-right shrink-0">
@@ -221,7 +227,7 @@
 
     function nombreDeProducto(productoId) {
         const p = state.productos.find(x => x.id === productoId);
-        return p?.nombre || 'Producto';
+        return esc(p?.nombre || 'Producto');
     }
 
     function renderMovimientos() {
@@ -241,7 +247,7 @@
             const hora = m.createdAt && m.createdAt.toDate
                 ? m.createdAt.toDate().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false })
                 : (m.createdAt?.seconds ? new Date(m.createdAt.seconds * 1000).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false }) : '');
-            const notas = m.notas ? `<span class="text-white/35 text-[10px] truncate"> · ${m.notas}</span>` : '';
+            const notas = m.notas ? `<span class="text-white/35 text-[10px] truncate"> · ${esc(m.notas)}</span>` : '';
 
             return `
                 <div class="flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.04]">
@@ -281,7 +287,7 @@
         const existing = document.getElementById('entrada-overlay');
         if (existing) existing.remove();
 
-        const productosOptions = state.productosActivos.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+        const productosOptions = state.productosActivos.map(p => `<option value="${esc(p.id)}">${esc(p.nombre)}</option>`).join('');
 
         const html = `
         <div id="entrada-overlay" class="barber-modal-overlay" style="z-index:160">

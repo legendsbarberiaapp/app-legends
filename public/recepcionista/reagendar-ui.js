@@ -15,6 +15,13 @@
     const DURACION_SLOT_MIN = 45;
     const DIAS_SEMANA_KEY = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
     const DIAS_SEMANA_LBL = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+    /** Escapa texto para HTML (clienteNombre llega de fuente no confiable). */
+    function esc(str) {
+        return String(str == null ? '' : str)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
     const MESES_LBL = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
     function toISO(d) {
@@ -88,7 +95,7 @@
                     </div>
                     <div class="flex-1 min-w-0">
                         <h3 class="text-white font-black text-base">Reagendar cita</h3>
-                        <p class="text-white/40 text-[10px] uppercase tracking-wider font-bold truncate">${cita.clienteNombre || 'Cliente'} · ${barbero.userName || 'Barbero'}</p>
+                        <p class="text-white/40 text-[10px] uppercase tracking-wider font-bold truncate">${esc(cita.clienteNombre || 'Cliente')} · ${esc(barbero.userName || 'Barbero')}</p>
                     </div>
                 </div>
 
