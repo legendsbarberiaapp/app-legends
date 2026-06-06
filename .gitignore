@@ -14,3 +14,7 @@ dist/
 .firebase/
 .qwen/
 memory/
+
+# Manual de uso (artefactos y PDFs de entrega — solo local)
+.manual/
+Manual Legends/

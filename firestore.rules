@@ -4,7 +4,11 @@ rules_version = '2';
 // Pégalas en: Firebase Console -> Firestore Database -> Rules
 //
 // Última actualización: 2026-06-06
-// Último cambio: SEGURIDAD — /users/{uid} update: el propio usuario ya NO puede
+// Último cambio: FIX /stock update — la comparación de `minimo` ahora es null-safe
+//   (get('minimo',0)). Una ficha de stock creada por una VENTA no trae `minimo`, y
+//   acceder a un campo inexistente en reglas lanzaba error y denegaba TODO, por lo
+//   que la recepcionista no podía registrar entradas en productos sobrevendidos.
+// Cambio previo: SEGURIDAD — /users/{uid} update: el propio usuario ya NO puede
 //   cambiar su `role` ni `sedeId` (cerraba escalación de privilegios: cualquiera
 //   se auto-ascendía a admin desde DevTools). Solo el admin cambia role/sedeId.
 //
@@ -227,7 +231,12 @@ service cloud.firestore {
           && resource.data.sedeId == recepcionistaSedeId()
           && request.resource.data.sedeId == resource.data.sedeId
           && request.resource.data.productoId == resource.data.productoId
-          && request.resource.data.minimo == resource.data.minimo)
+          // null-safe: una ficha de stock creada por una VENTA no tiene `minimo`;
+          // acceder a un campo inexistente en reglas lanza error y deniega todo.
+          // Con get(...,0) un `minimo` ausente cuenta como 0 en ambos lados, así
+          // la recepcionista puede registrar entradas/ajustes sin poder CAMBIAR
+          // el mínimo (que sigue siendo potestad del admin vía setMinimo).
+          && request.resource.data.get('minimo', 0) == resource.data.get('minimo', 0))
       );
 
       allow delete: if isAdmin();

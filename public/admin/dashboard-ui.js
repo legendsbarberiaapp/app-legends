@@ -17,6 +17,38 @@ async function loadDashboardStats() {
         const el2 = document.getElementById('dash-barberos');
         if (el2) el2.textContent = totalBarbers;
 
+        // Fechas locales (YYYY-MM-DD) para "este mes" y "hoy".
+        const d = new Date();
+        const pad = (n) => String(n).padStart(2, '0');
+        const hoy = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        const inicioMes = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-01`;
+
+        // INGRESOS del mes = ventas COBRADAS del mes (todas las sedes). Se excluye
+        // lo vendido a deuda (aún sin cobrar), igual que el reporte "Ingresos
+        // cobrados", para que el Panel y Reportes muestren la misma cifra.
+        const ventasMesSnap = await firebaseAdapter.db.collection('ventas')
+            .where('fecha', '>=', inicioMes)
+            .where('fecha', '<=', hoy)
+            .get();
+        let ingresosMes = 0;
+        ventasMesSnap.forEach(doc => {
+            const v = doc.data();
+            if (v.metodoPago !== 'deuda') ingresosMes += Number(v.total) || 0;
+        });
+        const elIng = document.getElementById('dash-ingresos');
+        if (elIng) elIng.textContent = (typeof window.formatCOP === 'function')
+            ? window.formatCOP(ingresosMes)
+            : ('$' + ingresosMes.toLocaleString('es-CO'));
+
+        // CITAS HOY = citas programadas para hoy (excluye las canceladas).
+        const citasHoySnap = await firebaseAdapter.db.collection('citas')
+            .where('fecha', '==', hoy)
+            .get();
+        let citasHoy = 0;
+        citasHoySnap.forEach(doc => { if (doc.data().estado !== 'cancelada') citasHoy++; });
+        const elCitas = document.getElementById('dash-citas');
+        if (elCitas) elCitas.textContent = citasHoy;
+
     } catch (error) {
         console.error('Error cargando stats del dashboard:', error);
     }
