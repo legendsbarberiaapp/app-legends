@@ -121,6 +121,12 @@
         const currentNivel = barberData?.nivel || '';
         const currentPrecio = barberData?.corte?.precio || '';
         const currentSedeId = barberData?.sedeId || '';
+        // P5: % de comisión del barbero (0–100). Si el barbero no tiene el campo
+        // (creado antes de P5), arranca en 50 para que el admin no lo deje en 0
+        // sin querer al editarlo.
+        const currentComision = (barberData && barberData.comisionPorcentaje !== undefined && barberData.comisionPorcentaje !== null)
+            ? barberData.comisionPorcentaje
+            : 50;
 
         const sedesOptions = (this.sedes || []).map(s => {
             const selected = currentSedeId === s.id ? 'selected' : '';
@@ -228,6 +234,18 @@
                             <input type="text" inputmode="numeric" autocomplete="off" id="barber-corte-precio" placeholder="0" value="${currentPrecio}" class="barber-form-input price-input pl-10">
                             <div class="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 text-xs font-bold pointer-events-none">PRECIO</div>
                         </div>
+                    </div>
+
+                    <div class="barber-form-section">
+                        <div class="barber-form-label">
+                            <span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1">percent</span>
+                            <span>Comisión del barbero</span>
+                        </div>
+                        <div class="relative">
+                            <input type="number" inputmode="numeric" min="0" max="100" autocomplete="off" id="barber-comision" placeholder="50" value="${currentComision}" class="barber-form-input pr-10">
+                            <div class="absolute right-3 top-1/2 -translate-y-1/2 text-primary text-lg font-black pointer-events-none">%</div>
+                        </div>
+                        <p class="text-white/30 text-[10px] mt-1.5 pl-1">% del corte y adicionales que gana el barbero. Puede ser 100% (paga por su mesa). Los productos no generan comisión.</p>
                     </div>
 
                     <div class="barber-form-section">
@@ -457,6 +475,10 @@
         const adicionalesSeleccionados = this.getSelectedAdicionales();
         const currentBarber = this.editingBarberId ? this.barbers.find(b => b.id === this.editingBarberId) : null;
 
+        // P5: comisión del barbero (0–100). Se clampa por si acaso.
+        const comisionRaw = parseFloat(document.getElementById('barber-comision')?.value);
+        const comisionPorcentaje = Math.max(0, Math.min(100, Number.isFinite(comisionRaw) ? comisionRaw : 0));
+
         const barberData = {
             userId: userId || currentBarber?.userId || '',
             userName: userName || currentBarber?.userName || '',
@@ -465,6 +487,7 @@
             phone: phoneNormalized,
             sedeId,
             nivel,
+            comisionPorcentaje,
             corte: { servicios: serviciosSeleccionados, precio },
             adicionales: adicionalesSeleccionados,
             horario,

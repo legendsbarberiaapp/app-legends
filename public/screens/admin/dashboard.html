@@ -55,6 +55,9 @@
         </div>
     </div>
 
+    <!-- Recordatorios de pago vencidos / de hoy -->
+    <div id="admin-recordatorios-alert" class="mb-8 hidden"></div>
+
     <!-- Accesos Rápidos -->
     <div class="mb-10">
         <h2 class="text-white/40 text-[10px] font-black uppercase tracking-widest mb-4 flex items-center gap-2">
@@ -83,6 +86,13 @@
                 </div>
                 <span class="text-white/50 text-[10px] font-bold text-center leading-tight">Ver<br>Equipo</span>
             </button>
+            <button onclick="switchTab('recepcionista-caja')"
+                class="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] hover:border-green-500/20 hover:bg-green-500/5 transition-all active:scale-95">
+                <div class="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-green-400 text-lg" style="font-variation-settings: 'FILL' 1">point_of_sale</span>
+                </div>
+                <span class="text-white/50 text-[10px] font-bold text-center leading-tight">Abrir<br>Caja</span>
+            </button>
         </div>
     </div>
 
@@ -107,5 +117,42 @@
                 <p class="text-white/50 text-xs">Cargando citas pendientes...</p>
             </div>
         </div>
+    </div>
+
+    <!-- Ajustes -->
+    <div class="mb-8">
+        <h2 class="text-white/40 text-[10px] font-black uppercase tracking-widest mb-4 flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1">tune</span>
+            Ajustes
+        </h2>
+        <div class="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-amber-400 text-lg" style="font-variation-settings: 'FILL' 1">reviews</span>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-white text-sm font-bold">Comentarios de reseñas</p>
+                <p class="text-white/40 text-[11px] leading-snug">Si lo apagás, los barberos ven solo las estrellas (no el texto). El promedio siempre cuenta.</p>
+            </div>
+            <button id="toggle-resenas-comentarios" role="switch" aria-checked="true"
+                onclick="if(typeof toggleResenasComentarios==='function')toggleResenasComentarios()"
+                class="relative w-12 h-7 rounded-full bg-white/10 border border-white/15 transition-all shrink-0 active:scale-95">
+                <span class="toggle-knob absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white/80 transition-all"></span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Recordatorios de pago (gestión) -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-white/40 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1">event_repeat</span>
+                Recordatorios de pago
+            </h2>
+            <button onclick="if(typeof openRecordatorioModal==='function')openRecordatorioModal()"
+                class="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary/15 border border-primary/30 text-primary text-[10px] font-black uppercase tracking-wider hover:bg-primary/25 transition-all active:scale-95">
+                <span class="material-symbols-outlined text-sm">add</span> Agregar
+            </button>
+        </div>
+        <div id="admin-recordatorios-list" class="space-y-2"></div>
     </div>
 </div>

@@ -1,67 +1,71 @@
-<div class="px-6 py-8 pb-28">
+<div id="bdash-root" class="px-6 py-8 pb-28">
     <!-- Header -->
-    <div class="mb-8">
-        <h1 class="text-3xl font-black text-white mb-2">Dashboard</h1>
-        <p class="text-white/60 text-sm">Vista general de tu día</p>
+    <div class="mb-6 flex items-start justify-between gap-3">
+        <div>
+            <h1 class="text-3xl font-black text-white mb-1">Dashboard</h1>
+            <p class="text-white/60 text-sm">Tu día y tu cuenta</p>
+        </div>
+        <div id="bdash-nivel" class="shrink-0 mt-1"></div>
     </div>
 
-    <!-- Today Stats Grid -->
-    <div class="grid grid-cols-2 gap-4 mb-8">
+    <!-- Stats del día -->
+    <div class="grid grid-cols-2 gap-4 mb-6">
         <div class="stat-card p-4 rounded-2xl">
             <div class="flex items-center justify-between mb-2">
-                <span class="material-symbols-outlined text-primary text-2xl">calendar_today</span>
-                <span class="text-3xl font-black text-white">8</span>
+                <span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings: 'FILL' 1">content_cut</span>
+                <span id="bdash-cortes-hoy" class="text-3xl font-black text-white tabular-nums">0</span>
             </div>
-            <p class="text-white/60 text-xs font-medium">Citas Hoy</p>
+            <p class="text-white/60 text-xs font-medium">Cortes hoy</p>
         </div>
         <div class="stat-card p-4 rounded-2xl">
             <div class="flex items-center justify-between mb-2">
-                <span class="material-symbols-outlined text-primary text-2xl">payments</span>
-                <span class="text-3xl font-black text-white">$225</span>
+                <span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings: 'FILL' 1">payments</span>
+                <span id="bdash-ingresos-hoy" class="text-2xl font-black text-white tabular-nums">$0</span>
             </div>
-            <p class="text-white/60 text-xs font-medium">Ingresos Hoy</p>
+            <p class="text-white/60 text-xs font-medium">Ingresos hoy</p>
         </div>
         <div class="stat-card p-4 rounded-2xl">
             <div class="flex items-center justify-between mb-2">
-                <span class="material-symbols-outlined text-primary text-2xl">check_circle</span>
-                <span class="text-3xl font-black text-white">5</span>
+                <span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings: 'FILL' 1">event_available</span>
+                <span id="bdash-citas-pendientes" class="text-3xl font-black text-white tabular-nums">0</span>
             </div>
-            <p class="text-white/60 text-xs font-medium">Completadas</p>
+            <p class="text-white/60 text-xs font-medium">Citas próximas</p>
         </div>
         <div class="stat-card p-4 rounded-2xl">
             <div class="flex items-center justify-between mb-2">
-                <span class="material-symbols-outlined text-primary text-2xl">schedule</span>
-                <span class="text-3xl font-black text-white">3</span>
+                <span class="material-symbols-outlined text-amber-400 text-2xl" style="font-variation-settings: 'FILL' 1">star</span>
+                <span id="bdash-rating" class="text-3xl font-black text-white tabular-nums">—</span>
             </div>
-            <p class="text-white/60 text-xs font-medium">Pendientes</p>
+            <p id="bdash-rating-count" class="text-white/60 text-xs font-medium">Sin reseñas</p>
         </div>
     </div>
 
-    <!-- Próximas Citas -->
+    <!-- Comisión del mes -->
     <div class="mb-6">
-        <h2 class="text-xl font-black text-white mb-4">Próximas Citas</h2>
-        <div class="space-y-3">
-            <!-- Cita 1 -->
-            <div class="p-4 rounded-2xl bg-gradient-to-br from-card-dark to-surface-dark border border-white/10">
-                <div class="flex items-center justify-between mb-3">
-                    <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                            <span class="material-symbols-outlined text-primary">person</span>
-                        </div>
-                        <div>
-                            <p class="text-white font-bold">Alex Rodriguez</p>
-                            <p class="text-white/50 text-xs">Fresh Fade + Beard</p>
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-primary font-black">2:30 PM</p>
-                        <p class="text-white/50 text-xs">45 min</p>
-                    </div>
-                </div>
-                <div class="flex gap-2">
-                    <span class="px-3 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded-full">Confirmada</span>
-                    <span class="px-3 py-1 bg-primary/20 text-primary text-xs font-bold rounded-full">$45.00</span>
-                </div>
+        <p class="text-white/45 text-[10px] font-black uppercase tracking-[0.3em] mb-2 pl-1">Tu comisión · este mes</p>
+        <div class="p-4 rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/25">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-white/60 text-xs font-bold">Generada este mes</span>
+                <span id="bdash-comision-generada" class="text-white text-sm font-black tabular-nums">$0</span>
+            </div>
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-white/60 text-xs font-bold">Pagos recibidos este mes</span>
+                <span id="bdash-comision-pagada" class="text-green-400 text-sm font-black tabular-nums">$0</span>
+            </div>
+            <div class="pt-2 border-t border-white/10 flex items-center justify-between">
+                <span class="text-white text-xs font-black uppercase tracking-wider">Pendiente del mes</span>
+                <span id="bdash-comision-pendiente" class="text-primary text-xl font-black tabular-nums">$0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registro de cortes del mes -->
+    <div class="mb-2">
+        <p class="text-white/45 text-[10px] font-black uppercase tracking-[0.3em] mb-2 pl-1">Tus cortes · este mes</p>
+        <div id="bdash-cortes-list" class="space-y-2">
+            <div class="flex flex-col items-center gap-3 py-10">
+                <div class="auth-checking-spinner"></div>
+                <p class="text-white/50 text-xs">Cargando...</p>
             </div>
         </div>
     </div>

@@ -13,7 +13,7 @@
         return (typeof roleManager !== 'undefined') ? roleManager.currentUser : null;
     }
 
-    const state = { resenias: [] };
+    const state = { resenias: [], comentariosVisibles: true };
 
     async function init() {
         const list = document.getElementById('resenias-list');
@@ -34,6 +34,13 @@
         if (stats) stats.innerHTML = '';
 
         try {
+            // El admin puede ocultar los comentarios: si está OFF, el barbero
+            // ve solo las estrellas (el promedio siempre cuenta).
+            // force=true: relee la config cada vez que el barbero entra a Reseñas,
+            // así un cambio del admin se refleja sin recargar la app.
+            state.comentariosVisibles = (typeof ConfigService !== 'undefined')
+                ? await ConfigService.getResenasComentariosVisibles(true)
+                : true;
             const resenias = await ReseniasService.listByBarbero(user.uid, 20);
             state.resenias = resenias || [];
             renderStats();
@@ -112,8 +119,9 @@
             return;
         }
 
+        const titulo = state.comentariosVisibles ? 'Comentarios' : 'Calificaciones';
         container.innerHTML = `
-            <p class="text-white/45 text-[10px] font-black uppercase tracking-[0.3em] mb-2 pl-1">Comentarios</p>
+            <p class="text-white/45 text-[10px] font-black uppercase tracking-[0.3em] mb-2 pl-1">${titulo}</p>
             <div class="space-y-2">
                 ${resenias.map(reseniaCard).join('')}
             </div>`;
@@ -145,7 +153,8 @@
         }
 
         const comentario = (r.comentario || '').trim();
-        const comentarioBlock = comentario
+        // Si el admin ocultó los comentarios, no mostramos el texto (solo estrellas).
+        const comentarioBlock = (state.comentariosVisibles && comentario)
             ? `<p class="text-white/75 text-sm mt-2 leading-relaxed">${escapeHTML(comentario)}</p>`
             : '';
 

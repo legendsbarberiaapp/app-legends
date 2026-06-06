@@ -97,6 +97,18 @@
                   Sin sede
               </span>`;
 
+        // P5: badge de comisión. Ámbar si el barbero aún no la tiene definida.
+        const comisionSet = (barber.comisionPorcentaje !== undefined && barber.comisionPorcentaje !== null);
+        const comisionBadge = comisionSet
+            ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/5 text-white/70 border border-white/10">
+                  <span class="material-symbols-outlined text-[10px]" style="font-variation-settings: 'FILL' 1">percent</span>
+                  ${barber.comisionPorcentaje}% comisión
+              </span>`
+            : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-400/90 border border-amber-500/20">
+                  <span class="material-symbols-outlined text-[10px]">error</span>
+                  Comisión sin definir
+              </span>`;
+
         return `
         <div class="barber-card" data-nivel="${barber.nivel || 'Experto'}" style="animation-delay: ${index * 0.08}s; --nivel-rgb: ${nivel.rgb};">
             <div class="barber-card-inner">
@@ -117,6 +129,7 @@
                                 ${barber.nivel || 'Experto'}
                             </span>
                             ${sedeBadge}
+                            ${comisionBadge}
                             ${renderRatingBadge(barber)}
                         </div>
                     </div>

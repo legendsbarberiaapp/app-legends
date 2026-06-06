@@ -50,7 +50,7 @@
         }
     }
 
-    async function create({ nombre, precio, sedeId, ordenActual }) {
+    async function create({ nombre, precio, sedeId, seccionId, ordenActual }) {
         const database = db();
         if (!database) return null;
         if (!nombre || !nombre.trim()) return null;
@@ -59,6 +59,7 @@
             nombre: nombre.trim(),
             precio: Number(precio) || 0,
             sedeId: sedeId,
+            seccionId: seccionId || null, // P3: sección global a la que pertenece
             activo: true,
             orden: ordenActual || 0,
             createdAt: serverTimestamp(),
@@ -88,6 +89,20 @@
         }
     }
 
+    /** P3: ¿hay algún producto (de cualquier sede) usando esta sección? */
+    async function existsWithSeccion(seccionId) {
+        const database = db();
+        if (!database || !seccionId) return false;
+        try {
+            const snap = await database.collection(COLLECTION)
+                .where('seccionId', '==', seccionId).limit(1).get();
+            return !snap.empty;
+        } catch (e) {
+            console.error('❌ Error verificando sección en uso:', e);
+            return false;
+        }
+    }
+
     async function update(id, fields) {
         const database = db();
         if (!database || !id || !fields) return false;
@@ -105,6 +120,6 @@
         return true;
     }
 
-    window.ProductosService = { list, listBySede, create, update, remove };
+    window.ProductosService = { list, listBySede, existsWithSeccion, create, update, remove };
     console.log('✓ ProductosService loaded');
 })();

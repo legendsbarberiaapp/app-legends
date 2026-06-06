@@ -6,3 +6,11 @@ dist/
 .agents/
 .agent/
 *.zip
+
+# Worklogs temporales de la skill /auditoria
+.auditoria/
+
+# Herramientas y estado local (no van a producción)
+.firebase/
+.qwen/
+memory/

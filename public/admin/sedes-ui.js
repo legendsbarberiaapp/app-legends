@@ -26,18 +26,27 @@
 
         const listHTML = (this.sedes || []).map(s => {
             const safeName = (s.nombre || '').replace(/"/g, '&quot;');
+            const safeWa = (s.whatsapp || '').replace(/"/g, '&quot;');
             return `
-            <div class="flex items-center gap-3 p-3 rounded-xl bg-white/3 border border-white/5">
-                <div class="w-9 h-9 rounded-xl bg-primary/15 border border-primary/25 flex items-center justify-center shrink-0">
-                    <span class="material-symbols-outlined text-primary text-base" style="font-variation-settings: 'FILL' 1">storefront</span>
+            <div class="p-3 rounded-xl bg-white/3 border border-white/5 space-y-2">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-primary/15 border border-primary/25 flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-primary text-base" style="font-variation-settings: 'FILL' 1">storefront</span>
+                    </div>
+                    <input type="text" id="sede-name-input-${s.id}" data-sede-id="${s.id}" value="${safeName}"
+                        maxlength="40" placeholder="Nombre de la sede"
+                        class="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm font-bold outline-none focus:border-primary/50 transition-colors">
                 </div>
-                <input type="text" id="sede-name-input-${s.id}" data-sede-id="${s.id}" value="${safeName}"
-                    maxlength="40" placeholder="Nombre de la sede"
-                    class="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm font-bold outline-none focus:border-primary/50 transition-colors">
-                <button onclick="barberManager.saveSedeNombre('${s.id}', this)"
-                    class="px-3 py-2 rounded-lg bg-primary/15 border border-primary/25 text-primary text-[10px] font-black uppercase tracking-wider hover:bg-primary/25 transition-all active:scale-95">
-                    Guardar
-                </button>
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-green-400 text-base shrink-0" style="font-variation-settings: 'FILL' 1">chat</span>
+                    <input type="tel" id="sede-wa-input-${s.id}" value="${safeWa}" maxlength="15" inputmode="tel"
+                        placeholder="WhatsApp tienda (ej: 573001234567)"
+                        class="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm outline-none focus:border-primary/50 transition-colors placeholder:text-white/20">
+                    <button onclick="barberManager.saveSedeNombre('${s.id}', this)"
+                        class="px-3 py-2 rounded-lg bg-primary/15 border border-primary/25 text-primary text-[10px] font-black uppercase tracking-wider hover:bg-primary/25 transition-all active:scale-95">
+                        Guardar
+                    </button>
+                </div>
             </div>`;
         }).join('');
 
@@ -94,9 +103,15 @@
             return;
         }
 
-        // No tocar Firestore si no cambió
+        // P3: WhatsApp de la tienda (solo dígitos). Si viene de 10 dígitos sin
+        // indicativo (Colombia), anteponemos 57 para que wa.me resuelva.
+        const waInput = document.getElementById(`sede-wa-input-${sedeId}`);
+        let nuevoWa = (waInput?.value || '').replace(/[^\d]/g, '');
+        if (nuevoWa.length === 10) nuevoWa = '57' + nuevoWa;
+
+        // No tocar Firestore si no cambió nada
         const sedeActual = this.sedes.find(s => s.id === sedeId);
-        if (sedeActual && sedeActual.nombre === nuevoNombre) {
+        if (sedeActual && sedeActual.nombre === nuevoNombre && (sedeActual.whatsapp || '') === nuevoWa) {
             this.showToast('Sin cambios', 'info');
             return;
         }
@@ -107,7 +122,7 @@
             btnEl.innerHTML = '...';
         }
 
-        const ok = await SedesService.update(sedeId, { nombre: nuevoNombre });
+        const ok = await SedesService.update(sedeId, { nombre: nuevoNombre, whatsapp: nuevoWa });
 
         if (btnEl) {
             btnEl.disabled = false;
@@ -119,8 +134,8 @@
             return;
         }
         // Actualizar cache local
-        if (sedeActual) sedeActual.nombre = nuevoNombre;
-        this.showToast(`Sede renombrada a "${nuevoNombre}" ✓`, 'success');
+        if (sedeActual) { sedeActual.nombre = nuevoNombre; sedeActual.whatsapp = nuevoWa; }
+        this.showToast(`Sede guardada ✓`, 'success');
 
         // Refrescar lista de barberos para que los badges muestren el nombre nuevo
         if (typeof this.renderBarbersList === 'function') {

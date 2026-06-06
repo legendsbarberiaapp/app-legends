@@ -72,6 +72,8 @@ function autoLoadDataForTab(tabName) {
     if (tabName === 'admin-dashboard') {
         if (typeof loadDashboardStats === 'function') loadDashboardStats();
         if (typeof initCitasPendientes === 'function') initCitasPendientes();
+        if (typeof loadAdminAjustes === 'function') loadAdminAjustes();
+        if (typeof loadAdminRecordatorios === 'function') loadAdminRecordatorios();
     }
     if (tabName === 'admin-usuarios' && typeof loadUsersForAdmin === 'function') {
         loadUsersForAdmin();
@@ -100,6 +102,12 @@ function autoLoadDataForTab(tabName) {
     }
     if (tabName === 'profile' && typeof initProfile === 'function') {
         initProfile();
+    }
+    if (tabName === 'tienda' && typeof initTienda === 'function') {
+        initTienda();
+    }
+    if (tabName === 'barbero-dashboard' && typeof initBarberoDashboard === 'function') {
+        initBarberoDashboard();
     }
     if (tabName === 'barbero-citas' && typeof initBarberoCitas === 'function') {
         initBarberoCitas();

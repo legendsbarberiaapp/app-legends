@@ -17,6 +17,46 @@
       ]
     },
     {
+      "collectionGroup": "retiros",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "sedeId", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ventas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "barberoId", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ventas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "sedeId", "order": "ASCENDING" },
+        { "fieldPath": "esDeuda", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "pagos_deuda",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "sedeId", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "gastos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "sedeId", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "stock_movimientos",
       "queryScope": "COLLECTION",
       "fields": [

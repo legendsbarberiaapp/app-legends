@@ -91,6 +91,13 @@
     <script src="services/ventas-service.js"></script>
     <script src="services/stock-service.js"></script>
     <script src="services/resenias-service.js"></script>
+    <script src="services/retiros-service.js"></script>
+    <script src="services/comisiones-service.js"></script>
+    <script src="services/deudas-service.js"></script>
+    <script src="services/secciones-service.js"></script>
+    <script src="services/gastos-service.js"></script>
+    <script src="services/recordatorios-service.js"></script>
+    <script src="services/config-service.js"></script>
     <!-- Loader de pantallas (partials) -->
     <script src="screen-loader.js"></script>
     <!-- Coordinador de UI de administración -->
@@ -117,10 +124,12 @@
     <script src="cliente/home-ui.js"></script>
     <script src="cliente/booking-ui.js"></script>
     <script src="cliente/profile-ui.js"></script>
+    <script src="cliente/tienda-ui.js"></script>
     <script src="cliente/resenia-modal-ui.js"></script>
     <script src="cliente/cita-listener.js"></script>
     <script src="cliente/recordatorio-cita.js"></script>
-    <!-- UI del barbero (citas + reseñas F6) -->
+    <!-- UI del barbero (dashboard P4+P10 + citas + reseñas F6) -->
+    <script src="barbero/dashboard-ui.js"></script>
     <script src="barbero/citas-ui.js"></script>
     <script src="barbero/resenias-ui.js"></script>
     <!-- UI de la recepcionista (F2: opera citas/walkin/reagendar · F3: cobro + caja · F4: inventario · F7: pending listener) -->
@@ -304,6 +313,9 @@
         <!-- PROFILE TAB (partial) -->
         <div id="profile-tab" class="tab-content hidden h-screen w-full overflow-y-auto no-scrollbar pb-48"
             data-partial="screens/cliente/profile.html"></div>
+
+        <div id="tienda-tab" class="tab-content hidden h-screen w-full overflow-y-auto no-scrollbar pb-48"
+            data-partial="screens/cliente/tienda.html"></div>
 
         <!-- ============================================
              BARBERO TABS (5 tabs)

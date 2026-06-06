@@ -18,6 +18,7 @@ const ROLE_CONFIGS = {
         tabs: [
             { id: 'home', icon: 'home', label: 'Inicio', fill: true },
             { id: 'booking', icon: 'calendar_month', label: 'Reservar', fill: false },
+            { id: 'tienda', icon: 'storefront', label: 'Tienda', fill: false },
             { id: 'profile', icon: 'account_circle', label: 'Perfil', fill: false }
         ],
         defaultTab: 'home',

@@ -22,7 +22,8 @@
  *     subtotal: number,
  *     total: number,             // == subtotal por ahora
  *
- *     metodoPago: 'efectivo'|'tarjeta'|'transferencia',
+ *     metodoPago: 'efectivo'|'transferencia'|'deuda',
+ *     esDeuda: boolean,          // true si metodoPago === 'deuda' (cliente debe)
  *
  *     // Auditoría
  *     cobradoPor: uid,
@@ -39,10 +40,14 @@
 
     const COLLECTION = 'ventas';
 
+    // Métodos de pago vigentes (definición de cliente): efectivo, transferencia
+    // y "deuda" (el cliente queda debiendo; el admin lo revisa al cuadrar caja).
+    // "Tarjeta/Datáfono" se retiró: si alguna vez cobran con datáfono, se
+    // registra como "transferencia".
     const METODOS_PAGO = {
         EFECTIVO: 'efectivo',
-        TARJETA: 'tarjeta',
-        TRANSFERENCIA: 'transferencia'
+        TRANSFERENCIA: 'transferencia',
+        DEUDA: 'deuda'
     };
 
     const TIPOS = {
@@ -82,6 +87,10 @@
                 total: Number(data.total) || 0,
 
                 metodoPago: data.metodoPago || METODOS_PAGO.EFECTIVO,
+                esDeuda: data.metodoPago === METODOS_PAGO.DEUDA,
+                // P5: comisión del barbero (denormalizada; fuente de los reportes de comisión).
+                barberoComisionPct: Number(data.barberoComisionPct) || 0,
+                comisionMonto: Number(data.comisionMonto) || 0,
 
                 cobradoPor: data.cobradoPor || null,
                 cobradoPorNombre: data.cobradoPorNombre || '',
@@ -154,12 +163,36 @@
         }
     }
 
+    /**
+     * P10: ventas de un barbero (por userId) en un rango de fechas. Para el
+     * dashboard del barbero (sus cortes, ingresos y comisión generada).
+     * Requiere índice compuesto (barberoId ASC, fecha ASC).
+     */
+    async function listByBarberoRange(barberoId, fechaDesde, fechaHasta) {
+        const database = db();
+        if (!database || !barberoId) return [];
+        try {
+            const snapshot = await database.collection(COLLECTION)
+                .where('barberoId', '==', barberoId)
+                .where('fecha', '>=', fechaDesde)
+                .where('fecha', '<=', fechaHasta)
+                .get();
+            const result = [];
+            snapshot.forEach(doc => result.push({ id: doc.id, ...doc.data() }));
+            result.sort((a, b) => (b.fechaHora?.seconds || 0) - (a.fechaHora?.seconds || 0));
+            return result;
+        } catch (error) {
+            console.error('❌ Error listando ventas (barbero):', error);
+            return [];
+        }
+    }
+
     /** Agrupa ventas por método de pago. Útil para cierre de caja. */
     function aggregarPorMetodo(ventas) {
         const agg = {
             [METODOS_PAGO.EFECTIVO]:      { count: 0, total: 0 },
-            [METODOS_PAGO.TARJETA]:       { count: 0, total: 0 },
-            [METODOS_PAGO.TRANSFERENCIA]: { count: 0, total: 0 }
+            [METODOS_PAGO.TRANSFERENCIA]: { count: 0, total: 0 },
+            [METODOS_PAGO.DEUDA]:         { count: 0, total: 0 }
         };
         (ventas || []).forEach(v => {
             const m = v.metodoPago || METODOS_PAGO.EFECTIVO;
@@ -170,6 +203,6 @@
         return agg;
     }
 
-    window.VentasService = { create, listBySedeRange, listByRange, aggregarPorMetodo, METODOS_PAGO, TIPOS };
+    window.VentasService = { create, listBySedeRange, listByRange, listByBarberoRange, aggregarPorMetodo, METODOS_PAGO, TIPOS };
     console.log('✓ VentasService loaded');
 })();

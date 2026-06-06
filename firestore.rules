@@ -3,8 +3,28 @@ rules_version = '2';
 // Reglas para Legends Barbería
 // Pégalas en: Firebase Console -> Firestore Database -> Rules
 //
-// Última actualización: 2026-06-01
-// Último cambio: F6-fix — endurecemos rules de F6 contra vandalismo:
+// Última actualización: 2026-06-05
+// Último cambio: P3 — colección `secciones` (categorías globales de tienda; las
+//   gestiona el admin, las lee cualquier logeado). Producto suma `seccionId` y
+//   la sede suma `whatsapp` (campos, sin nuevas rules).
+//
+// P8 — colecciones `gastos` (egresos en efectivo; crea/lee admin
+//   o recepcionista de la sede; update/delete admin) y `recordatorios_pago`
+//   (pagos fijos por sede; los gestiona el admin; lee admin o recep de la sede).
+//
+// P7 — colección `pagos_deuda` (abonos de deudas; crea/lee admin
+//   o recepcionista de la sede; update/delete admin). La deuda es la venta con
+//   esDeuda=true; aquí solo se registra el pago.
+//
+// P5 — colección `pagos_comision` (pagos de comisión a barberos;
+//   crea/edita solo admin; lee admin, el barbero dueño o la recepcionista de la
+//   sede). La comisión generada va denormalizada en cada venta (comisionMonto).
+//
+// F-caja — nuevas colecciones `retiros` (salidas de efectivo de
+//   caja; crea admin o recepcionista de su sede, firmado, monto>0) y `config`
+//   (ajustes globales doc `config/app`; lee cualquier logeado, escribe admin).
+//
+// F6-fix — endurecemos rules de F6 contra vandalismo:
 //   1. barberos.ratingPromedio en [0,5] + ratingCount entero solo creciente
 //      por 1 (evita "rating=5.0 (9999)" desde DevTools).
 //   2. resenias.create lee la cita via get() y valida que sea del cliente,
@@ -118,6 +138,16 @@ service cloud.firestore {
     }
 
     // ============================================
+    // SECCIONES (categorías globales de la tienda) — P3
+    // Las gestiona solo el admin. Todos los logeados leen (cliente las ve en la
+    // tienda, recepcionista/admin al organizar productos).
+    // ============================================
+    match /secciones/{seccionId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ============================================
     // PRODUCTOS (catálogo para POS) — F3
     // Solo admin gestiona. Todos los logeados leen (la recepcionista los muestra
     // al cobrar; el cliente podría verlos en su recibo futuro).
@@ -210,6 +240,115 @@ service cloud.firestore {
       );
 
       allow update, delete: if isAdmin();
+    }
+
+    // ============================================
+    // RETIROS (salidas de efectivo de la caja) — F-caja
+    // - Crear: admin (cualquier sede) o recepcionista de SU sede, firmado con
+    //   su uid y con monto > 0.
+    // - Leer: admin (todo) o recepcionista de su sede (para el cuadre).
+    // - Update/delete: solo admin (los retiros son inmutables).
+    // ============================================
+    match /retiros/{retiroId} {
+      allow read: if isSignedIn() && (
+        isAdmin() ||
+        (isRecepcionista() && resource.data.sedeId == recepcionistaSedeId())
+      );
+
+      allow create: if isSignedIn() && (
+        isAdmin() ||
+        (isRecepcionista()
+          && request.resource.data.sedeId == recepcionistaSedeId()
+          && request.resource.data.hechoPor == request.auth.uid
+          && request.resource.data.monto is number
+          && request.resource.data.monto > 0)
+      );
+
+      allow update, delete: if isAdmin();
+    }
+
+    // ============================================
+    // PAGOS_COMISION (pagos de comisión a barberos) — P5
+    // - Crear/editar/borrar: solo admin (es quien paga).
+    // - Leer: admin (todo), el barbero dueño (barberoId == uid) para ver sus
+    //   pagos, o la recepcionista de la sede.
+    // ============================================
+    match /pagos_comision/{pagoId} {
+      allow read: if isSignedIn() && (
+        isAdmin() ||
+        resource.data.barberoId == request.auth.uid ||
+        (isRecepcionista() && resource.data.sedeId == recepcionistaSedeId())
+      );
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ============================================
+    // PAGOS_DEUDA (abonos/saldos de deudas) — P7
+    // - Crear/leer: admin (todo) o recepcionista de la sede de la deuda.
+    // - Update/delete: solo admin.
+    // (La deuda en sí es la venta con esDeuda=true; aquí solo registramos el pago.)
+    // ============================================
+    match /pagos_deuda/{pagoId} {
+      allow read: if isSignedIn() && (
+        isAdmin() ||
+        (isRecepcionista() && resource.data.sedeId == recepcionistaSedeId())
+      );
+      allow create: if isSignedIn() && (
+        isAdmin() ||
+        (isRecepcionista()
+          && request.resource.data.sedeId == recepcionistaSedeId()
+          && request.resource.data.registradoPor == request.auth.uid
+          && request.resource.data.monto is number
+          && request.resource.data.monto > 0)
+      );
+      allow update, delete: if isAdmin();
+    }
+
+    // ============================================
+    // GASTOS (egresos en efectivo de la caja) — P8
+    // - Crear/leer: admin (todo) o recepcionista de la sede, firmado, monto>0.
+    // - Update/delete: solo admin.
+    // ============================================
+    match /gastos/{gastoId} {
+      allow read: if isSignedIn() && (
+        isAdmin() ||
+        (isRecepcionista() && resource.data.sedeId == recepcionistaSedeId())
+      );
+      allow create: if isSignedIn()
+        && request.resource.data.monto is number
+        && request.resource.data.monto > 0
+        && request.resource.data.concepto is string
+        && request.resource.data.concepto.size() > 0
+        && (
+          isAdmin() ||
+          (isRecepcionista()
+            && request.resource.data.sedeId == recepcionistaSedeId()
+            && request.resource.data.registradoPor == request.auth.uid)
+        );
+      allow update, delete: if isAdmin();
+    }
+
+    // ============================================
+    // RECORDATORIOS_PAGO (pagos fijos del negocio, por sede) — P8
+    // - Los gestiona solo el admin (crea/edita/borra/marca pagado).
+    // - Leer: admin o recepcionista de la sede (por si se muestran en la sede).
+    // ============================================
+    match /recordatorios_pago/{recId} {
+      allow read: if isSignedIn() && (
+        isAdmin() ||
+        (isRecepcionista() && resource.data.sedeId == recepcionistaSedeId())
+      );
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ============================================
+    // CONFIG (ajustes globales de la app) — F-caja
+    // Doc único `config/app`. Lo lee cualquier logeado (para aplicar el ajuste);
+    // solo el admin lo escribe (ej: visibilidad de comentarios de reseñas).
+    // ============================================
+    match /config/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
 
     // ============================================

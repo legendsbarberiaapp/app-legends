@@ -15,11 +15,11 @@
 (function () {
     'use strict';
 
-    const METODOS = ['efectivo', 'tarjeta', 'transferencia'];
+    const METODOS = ['efectivo', 'transferencia', 'deuda'];
     const METODO_META = {
         efectivo:      { label: 'Efectivo',      icon: 'payments'  },
-        tarjeta:       { label: 'Tarjeta',       icon: 'credit_card' },
-        transferencia: { label: 'Transferencia', icon: 'account_balance' }
+        transferencia: { label: 'Transferencia', icon: 'account_balance' },
+        deuda:         { label: 'Deuda',         icon: 'schedule' }
     };
 
     // Estado del overlay
@@ -28,8 +28,10 @@
         cita: null,           // referencia cuando modo='cita'
         items: [],            // {tipo,nombre,cantidad,precioUnit,subtotal,productoId?}
         metodoPago: 'efectivo',
+        deudorNombre: '',     // F-caja: nombre de quien queda debiendo (solo si metodoPago='deuda' en venta directa)
         productosCache: [],
-        stockCache: {}        // F4: productoId → cantidad disponible (de la sede actual)
+        stockCache: {},       // F4: productoId → cantidad disponible (de la sede actual)
+        comisionByBarbero: {} // P5: userId del barbero → % de comisión
     };
 
     function fmtCOP(n) {
@@ -112,6 +114,7 @@
         ctx.cita = cita;
         ctx.items = itemsDesdeCita(cita);
         ctx.metodoPago = 'efectivo';
+        ctx.deudorNombre = '';
         await loadProductosYStock();
         renderOverlay();
     }
@@ -124,6 +127,7 @@
         ctx.cita = null;
         ctx.items = [];
         ctx.metodoPago = 'efectivo';
+        ctx.deudorNombre = '';
         await loadProductosYStock();
         renderOverlay();
     }
@@ -140,23 +144,30 @@
     async function loadProductosYStock() {
         const sedeId = getSedeId();
         try {
-            const [productos, stockRows] = await Promise.all([
+            const [productos, stockRows, barberos] = await Promise.all([
                 (sedeId && typeof ProductosService !== 'undefined')
                     ? ProductosService.listBySede(sedeId, { soloActivos: true })
                     : Promise.resolve([]),
                 (sedeId && typeof StockService !== 'undefined')
                     ? StockService.listBySede(sedeId)
-                    : Promise.resolve([])
+                    : Promise.resolve([]),
+                // P5: barberos para resolver el % de comisión por userId.
+                (typeof BarbersService !== 'undefined') ? BarbersService.list() : Promise.resolve([])
             ]);
             ctx.productosCache = productos;
             ctx.stockCache = {};
             (stockRows || []).forEach(s => {
                 ctx.stockCache[s.productoId] = Number(s.cantidad) || 0;
             });
+            ctx.comisionByBarbero = {};
+            (barberos || []).forEach(b => {
+                if (b.userId) ctx.comisionByBarbero[b.userId] = Number(b.comisionPorcentaje) || 0;
+            });
         } catch (e) {
             console.error('❌ Error cargando productos/stock:', e);
             ctx.productosCache = [];
             ctx.stockCache = {};
+            ctx.comisionByBarbero = {};
         }
     }
 
@@ -233,6 +244,8 @@
                             <span>Método de pago</span>
                         </div>
                         <div id="cobrar-metodos" class="grid grid-cols-3 gap-2"></div>
+                        <!-- Campo "quién debe" — solo visible si método = deuda -->
+                        <div id="cobrar-deuda-field" class="mt-2"></div>
                     </div>
 
                     <!-- Total -->
@@ -262,6 +275,7 @@
         renderItems();
         renderProductos();
         renderMetodos();
+        renderDeudaField();
         renderTotal();
     }
 
@@ -362,6 +376,39 @@
         }).join('');
     }
 
+    /**
+     * Campo dinámico para "deuda". Solo aparece cuando metodoPago === 'deuda'.
+     * - En modo 'cita' el que debe es el cliente de la cita → solo mostramos
+     *   una nota (no pedimos nombre, ya lo tenemos).
+     * - En modo 'directa' no hay cliente asociado → pedimos el nombre de quien
+     *   queda debiendo, para que el admin sepa a quién cobrarle al cuadrar caja.
+     */
+    function renderDeudaField() {
+        const container = document.getElementById('cobrar-deuda-field');
+        if (!container) return;
+        if (ctx.metodoPago !== 'deuda') {
+            container.innerHTML = '';
+            return;
+        }
+        if (ctx.modo === 'cita') {
+            const cliente = ctx.cita?.clienteNombre || 'el cliente';
+            container.innerHTML = `
+                <div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-amber-400 text-base" style="font-variation-settings: 'FILL' 1">info</span>
+                    <p class="text-amber-200/90 text-[11px] font-bold">Queda como deuda de <span class="text-amber-300">${cliente}</span>. El admin lo revisa al cuadrar caja.</p>
+                </div>`;
+            return;
+        }
+        // Venta directa: pedir nombre del deudor
+        container.innerHTML = `
+            <label class="block">
+                <span class="text-amber-300 text-[10px] font-black uppercase tracking-wider">¿Quién queda debiendo?</span>
+                <input type="text" id="cobrar-deudor-input" value="${(ctx.deudorNombre || '').replace(/"/g, '&quot;')}"
+                    oninput="cobrarSetDeudor(this.value)" placeholder="Nombre de quien debe"
+                    class="mt-1 w-full px-3 py-2.5 rounded-xl bg-amber-500/5 border border-amber-500/25 text-white text-sm font-bold placeholder-white/25 focus:outline-none focus:border-amber-400/50">
+            </label>`;
+    }
+
     function renderTotal() {
         const amount = document.getElementById('cobrar-total-amount');
         if (amount) amount.textContent = fmtCOP(calcularSubtotal());
@@ -419,6 +466,11 @@
         if (!METODOS.includes(metodo)) return;
         ctx.metodoPago = metodo;
         renderMetodos();
+        renderDeudaField();
+    }
+
+    function setDeudor(value) {
+        ctx.deudorNombre = value || '';
     }
 
     // ============================================
@@ -447,6 +499,13 @@
             if (typeof window.showToast === 'function') window.showToast('Total en 0 — agregá items', 'error');
             return;
         }
+        // F-caja: si es deuda en venta directa, exigir el nombre de quien debe.
+        if (ctx.metodoPago === 'deuda' && ctx.modo === 'directa' && !(ctx.deudorNombre || '').trim()) {
+            if (typeof window.showToast === 'function') window.showToast('Escribí quién queda debiendo', 'error');
+            const inp = document.getElementById('cobrar-deudor-input');
+            if (inp) inp.focus();
+            return;
+        }
 
         const database = firebaseAdapter?.db;
         if (!database) {
@@ -468,6 +527,18 @@
         const ventaId = ventaRef.id;
         const serverTS = firebase.firestore.FieldValue.serverTimestamp();
 
+        // P5: comisión del barbero. Aplica sobre el corte Y los adicionales
+        // (decisión confirmada del cliente); SOLO los productos quedan 100% para
+        // la barbería. Por eso la base = todo lo que NO sea 'producto'.
+        // Se calcula al cobrar, sin importar el método (una deuda también genera
+        // comisión de una vez).
+        const barberoIdVenta = ctx.cita?.barberoId || null;
+        const comisionPct = barberoIdVenta ? (Number(ctx.comisionByBarbero[barberoIdVenta]) || 0) : 0;
+        const comisionableTotal = ctx.items
+            .filter(it => it.tipo !== 'producto')
+            .reduce((s, it) => s + (Number(it.subtotal) || 0), 0);
+        const comisionMonto = Math.round(comisionableTotal * comisionPct / 100);
+
         const ventaDoc = {
             sedeId,
             fecha: todayISO(),
@@ -475,7 +546,10 @@
 
             citaId: ctx.cita?.id || null,
             clienteId: ctx.cita?.clienteId || null,
-            clienteNombre: ctx.cita?.clienteNombre || 'Cliente',
+            // En venta directa con deuda usamos el nombre del deudor; si no, el del cliente de la cita.
+            clienteNombre: (ctx.modo === 'directa' && ctx.metodoPago === 'deuda' && ctx.deudorNombre.trim())
+                ? ctx.deudorNombre.trim()
+                : (ctx.cita?.clienteNombre || 'Cliente'),
             barberoId: ctx.cita?.barberoId || null,
             barberoNombre: ctx.cita?.barberoNombre || '',
 
@@ -483,6 +557,10 @@
             subtotal: total,
             total,
             metodoPago: ctx.metodoPago,
+            esDeuda: ctx.metodoPago === 'deuda',
+            // P5: comisión denormalizada en la venta (fuente de los reportes de comisión).
+            barberoComisionPct: comisionPct,
+            comisionMonto,
 
             cobradoPor: user?.uid || null,
             cobradoPorNombre: user?.displayName || '',
@@ -573,6 +651,7 @@
     window.cobrarAddProducto = addProducto;
     window.cobrarRemoveItem = removeItem;
     window.cobrarSelectMetodo = selectMetodo;
+    window.cobrarSetDeudor = setDeudor;
     window.cobrarSubmit = submit;
 
     console.log('✓ RecepcionistaCobrarUI (F3) loaded');
