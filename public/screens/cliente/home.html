@@ -1,14 +1,13 @@
 <!-- Main scroll area -->
 <main class="flex-1 overflow-y-auto no-scrollbar relative z-0 pb-32">
 
-    <!-- Hero minimalista: logo + saludo -->
-    <div class="relative w-full h-[40vh] min-h-[300px] overflow-hidden">
-        <!-- Fondo con gradientes + textura -->
-        <div class="absolute inset-0 bg-gradient-to-br from-background-dark via-black to-background-dark"></div>
-        <div class="absolute inset-0 smoke-overlay opacity-40"></div>
-        <div class="absolute top-1/4 right-0 w-96 h-96 bg-primary/10 rounded-full blur-[120px] pointer-events-none"></div>
-        <div class="absolute bottom-0 left-0 w-80 h-80 bg-primary/5 rounded-full blur-[100px] pointer-events-none"></div>
-        <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-background-dark"></div>
+    <!-- Hero: foto de barbería + saludo -->
+    <div class="relative w-full h-[42vh] min-h-[320px] overflow-hidden">
+        <!-- Foto de fondo -->
+        <div class="absolute inset-0 bg-cover bg-center bg-no-repeat" style="background-image: url('hero-home.png');"></div>
+        <!-- Oscurecido para legibilidad: marca arriba, saludo al centro, fundido al fondo -->
+        <div class="absolute inset-0 bg-gradient-to-b from-black/75 via-black/45 to-background-dark"></div>
+        <div class="absolute inset-0 smoke-overlay opacity-20"></div>
 
         <!-- Top brand -->
         <div class="absolute top-0 left-0 w-full px-6 pt-14 z-10 fade-in-soft">
