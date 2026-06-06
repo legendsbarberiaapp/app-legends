@@ -330,11 +330,25 @@
         }
     }
 
+    /** Setea el primer nombre real en el saludo del hero y lo revela con animación. */
+    function setGreeting(user) {
+        const el = document.getElementById('home-greeting-name');
+        if (!el) return;
+        const display = (user && user.displayName) ? user.displayName : '';
+        const firstName = display ? display.split(' ')[0] : 'Usuario';
+        el.textContent = firstName;
+        // Revelar (estaba opacity-0 + translate-y-2) tras un instante → la transición
+        // CSS anima de 0→1. setTimeout (no rAF) para que dispare aunque la pestaña
+        // no esté en foco.
+        setTimeout(() => el.classList.remove('opacity-0', 'translate-y-2'), 40);
+    }
+
     async function initHome() {
         const container = document.getElementById('home-proxima-container');
         if (!container) return;
 
         const user = roleManager && roleManager.currentUser;
+        setGreeting(user); // P-home: nombre real + animación, en cada apertura del Inicio
         if (!user || !user.uid) {
             container.innerHTML = renderSinCita();
             renderServiciosPreview();
