@@ -22,6 +22,25 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
         rel="stylesheet">
 
+    <!-- Consola limpia: silencia logs informativos (✓ loaded, etc.) y el aviso
+         del CDN de Tailwind. CONSERVA console.error y los warnings reales.
+         Va antes de cualquier otro script para tomar efecto desde el inicio. -->
+    <script>
+        (function () {
+            var noop = function () { };
+            console.log = noop;
+            console.info = noop;
+            console.debug = noop;
+            var _warn = console.warn ? console.warn.bind(console) : noop;
+            console.warn = function () {
+                var m = arguments[0];
+                if (typeof m === 'string' && m.indexOf('cdn.tailwindcss.com') !== -1) return;
+                _warn.apply(null, arguments);
+            };
+            // console.error se conserva intacto: los errores reales deben verse.
+        })();
+    </script>
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 
