@@ -81,6 +81,9 @@
                 clienteNombre: data.clienteNombre || 'Cliente',
                 barberoId: data.barberoId || null,
                 barberoNombre: data.barberoNombre || '',
+                // Modelo multi-barbero: una venta puede tener cortes de varios barberos.
+                barberoIds: Array.isArray(data.barberoIds) ? data.barberoIds : (data.barberoId ? [data.barberoId] : []),
+                comisionPorBarbero: data.comisionPorBarbero || {},
 
                 items: data.items || [],
                 subtotal: Number(data.subtotal) || 0,
@@ -88,8 +91,7 @@
 
                 metodoPago: data.metodoPago || METODOS_PAGO.EFECTIVO,
                 esDeuda: data.metodoPago === METODOS_PAGO.DEUDA,
-                // P5: comisión del barbero (denormalizada; fuente de los reportes de comisión).
-                barberoComisionPct: Number(data.barberoComisionPct) || 0,
+                // Comisión total denormalizada (suma de comisionPorBarbero).
                 comisionMonto: Number(data.comisionMonto) || 0,
 
                 cobradoPor: data.cobradoPor || null,
@@ -172,8 +174,10 @@
         const database = db();
         if (!database || !barberoId) return [];
         try {
+            // Multi-barbero: una venta puede tener cortes de varios barberos, así
+            // que filtramos por el array `barberoIds` (no por el único `barberoId`).
             const snapshot = await database.collection(COLLECTION)
-                .where('barberoId', '==', barberoId)
+                .where('barberoIds', 'array-contains', barberoId)
                 .where('fecha', '>=', fechaDesde)
                 .where('fecha', '<=', fechaHasta)
                 .get();

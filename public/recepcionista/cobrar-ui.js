@@ -22,16 +22,20 @@
         deuda:         { label: 'Deuda',         icon: 'schedule' }
     };
 
-    // Estado del overlay
+    // Estado del overlay — VENTA UNIFICADA: un solo ticket puede llevar cortes
+    // (de uno o VARIOS barberos) + productos. La comisión se calcula POR ÍTEM.
     const ctx = {
-        modo: null,           // 'cita' | 'directa'
-        cita: null,           // referencia cuando modo='cita'
-        items: [],            // {tipo,nombre,cantidad,precioUnit,subtotal,productoId?}
+        cita: null,           // cita vinculada (opcional). Al cobrar se marca completada.
+        items: [],            // servicio/adicional: {tipo,nombre,barberoId,barberoNombre,comisionPct,cantidad,precioUnit,subtotal}
+                              // producto: {tipo:'producto',productoId,nombre,cantidad,precioUnit,subtotal}
         metodoPago: 'efectivo',
-        deudorNombre: '',     // F-caja: nombre de quien queda debiendo (solo si metodoPago='deuda' en venta directa)
+        deudorNombre: '',     // nombre de quien queda debiendo (solo si metodoPago='deuda')
         productosCache: [],
         stockCache: {},       // F4: productoId → cantidad disponible (de la sede actual)
-        comisionByBarbero: {} // P5: userId del barbero → % de comisión
+        comisionByBarbero: {},// userId del barbero → % de comisión
+        barberosCache: [],    // barberos de la sede (para la sección "Agregar corte")
+        citasHoy: [],         // citas del día (pendiente/confirmada) para vincular
+        productoSearch: ''    // filtro del buscador de productos
     };
 
     function fmtCOP(n) {
@@ -109,27 +113,53 @@
      * Abre el overlay en modo 'cita' (al completar una cita confirmada).
      * @param {object} cita
      */
-    async function openParaCita(cita) {
-        ctx.modo = 'cita';
-        ctx.cita = cita;
-        ctx.items = itemsDesdeCita(cita);
+    function resetCtx() {
+        ctx.cita = null;
+        ctx.items = [];
         ctx.metodoPago = 'efectivo';
         ctx.deudorNombre = '';
+        ctx.productoSearch = '';
+    }
+
+    /** Abre la venta ya vinculada a una cita (pre-llena el corte de la cita). */
+    async function openParaCita(cita) {
+        resetCtx();
+        await loadProductosYStock();
+        vincularCita(cita); // arma los items del corte de la cita
+        renderOverlay();
+    }
+
+    /** Abre la "Nueva venta" vacía (walk-in / venta directa). */
+    async function openVentaDirecta() {
+        resetCtx();
         await loadProductosYStock();
         renderOverlay();
     }
 
     /**
-     * Abre el overlay en modo 'directa' (venta sin cita).
+     * Vincula una cita: setea ctx.cita y arma sus items de corte (con barbero +
+     * comisión) para que el cobro genere la comisión correcta. Al cobrar, la cita
+     * queda 'completada'. Si ya había items, conserva los productos agregados.
      */
-    async function openVentaDirecta() {
-        ctx.modo = 'directa';
-        ctx.cita = null;
-        ctx.items = [];
-        ctx.metodoPago = 'efectivo';
-        ctx.deudorNombre = '';
-        await loadProductosYStock();
-        renderOverlay();
+    function vincularCita(cita) {
+        ctx.cita = cita || null;
+        // Quitar items de servicio previos que vinieran de otra cita (conserva productos)
+        ctx.items = ctx.items.filter(it => it.tipo === 'producto');
+        if (!cita) return;
+        const pct = Number(ctx.comisionByBarbero[cita.barberoId]) || 0;
+        if (cita.servicioNombre && (cita.servicioPrecio || cita.total)) {
+            const precio = Number(cita.servicioPrecio || cita.total || 0);
+            ctx.items.unshift({
+                tipo: 'servicio',
+                nombre: cita.servicioNombre,
+                barberoId: cita.barberoId || null,
+                barberoNombre: cita.barberoNombre || '',
+                comisionPct: pct,
+                cantidad: 1,
+                precioUnit: precio,
+                subtotal: precio
+            });
+        }
     }
 
     /**
@@ -163,11 +193,23 @@
             (barberos || []).forEach(b => {
                 if (b.userId) ctx.comisionByBarbero[b.userId] = Number(b.comisionPorcentaje) || 0;
             });
+            // Barberos de ESTA sede (para la sección "Agregar corte"). Fallback de
+            // migración: barbero sin sedeId cuenta para la primera sede.
+            ctx.barberosCache = (barberos || []).filter(b => b.sedeId === sedeId);
+            // Citas del día (pendiente/confirmada) de la sede, para vincular el cobro.
+            try {
+                const hoy = todayISO();
+                const citas = (typeof CitasService !== 'undefined' && sedeId)
+                    ? await CitasService.listBySedeRange(sedeId, hoy, hoy) : [];
+                ctx.citasHoy = (citas || []).filter(c => c.estado === 'pendiente' || c.estado === 'confirmada');
+            } catch (e) { ctx.citasHoy = []; }
         } catch (e) {
             console.error('❌ Error cargando productos/stock:', e);
             ctx.productosCache = [];
             ctx.stockCache = {};
             ctx.comisionByBarbero = {};
+            ctx.barberosCache = [];
+            ctx.citasHoy = [];
         }
     }
 
@@ -194,10 +236,10 @@
         const existing = document.getElementById('cobrar-overlay');
         if (existing) existing.remove();
 
-        const titulo = ctx.modo === 'cita' ? 'Cobrar cita' : 'Venta directa';
+        const titulo = 'Nueva venta';
         const sedeNombre = getSedeNombre();
-        const sub = ctx.modo === 'cita'
-            ? `${ctx.cita?.clienteNombre || 'Cliente'} · ${ctx.cita?.hora || ''}`
+        const sub = ctx.cita
+            ? `Cita de ${ctx.cita.clienteNombre || 'Cliente'} · ${ctx.cita.hora || ''}`
             : (sedeNombre ? `Sede ${sedeNombre}` : 'Tu sede');
 
         const html = `
@@ -219,6 +261,15 @@
                 </div>
 
                 <div class="barber-modal-body">
+                    <!-- Vincular a una cita agendada (opcional) -->
+                    <div class="barber-form-section">
+                        <div class="barber-form-label">
+                            <span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1">event</span>
+                            <span>¿Es de una cita? (opcional)</span>
+                        </div>
+                        <div id="cobrar-cita-selector"></div>
+                    </div>
+
                     <!-- Items del ticket -->
                     <div class="barber-form-section">
                         <div class="barber-form-label">
@@ -228,11 +279,26 @@
                         <div id="cobrar-items-list" class="space-y-2"></div>
                     </div>
 
-                    <!-- Agregar producto del catálogo -->
+                    <!-- Agregar corte / servicio (uno o varios barberos) -->
+                    <div class="barber-form-section">
+                        <div class="barber-form-label">
+                            <span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1">content_cut</span>
+                            <span>Agregar corte / servicio</span>
+                        </div>
+                        <div id="cobrar-corte-section"></div>
+                    </div>
+
+                    <!-- Agregar producto del catálogo (con buscador) -->
                     <div class="barber-form-section">
                         <div class="barber-form-label">
                             <span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1">add_shopping_cart</span>
                             <span>Agregar producto</span>
+                        </div>
+                        <div class="relative mb-2">
+                            <span class="material-symbols-outlined text-white/30 text-base absolute left-3 top-1/2 -translate-y-1/2">search</span>
+                            <input type="text" id="cobrar-producto-search" value="${(ctx.productoSearch || '').replace(/"/g, '&quot;')}"
+                                oninput="cobrarSetProductoSearch(this.value)" placeholder="Buscar producto…" autocomplete="off"
+                                class="w-full pl-10 pr-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder-white/25 focus:outline-none focus:border-primary/50">
                         </div>
                         <div id="cobrar-productos-grid" class="grid grid-cols-2 gap-2"></div>
                     </div>
@@ -272,11 +338,111 @@
         document.body.insertAdjacentHTML('beforeend', html);
         requestAnimationFrame(() => document.getElementById('cobrar-overlay')?.classList.add('visible'));
 
+        renderCitaSelector();
         renderItems();
+        renderCorteSection();
         renderProductos();
         renderMetodos();
         renderDeudaField();
         renderTotal();
+    }
+
+    // Escapa texto para HTML (nombres de cliente/barbero/producto).
+    function escH(x) {
+        return String(x == null ? '' : x)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    /** Selector de cita: chips con las citas del día; al elegir, pre-llena el corte. */
+    function renderCitaSelector() {
+        const cont = document.getElementById('cobrar-cita-selector');
+        if (!cont) return;
+        const citas = ctx.citasHoy || [];
+        if (!citas.length) {
+            cont.innerHTML = `<p class="text-white/30 text-[11px] py-1 pl-1">No hay citas pendientes hoy. Registrá la venta directo (walk-in).</p>`;
+            return;
+        }
+        const chips = citas.map(c => {
+            const active = ctx.cita && ctx.cita.id === c.id;
+            return `<button type="button" onclick="cobrarToggleCita('${c.id}')"
+                class="shrink-0 px-3 py-2 rounded-xl text-[11px] font-bold transition-all active:scale-95 text-left
+                    ${active ? 'bg-primary text-black' : 'bg-white/[0.04] border border-white/[0.08] text-white/70 hover:bg-white/[0.08]'}">
+                ${escH(c.clienteNombre || 'Cliente')} · ${escH(c.hora || '')}<br>
+                <span class="${active ? 'text-black/60' : 'text-white/35'} text-[10px]">${escH(c.barberoNombre || '')}</span>
+            </button>`;
+        }).join('');
+        cont.innerHTML = `<div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">${chips}</div>`;
+    }
+
+    /** Sección "Agregar corte": elegí barbero → agrega su corte (con su comisión). */
+    function renderCorteSection() {
+        const cont = document.getElementById('cobrar-corte-section');
+        if (!cont) return;
+        const barberos = ctx.barberosCache || [];
+        if (!barberos.length) {
+            cont.innerHTML = `<p class="text-white/30 text-[11px] py-1 pl-1">No hay barberos en esta sede. El admin los crea en la pestaña Barberos.</p>`;
+            return;
+        }
+        const opts = barberos.map(b => `<option value="${b.id}">${escH(b.userName || b.nombre || 'Barbero')} — ${fmtCOP(b.corte?.precio || 0)}</option>`).join('');
+        cont.innerHTML = `
+            <div class="flex items-center gap-2">
+                <select id="cobrar-corte-barbero" class="flex-1 px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-primary/50">
+                    <option value="">Elegí un barbero…</option>
+                    ${opts}
+                </select>
+                <button type="button" onclick="cobrarAddCorte()"
+                    class="px-4 py-2.5 rounded-xl bg-primary/15 border border-primary/25 text-primary text-[11px] font-black uppercase tracking-wider hover:bg-primary/25 active:scale-95 transition-all whitespace-nowrap">
+                    + Corte
+                </button>
+            </div>
+            <p class="text-white/30 text-[10px] mt-1 pl-1">Podés agregar cortes de varios barberos en el mismo ticket.</p>`;
+    }
+
+    /** Agrega el corte del barbero elegido como ítem (con su comisión). */
+    function addCorte() {
+        const sel = document.getElementById('cobrar-corte-barbero');
+        if (!sel || !sel.value) {
+            if (typeof window.showToast === 'function') window.showToast('Elegí un barbero', 'info');
+            return;
+        }
+        const b = (ctx.barberosCache || []).find(x => x.id === sel.value);
+        if (!b) return;
+        const precio = Number(b.corte?.precio) || 0;
+        if (precio <= 0) {
+            if (typeof window.showToast === 'function') window.showToast('Ese barbero no tiene precio de corte configurado', 'error');
+            return;
+        }
+        ctx.items.push({
+            tipo: 'servicio',
+            nombre: 'Corte',
+            barberoId: b.userId || null,
+            barberoNombre: b.userName || b.nombre || '',
+            comisionPct: Number(b.comisionPorcentaje) || 0,
+            cantidad: 1,
+            precioUnit: precio,
+            subtotal: precio
+        });
+        sel.value = '';
+        renderItems();
+        renderTotal();
+    }
+
+    function setProductoSearch(v) {
+        ctx.productoSearch = v || '';
+        renderProductos();
+    }
+
+    /** Vincular/desvincular una cita desde los chips. */
+    function toggleCita(citaId) {
+        if (ctx.cita && ctx.cita.id === citaId) {
+            vincularCita(null); // desvincular
+        } else {
+            const c = (ctx.citasHoy || []).find(x => x.id === citaId);
+            vincularCita(c || null);
+        }
+        // re-render header sub + secciones
+        renderOverlay();
     }
 
     // ============================================
@@ -297,11 +463,14 @@
             const closeBtn = `<button onclick="cobrarRemoveItem(${i})" class="w-6 h-6 rounded-md bg-white/5 hover:bg-red-500/20 flex items-center justify-center transition-all active:scale-90">
                       <span class="material-symbols-outlined text-red-400 text-xs">close</span>
                    </button>`;
+            const barberoSub = (it.tipo !== 'producto' && it.barberoNombre)
+                ? `<p class="text-white/40 text-[10px] truncate">${escH(it.barberoNombre)}</p>` : '';
             return `
                 <div class="flex items-center gap-2 p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05]">
                     <span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1">${iconTipo}</span>
                     <div class="flex-1 min-w-0">
-                        <p class="text-white text-sm font-bold truncate">${it.nombre}${unit}</p>
+                        <p class="text-white text-sm font-bold truncate">${escH(it.nombre)}${unit}</p>
+                        ${barberoSub}
                     </div>
                     <span class="text-primary text-sm font-black tabular-nums shrink-0">${sub}</span>
                     ${closeBtn}
@@ -312,12 +481,18 @@
     function renderProductos() {
         const container = document.getElementById('cobrar-productos-grid');
         if (!container) return;
-        const productos = ctx.productosCache || [];
-        if (productos.length === 0) {
+        const todos = ctx.productosCache || [];
+        if (todos.length === 0) {
             container.innerHTML = `
                 <p class="col-span-2 text-white/30 text-xs text-center py-3">
-                    Sin productos en el catálogo. El admin puede agregar desde Barberos → Productos.
+                    Sin productos en el catálogo. El admin los agrega en la pestaña Inventario.
                 </p>`;
+            return;
+        }
+        const q = (ctx.productoSearch || '').trim().toLowerCase();
+        const productos = q ? todos.filter(p => (p.nombre || '').toLowerCase().includes(q)) : todos;
+        if (productos.length === 0) {
+            container.innerHTML = `<p class="col-span-2 text-white/30 text-xs text-center py-3">Ningún producto coincide con "${escH(ctx.productoSearch)}".</p>`;
             return;
         }
         container.innerHTML = productos.map(p => {
@@ -388,8 +563,8 @@
             container.innerHTML = '';
             return;
         }
-        if (ctx.modo === 'cita') {
-            const cliente = ctx.cita?.clienteNombre || 'el cliente';
+        if (ctx.cita) {
+            const cliente = escH(ctx.cita.clienteNombre || 'el cliente');
             container.innerHTML = `
                 <div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center gap-2">
                     <span class="material-symbols-outlined text-amber-400 text-base" style="font-variation-settings: 'FILL' 1">info</span>
@@ -397,7 +572,7 @@
                 </div>`;
             return;
         }
-        // Venta directa: pedir nombre del deudor
+        // Sin cita vinculada: pedir nombre del deudor
         container.innerHTML = `
             <label class="block">
                 <span class="text-amber-300 text-[10px] font-black uppercase tracking-wider">¿Quién queda debiendo?</span>
@@ -497,8 +672,8 @@
             if (typeof window.showToast === 'function') window.showToast('Total en 0 — agregá items', 'error');
             return;
         }
-        // F-caja: si es deuda en venta directa, exigir el nombre de quien debe.
-        if (ctx.metodoPago === 'deuda' && ctx.modo === 'directa' && !(ctx.deudorNombre || '').trim()) {
+        // F-caja: si es deuda y NO hay cita vinculada, exigir el nombre de quien debe.
+        if (ctx.metodoPago === 'deuda' && !ctx.cita && !(ctx.deudorNombre || '').trim()) {
             if (typeof window.showToast === 'function') window.showToast('Escribí quién queda debiendo', 'error');
             const inp = document.getElementById('cobrar-deudor-input');
             if (inp) inp.focus();
@@ -525,17 +700,25 @@
         const ventaId = ventaRef.id;
         const serverTS = firebase.firestore.FieldValue.serverTimestamp();
 
-        // P5: comisión del barbero. Aplica sobre el corte Y los adicionales
-        // (decisión confirmada del cliente); SOLO los productos quedan 100% para
-        // la barbería. Por eso la base = todo lo que NO sea 'producto'.
-        // Se calcula al cobrar, sin importar el método (una deuda también genera
-        // comisión de una vez).
-        const barberoIdVenta = ctx.cita?.barberoId || null;
-        const comisionPct = barberoIdVenta ? (Number(ctx.comisionByBarbero[barberoIdVenta]) || 0) : 0;
-        const comisionableTotal = ctx.items
-            .filter(it => it.tipo !== 'producto')
-            .reduce((s, it) => s + (Number(it.subtotal) || 0), 0);
-        const comisionMonto = Math.round(comisionableTotal * comisionPct / 100);
+        // Comisión POR ÍTEM: cada corte/adicional lleva su barbero + %. Esto
+        // permite VARIOS barberos en una sola cuenta (la mamá con dos hijos).
+        // Los productos NO generan comisión (quedan 100% para la barbería).
+        const comisionPorBarbero = {};
+        let comisionMonto = 0;
+        ctx.items.forEach(it => {
+            if (it.tipo === 'producto') return;
+            const bid = it.barberoId;
+            if (!bid) return;
+            const pct = Number(it.comisionPct) || 0;
+            const m = Math.round((Number(it.subtotal) || 0) * pct / 100);
+            if (m > 0) {
+                comisionPorBarbero[bid] = (comisionPorBarbero[bid] || 0) + m;
+                comisionMonto += m;
+            }
+        });
+        // Barberos presentes en el ticket (para consultar sus ventas por array-contains).
+        const barberoIds = [...new Set(ctx.items.filter(it => it.tipo !== 'producto' && it.barberoId).map(it => it.barberoId))];
+        const primerServicio = ctx.items.find(it => it.tipo !== 'producto' && it.barberoId) || null;
 
         const ventaDoc = {
             sedeId,
@@ -544,25 +727,28 @@
 
             citaId: ctx.cita?.id || null,
             clienteId: ctx.cita?.clienteId || null,
-            // En venta directa con deuda usamos el nombre del deudor; si no, el del cliente de la cita.
-            clienteNombre: (ctx.modo === 'directa' && ctx.metodoPago === 'deuda' && ctx.deudorNombre.trim())
+            // Sin cita y con deuda usamos el nombre del deudor; si hay cita, su cliente.
+            clienteNombre: (!ctx.cita && ctx.metodoPago === 'deuda' && ctx.deudorNombre.trim())
                 ? ctx.deudorNombre.trim()
                 : (ctx.cita?.clienteNombre || 'Cliente'),
-            barberoId: ctx.cita?.barberoId || null,
-            barberoNombre: ctx.cita?.barberoNombre || '',
+            // Barbero "principal" (primer corte) para mostrar en listados simples.
+            barberoId: primerServicio?.barberoId || null,
+            barberoNombre: primerServicio?.barberoNombre || '',
+            // Todos los barberos del ticket + su comisión (modelo multi-barbero).
+            barberoIds,
+            comisionPorBarbero,
 
             items: ctx.items.map(it => ({ ...it })),
             subtotal: total,
             total,
             metodoPago: ctx.metodoPago,
             esDeuda: ctx.metodoPago === 'deuda',
-            // P5: comisión denormalizada en la venta (fuente de los reportes de comisión).
-            barberoComisionPct: comisionPct,
+            // Comisión total denormalizada (suma de comisionPorBarbero).
             comisionMonto,
 
             cobradoPor: user?.uid || null,
             cobradoPorNombre: user?.displayName || '',
-            tipo: ctx.modo === 'cita' ? 'cita' : 'venta_directa',
+            tipo: ctx.cita ? 'cita' : 'venta_directa',
             // F5: denormalizamos el flag walk-in de la cita original para que
             // reportes pueda separar "citas reservadas con app" vs "walk-ins".
             walkin: !!ctx.cita?.walkin,
@@ -572,7 +758,7 @@
         const batch = database.batch();
         batch.set(ventaRef, ventaDoc);
 
-        if (ctx.modo === 'cita' && ctx.cita?.id) {
+        if (ctx.cita?.id) {
             const citaRef = database.collection('citas').doc(ctx.cita.id);
             batch.update(citaRef, {
                 estado: 'completada',
@@ -611,7 +797,7 @@
             if (typeof window.showToast === 'function') {
                 // Mensajes específicos por causa más común
                 let msg;
-                if (ctx.modo === 'cita') {
+                if (ctx.cita) {
                     msg = 'No se pudo cobrar. ¿La cita es vieja sin sede? Pedile al admin que la asigne.';
                 } else if (ctx.items.some(it => it.tipo === 'producto')) {
                     msg = 'No se pudo registrar. Quizás el stock de algún producto está mal — revisá Inventario.';
@@ -631,7 +817,7 @@
         close();
 
         // Notificar al resto del UI
-        if (ctx.modo === 'cita' && typeof window.onRecepCobroCita === 'function') {
+        if (ctx.cita?.id && typeof window.onRecepCobroCita === 'function') {
             window.onRecepCobroCita(ctx.cita.id, { total, metodoPago: ctx.metodoPago });
         }
         if (typeof window.onRecepVentaCreada === 'function') {
@@ -651,6 +837,9 @@
     window.cobrarSelectMetodo = selectMetodo;
     window.cobrarSetDeudor = setDeudor;
     window.cobrarSubmit = submit;
+    window.cobrarAddCorte = addCorte;
+    window.cobrarSetProductoSearch = setProductoSearch;
+    window.cobrarToggleCita = toggleCita;
 
     console.log('✓ RecepcionistaCobrarUI (F3) loaded');
 })();

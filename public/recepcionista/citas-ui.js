@@ -358,11 +358,6 @@
         if (estado === 'confirmada') {
             return `
                 <div class="mt-3 grid grid-cols-2 gap-2">
-                    <button onclick="recepCompletar('${id}')"
-                        class="px-3 py-2.5 rounded-xl bg-blue-500/20 border border-blue-500/30 text-blue-300 text-[11px] font-black uppercase tracking-wide hover:bg-blue-500/30 transition-all active:scale-95 flex items-center justify-center gap-1.5">
-                        <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1">check</span>
-                        Completar
-                    </button>
                     <button onclick="recepNoShow('${id}')"
                         class="px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/70 text-[11px] font-black uppercase tracking-wide hover:bg-white/[0.08] transition-all active:scale-95 flex items-center justify-center gap-1.5">
                         <span class="material-symbols-outlined text-sm">person_off</span>

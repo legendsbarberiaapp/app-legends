@@ -442,13 +442,24 @@
         const pagos = (state.pagosComision || []).filter(p =>
             state.sedeFilter === 'all' ? true : p.sedeId === state.sedeFilter);
 
-        // Comisión generada por barbero (de las ventas del período)
+        // Comisión generada por barbero (de las ventas del período). Modelo
+        // multi-barbero: cada venta trae `comisionPorBarbero` {barberoId: monto}.
+        // (Fallback al modelo viejo barberoId/comisionMonto por si hubiera ventas
+        // antiguas, aunque en producción se arrancó con 0 ventas.)
+        const nombreDe = (id) => {
+            const b = (state.barberos || []).find(x => x.userId === id);
+            return (b && (b.userName || b.nombre)) || 'Barbero';
+        };
         const agg = {};
         ventas.forEach(v => {
-            if (!v.barberoId || !(Number(v.comisionMonto) > 0)) return;
-            const id = v.barberoId;
-            if (!agg[id]) agg[id] = { id, nombre: v.barberoNombre || 'Barbero', sedeId: v.sedeId || null, generada: 0 };
-            agg[id].generada += Number(v.comisionMonto) || 0;
+            const cpb = (v.comisionPorBarbero && Object.keys(v.comisionPorBarbero).length)
+                ? v.comisionPorBarbero
+                : (v.barberoId && Number(v.comisionMonto) > 0 ? { [v.barberoId]: Number(v.comisionMonto) } : {});
+            Object.entries(cpb).forEach(([id, monto]) => {
+                if (!(Number(monto) > 0)) return;
+                if (!agg[id]) agg[id] = { id, nombre: nombreDe(id), sedeId: v.sedeId || null, generada: 0 };
+                agg[id].generada += Number(monto) || 0;
+            });
         });
         // Pagada por barbero (en el período)
         const pagadaPorBarbero = {};

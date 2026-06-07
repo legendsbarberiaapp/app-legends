@@ -208,13 +208,17 @@
     function renderBarberos() {
         const container = document.getElementById('caja-barberos');
         if (!container) return;
+        // Modelo multi-barbero: contamos los ÍTEMS de corte por barbero (un mismo
+        // ticket puede tener cortes de varios barberos + productos).
         const agg = {};
         cajaState.ventas.forEach(v => {
-            if (!v.barberoId) return;
-            const id = v.barberoId;
-            if (!agg[id]) agg[id] = { id, nombre: v.barberoNombre || 'Barbero', count: 0, total: 0 };
-            agg[id].count += 1;
-            agg[id].total += Number(v.total) || 0;
+            (v.items || []).forEach(it => {
+                if (it.tipo === 'producto' || !it.barberoId) return;
+                const id = it.barberoId;
+                if (!agg[id]) agg[id] = { id, nombre: it.barberoNombre || 'Barbero', count: 0, total: 0 };
+                agg[id].count += 1;
+                agg[id].total += Number(it.subtotal) || 0;
+            });
         });
         const lista = Object.values(agg).sort((a, b) => b.total - a.total);
         if (lista.length === 0) {

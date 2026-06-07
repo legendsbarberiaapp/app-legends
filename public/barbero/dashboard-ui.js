@@ -54,11 +54,30 @@
             ]);
 
             const miBarbero = (barberos || []).find(b => b.userId === user.uid) || {};
+            const uid = user.uid;
+
+            // Modelo multi-barbero: una venta puede tener cortes de varios barberos.
+            // "Mis cortes" = los ÍTEMS de servicio de ESTE barbero dentro de cada
+            // ticket (no la venta entera, que puede incluir cortes de otros + productos).
+            const misCortes = [];
+            (ventasMes || []).forEach(v => {
+                (v.items || []).forEach(it => {
+                    if (it.tipo === 'producto' || it.barberoId !== uid) return;
+                    misCortes.push({
+                        clienteNombre: v.clienteNombre,
+                        fecha: v.fecha,
+                        fechaHora: v.fechaHora,
+                        metodoPago: v.metodoPago,
+                        monto: Number(it.subtotal) || 0,
+                        comision: Math.round((Number(it.subtotal) || 0) * (Number(it.comisionPct) || 0) / 100)
+                    });
+                });
+            });
 
             // --- Stats del día ---
-            const ventasHoy = (ventasMes || []).filter(v => v.fecha === hoy);
-            const cortesHoy = ventasHoy.length;
-            const ingresosHoy = ventasHoy.reduce((s, v) => s + (Number(v.total) || 0), 0);
+            const cortesHoyList = misCortes.filter(c => c.fecha === hoy);
+            const cortesHoy = cortesHoyList.length;
+            const ingresosHoy = cortesHoyList.reduce((s, c) => s + c.monto, 0);
             // H2: solo confirmadas de hoy en adelante (no las viejas sin completar).
             const confirmadas = (citas || []).filter(c => c.estado === 'confirmada' && (c.fecha || '') >= hoy);
 
@@ -75,8 +94,8 @@
             // --- Nivel (manual, solo mostrar) ---
             renderNivel(miBarbero.nivel || '');
 
-            // --- Comisión del mes ---
-            const comisionGenerada = (ventasMes || []).reduce((s, v) => s + (Number(v.comisionMonto) || 0), 0);
+            // --- Comisión del mes (la parte de ESTE barbero en cada ticket) ---
+            const comisionGenerada = (ventasMes || []).reduce((s, v) => s + (Number(v.comisionPorBarbero?.[uid]) || 0), 0);
             const comisionPagada = (pagos || [])
                 .filter(p => (p.fecha || '') >= desdeMes && (p.fecha || '') <= hoy)
                 .reduce((s, p) => s + (Number(p.monto) || 0), 0);
@@ -86,7 +105,7 @@
             setText('bdash-comision-pendiente', fmtCOP(comisionPendiente));
 
             // --- Registro de cortes del mes ---
-            renderCortes(ventasMes || []);
+            renderCortes(misCortes);
         } catch (e) {
             console.error('❌ Error cargando dashboard del barbero:', e);
             const list = document.getElementById('bdash-cortes-list');
@@ -118,33 +137,33 @@
             </span>`;
     }
 
-    function renderCortes(ventas) {
+    function renderCortes(cortes) {
         const list = document.getElementById('bdash-cortes-list');
         if (!list) return;
-        if (!ventas.length) {
+        if (!cortes.length) {
             list.innerHTML = `
                 <div class="p-4 rounded-xl bg-white/[0.02] border border-white/[0.04]">
                     <p class="text-white/40 text-xs text-center">Aún no tienes cortes este mes</p>
                 </div>`;
             return;
         }
-        list.innerHTML = ventas.map(v => {
-            const hora = v.fechaHora?.toDate
-                ? v.fechaHora.toDate().toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })
-                : (v.fechaHora?.seconds ? new Date(v.fechaHora.seconds * 1000).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' }) : (v.fecha || ''));
-            const comision = Number(v.comisionMonto) || 0;
-            const deuda = v.metodoPago === 'deuda';
+        list.innerHTML = cortes.map(c => {
+            const hora = c.fechaHora?.toDate
+                ? c.fechaHora.toDate().toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })
+                : (c.fechaHora?.seconds ? new Date(c.fechaHora.seconds * 1000).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' }) : (c.fecha || ''));
+            const comision = Number(c.comision) || 0;
+            const deuda = c.metodoPago === 'deuda';
             return `
             <div class="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.05]">
                 <div class="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
                     <span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1">content_cut</span>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-white text-sm font-bold truncate">${esc(v.clienteNombre || 'Cliente')}</p>
+                    <p class="text-white text-sm font-bold truncate">${esc(c.clienteNombre || 'Cliente')}</p>
                     <p class="text-white/40 text-[11px]">${hora}${deuda ? ' · <span class="text-amber-400 font-bold">deuda</span>' : ''}</p>
                 </div>
                 <div class="text-right shrink-0">
-                    <p class="text-white text-sm font-black tabular-nums">${fmtCOP(v.total)}</p>
+                    <p class="text-white text-sm font-black tabular-nums">${fmtCOP(c.monto)}</p>
                     <p class="text-primary text-[10px] font-bold tabular-nums">comisión ${fmtCOP(comision)}</p>
                 </div>
             </div>`;
